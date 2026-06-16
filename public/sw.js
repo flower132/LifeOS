@@ -1,10 +1,14 @@
-const CACHE_NAME = "lifeos-v1";
+const CACHE_VERSION =
+  new URL(self.location.href).searchParams.get("v") || "v1";
+const CACHE_NAME = `lifeos-${CACHE_VERSION}`;
+
 const STATIC_ASSETS = [
   "/",
   "/home",
   "/objects",
   "/create-object",
   "/create-note",
+  "/settings",
   "/manifest.json",
   "/icons/icon-192x192.svg",
   "/icons/icon-512x512.svg",
@@ -12,9 +16,11 @@ const STATIC_ASSETS = [
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(STATIC_ASSETS))
+    caches
+      .open(CACHE_NAME)
+      .then((cache) => cache.addAll(STATIC_ASSETS))
+      .then(() => self.skipWaiting())
   );
-  self.skipWaiting();
 });
 
 self.addEventListener("activate", (event) => {
@@ -24,7 +30,7 @@ self.addEventListener("activate", (event) => {
       .then((keys) =>
         Promise.all(
           keys
-            .filter((key) => key !== CACHE_NAME)
+            .filter((key) => key.startsWith("lifeos-") && key !== CACHE_NAME)
             .map((key) => caches.delete(key))
         )
       )

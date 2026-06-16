@@ -4,7 +4,7 @@ import {
   Relation,
   Tag,
 } from "@/lib/types";
-import { StorageAdapter } from "./types";
+import { AppSettings, StorageAdapter } from "./types";
 
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
@@ -29,6 +29,18 @@ export class SupabaseAdapter implements StorageAdapter {
     console.warn(
       "SupabaseAdapter is not fully implemented. Falling back to localStorage behavior."
     );
+  }
+
+  async getStorageVersion(): Promise<number> {
+    throw new Error("SupabaseAdapter.getStorageVersion not implemented");
+  }
+
+  async setStorageVersion(version: number): Promise<void> {
+    throw new Error("SupabaseAdapter.setStorageVersion not implemented");
+  }
+
+  async migrateIfNeeded(): Promise<void> {
+    throw new Error("SupabaseAdapter.migrateIfNeeded not implemented");
   }
 
   // Objects
@@ -98,11 +110,28 @@ export class SupabaseAdapter implements StorageAdapter {
     throw new Error("SupabaseAdapter.getTags not implemented");
   }
 
-  async createTag(tag: Omit<Tag, "id">): Promise<Tag> {
+  async createTag(
+    tag: Omit<Tag, "id" | "createdAt" | "usageCount">
+  ): Promise<Tag> {
     throw new Error("SupabaseAdapter.createTag not implemented");
+  }
+
+  async updateTag(
+    id: string,
+    updates: Partial<Omit<Tag, "id" | "createdAt">>
+  ): Promise<Tag> {
+    throw new Error("SupabaseAdapter.updateTag not implemented");
   }
 
   async deleteTag(id: string): Promise<void> {
     throw new Error("SupabaseAdapter.deleteTag not implemented");
+  }
+
+  async getSettings(): Promise<Partial<AppSettings>> {
+    throw new Error("SupabaseAdapter.getSettings not implemented");
+  }
+
+  async setSettings(settings: Partial<AppSettings>): Promise<void> {
+    throw new Error("SupabaseAdapter.setSettings not implemented");
   }
 }

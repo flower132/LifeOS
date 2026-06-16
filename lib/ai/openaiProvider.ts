@@ -1,6 +1,7 @@
 import {
   AIProvider,
   EventGoalInsight,
+  Language,
   PersonProfile,
   SelfState,
 } from "./types";
@@ -9,8 +10,14 @@ function buildPersonMessages(
   objectName: string,
   objectDescription: string | undefined,
   notesText: string,
-  relationsText: string
+  relationsText: string,
+  language: Language
 ) {
+  const langHint =
+    language === "zh"
+      ? "Respond in Chinese (Simplified)."
+      : "Respond in English.";
+
   return [
     {
       role: "system" as const,
@@ -26,7 +33,8 @@ function buildPersonMessages(
 Rules:
 - Do not invent facts not present in the data.
 - If data is insufficient, say so explicitly in fields.
-- Keep each string concise (1-2 sentences).`,
+- Keep each string concise (1-2 sentences).
+- ${langHint}`,
     },
     {
       role: "user" as const,
@@ -39,8 +47,14 @@ function buildSelfMessages(
   objectName: string,
   objectDescription: string | undefined,
   notesText: string,
-  relationsText: string
+  relationsText: string,
+  language: Language
 ) {
+  const langHint =
+    language === "zh"
+      ? "Respond in Chinese (Simplified)."
+      : "Respond in English.";
+
   return [
     {
       role: "system" as const,
@@ -55,7 +69,8 @@ function buildSelfMessages(
 Rules:
 - Do not invent facts not present in the data.
 - If data is insufficient, say so explicitly in fields.
-- Keep each string concise.`,
+- Keep each string concise.
+- ${langHint}`,
     },
     {
       role: "user" as const,
@@ -67,8 +82,14 @@ Rules:
 function buildEventMessages(
   objectName: string,
   objectDescription: string | undefined,
-  notesText: string
+  notesText: string,
+  language: Language
 ) {
+  const langHint =
+    language === "zh"
+      ? "Respond in Chinese (Simplified)."
+      : "Respond in English.";
+
   return [
     {
       role: "system" as const,
@@ -81,7 +102,8 @@ function buildEventMessages(
 Rules:
 - Do not invent facts not present in the data.
 - If data is insufficient, say so explicitly in fields.
-- Keep each string concise.`,
+- Keep each string concise.
+- ${langHint}`,
     },
     {
       role: "user" as const,
@@ -131,14 +153,16 @@ export const openaiProvider: AIProvider = {
     objectName,
     objectDescription,
     notesText,
-    relationsText
+    relationsText,
+    language
   ): Promise<PersonProfile> {
     return callOpenAI<PersonProfile>(
       buildPersonMessages(
         objectName,
         objectDescription,
         notesText,
-        relationsText
+        relationsText,
+        language
       )
     );
   },
@@ -147,20 +171,28 @@ export const openaiProvider: AIProvider = {
     objectName,
     objectDescription,
     notesText,
-    relationsText
+    relationsText,
+    language
   ): Promise<SelfState> {
     return callOpenAI<SelfState>(
-      buildSelfMessages(objectName, objectDescription, notesText, relationsText)
+      buildSelfMessages(
+        objectName,
+        objectDescription,
+        notesText,
+        relationsText,
+        language
+      )
     );
   },
 
   async generateEventInsight(
     objectName,
     objectDescription,
-    notesText
+    notesText,
+    language
   ): Promise<EventGoalInsight> {
     return callOpenAI<EventGoalInsight>(
-      buildEventMessages(objectName, objectDescription, notesText)
+      buildEventMessages(objectName, objectDescription, notesText, language)
     );
   },
 };

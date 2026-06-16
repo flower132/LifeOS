@@ -3,7 +3,10 @@
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Trash2, StickyNote, Link as LinkIcon, Sparkles } from "lucide-react";
-import { useObjectStore, useNoteStore, useRelationStore, useTagStore } from "@/stores";
+import { useObjectStore } from "@/stores/objectStore";
+import { useNoteStore } from "@/stores/noteStore";
+import { useRelationStore } from "@/stores/relationStore";
+import { useTagStore } from "@/stores/tagStore";
 import { ObjectTypeBadge } from "@/components/object/ObjectTypeBadge";
 import { TagBadge } from "@/components/tag/TagBadge";
 import { TagSelect } from "@/components/tag/TagSelect";
@@ -13,10 +16,12 @@ import { RelationForm } from "@/components/relation/RelationForm";
 import { PersonInsightCard } from "@/components/ai/PersonInsightCard";
 import { SelfInsightCard } from "@/components/ai/SelfInsightCard";
 import { GoalEventInsightCard } from "@/components/ai/GoalEventInsightCard";
+import { useTranslation } from "@/lib/useTranslation";
 
 export default function ObjectDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const { t } = useTranslation();
   const id = params.id as string;
 
   const { objects, loaded: objectsLoaded, removeObject, updateObject } = useObjectStore();
@@ -40,7 +45,7 @@ export default function ObjectDetailPage() {
 
   const handleDelete = async () => {
     if (!object) return;
-    if (!confirm(`Delete "${object.name}"? This will also remove its notes and relations.`)) return;
+    if (!confirm(t("deleteConfirm", { name: object.name }))) return;
     await removeObject(object.id);
     router.push("/objects");
   };
@@ -52,10 +57,10 @@ export default function ObjectDetailPage() {
 
   if (!objectsLoaded) {
     return (
-      <div className="min-h-screen bg-white px-6 py-10">
+      <div className="min-h-screen bg-white px-6 py-10 dark:bg-slate-900">
         <div className="mx-auto max-w-4xl space-y-6">
-          <div className="h-8 w-48 animate-pulse rounded bg-slate-100" />
-          <div className="h-32 animate-pulse rounded-xl bg-slate-100" />
+          <div className="h-8 w-48 animate-pulse rounded bg-slate-100 dark:bg-slate-800" />
+          <div className="h-32 animate-pulse rounded-xl bg-slate-100 dark:bg-slate-800" />
         </div>
       </div>
     );
@@ -63,15 +68,15 @@ export default function ObjectDetailPage() {
 
   if (!object) {
     return (
-      <div className="min-h-screen bg-white px-6 py-10">
+      <div className="min-h-screen bg-white px-6 py-10 dark:bg-slate-900">
         <div className="mx-auto max-w-4xl text-center">
-          <h1 className="text-xl font-semibold text-slate-900">Object not found</h1>
+          <h1 className="text-xl font-semibold text-slate-900 dark:text-white">{t("objectNotFound")}</h1>
           <Link
             href="/objects"
             className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-indigo-600"
           >
             <ArrowLeft className="h-4 w-4" />
-            Back to objects
+            {t("backToObjects")}
           </Link>
         </div>
       </div>
@@ -79,31 +84,31 @@ export default function ObjectDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white">
-      <header className="border-b border-slate-100 bg-white px-6 py-5">
+    <div className="min-h-screen bg-white dark:bg-slate-900">
+      <header className="border-b border-slate-100 bg-white px-6 py-5 dark:border-slate-800 dark:bg-slate-900">
         <div className="mx-auto flex max-w-4xl items-start justify-between">
           <div className="space-y-1">
             <Link
               href="/objects"
-              className="mb-2 inline-flex items-center gap-1 text-xs font-medium text-slate-500 hover:text-slate-800"
+              className="mb-2 inline-flex items-center gap-1 text-xs font-medium text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200"
             >
               <ArrowLeft className="h-3.5 w-3.5" />
-              Objects
+              {t("backToObjects")}
             </Link>
             <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
+              <h1 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-white">
                 {object.name}
               </h1>
               <ObjectTypeBadge type={object.type} />
             </div>
             {object.description && (
-              <p className="max-w-2xl text-sm text-slate-500">{object.description}</p>
+              <p className="max-w-2xl text-sm text-slate-500 dark:text-slate-400">{object.description}</p>
             )}
           </div>
           <button
             onClick={handleDelete}
             className="rounded-lg p-2 text-slate-400 hover:bg-red-50 hover:text-red-600"
-            title="Delete object"
+            title={t("deleteObject")}
           >
             <Trash2 className="h-4 w-4" />
           </button>
@@ -114,12 +119,12 @@ export default function ObjectDetailPage() {
         {/* Tags */}
         <section className="space-y-3">
           <div className="flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-slate-400" />
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
-              Tags
+            <Sparkles className="h-4 w-4 text-slate-400 dark:text-slate-500" />
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+              {t("tagsSection")}
             </h2>
           </div>
-          <div className="rounded-xl border border-slate-100 bg-white p-4">
+          <div className="rounded-xl border border-slate-100 bg-white p-4 dark:border-slate-800 dark:bg-slate-800">
             <TagSelect
               selectedTagIds={object.tag_ids}
               onChange={handleTagChange}
@@ -138,8 +143,8 @@ export default function ObjectDetailPage() {
         <section className="space-y-3">
           <div className="flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-indigo-500" />
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
-              AI Understanding
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+              {t("aiUnderstanding")}
             </h2>
           </div>
           {object.type === "person" && (
@@ -166,9 +171,9 @@ export default function ObjectDetailPage() {
         {/* Relations */}
         <section className="space-y-3">
           <div className="flex items-center gap-2">
-            <LinkIcon className="h-4 w-4 text-slate-400" />
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
-              Relations
+            <LinkIcon className="h-4 w-4 text-slate-400 dark:text-slate-500" />
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+              {t("relations")}
             </h2>
           </div>
           <RelationForm sourceObjectId={object.id} />
@@ -181,16 +186,16 @@ export default function ObjectDetailPage() {
         <section className="space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <StickyNote className="h-4 w-4 text-slate-400" />
-              <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
-                Notes Timeline
+              <StickyNote className="h-4 w-4 text-slate-400 dark:text-slate-500" />
+              <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                {t("notesTimeline")}
               </h2>
             </div>
             <Link
               href={`/create-note?objectId=${object.id}`}
               className="text-sm font-medium text-indigo-600 hover:text-indigo-700"
             >
-              + Add note
+              + {t("addNote")}
             </Link>
           </div>
           <NoteTimeline notes={notes} />

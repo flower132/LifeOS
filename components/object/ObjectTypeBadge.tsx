@@ -1,5 +1,6 @@
 import { LifeObjectType } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "@/lib/useTranslation";
 
 const typeStyles: Record<LifeObjectType, string> = {
   person: "bg-blue-50 text-blue-700 border-blue-100",
@@ -9,20 +10,21 @@ const typeStyles: Record<LifeObjectType, string> = {
   goal: "bg-rose-50 text-rose-700 border-rose-100",
 };
 
-const typeLabels: Record<LifeObjectType, string> = {
-  person: "Person",
-  self: "Self",
-  event: "Event",
-  idea: "Idea",
-  goal: "Goal",
-};
-
 interface ObjectTypeBadgeProps {
   type: LifeObjectType;
   className?: string;
 }
 
 export function ObjectTypeBadge({ type, className }: ObjectTypeBadgeProps) {
+  const { t } = useTranslation();
+  const typeLabels: Record<LifeObjectType, string> = {
+    person: t("person"),
+    self: t("self"),
+    event: t("event"),
+    idea: t("idea"),
+    goal: t("goal"),
+  };
+
   return (
     <span
       className={cn(

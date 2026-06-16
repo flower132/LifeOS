@@ -5,7 +5,30 @@ import {
   Tag,
 } from "@/lib/types";
 
+export type DateFormat = "YYYY-MM-DD" | "MM/DD/YYYY" | "DD/MM/YYYY";
+export type TimeFormat = "24h" | "12h";
+
+export type AppSettings = {
+  language: "zh" | "en";
+  theme: "light" | "dark" | "system";
+  themeColor: "light" | "dark";
+  accentColor: "blue" | "green" | "purple" | "orange";
+  dateFormat: DateFormat;
+  timeFormat: TimeFormat;
+  aiEnabled: boolean;
+  aiPrivacyMode: boolean;
+  aiProvider: "mock" | "openai" | "anthropic";
+  aiModel: string;
+  openaiKey: string;
+  anthropicKey: string;
+};
+
 export interface StorageAdapter {
+  // Migration / version
+  getStorageVersion(): Promise<number>;
+  setStorageVersion(version: number): Promise<void>;
+  migrateIfNeeded(): Promise<void>;
+
   // Objects
   getObjects(): Promise<LifeObject[]>;
   getObjectById(id: string): Promise<LifeObject | null>;
@@ -34,8 +57,13 @@ export interface StorageAdapter {
 
   // Tags
   getTags(): Promise<Tag[]>;
-  createTag(tag: Omit<Tag, "id">): Promise<Tag>;
+  createTag(tag: Omit<Tag, "id" | "createdAt" | "usageCount">): Promise<Tag>;
+  updateTag(id: string, updates: Partial<Omit<Tag, "id" | "createdAt">>): Promise<Tag>;
   deleteTag(id: string): Promise<void>;
+
+  // Settings
+  getSettings(): Promise<Partial<AppSettings>>;
+  setSettings(settings: Partial<AppSettings>): Promise<void>;
 }
 
 export interface StorageConfig {

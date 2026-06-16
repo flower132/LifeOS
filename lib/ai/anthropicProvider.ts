@@ -1,12 +1,24 @@
 import {
   AIProvider,
   EventGoalInsight,
+  Language,
   PersonProfile,
   SelfState,
 } from "./types";
 
-function buildSystemPrompt(shape: string): string {
-  return `You are a structured understanding engine for a personal life OS. Based ONLY on the user data provided, generate a JSON object matching this exact shape:\n${shape}\nRules:\n- Do not invent facts not present in the data.\n- If data is insufficient, say so explicitly in fields.\n- Keep each string concise (1-2 sentences).\n- Return ONLY valid JSON.`;
+function buildSystemPrompt(shape: string, language: Language): string {
+  const langHint =
+    language === "zh"
+      ? "Respond in Chinese (Simplified)."
+      : "Respond in English.";
+
+  return `You are a structured understanding engine for a personal life OS. Based ONLY on the user data provided, generate a JSON object matching this exact shape:
+${shape}
+Rules:
+- Do not invent facts not present in the data.
+- If data is insufficient, say so explicitly in fields.
+- Keep each string concise (1-2 sentences).
+- ${langHint}`;
 }
 
 const PERSON_SHAPE = JSON.stringify(
@@ -44,7 +56,10 @@ const EVENT_SHAPE = JSON.stringify(
   2
 );
 
-async function callAnthropic<T>(system: string, userContent: string): Promise<T> {
+async function callAnthropic<T>(
+  system: string,
+  userContent: string
+): Promise<T> {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   const baseUrl =
     process.env.ANTHROPIC_API_BASE || "https://api.anthropic.com/v1";
@@ -81,7 +96,8 @@ async function callAnthropic<T>(system: string, userContent: string): Promise<T>
   if (!text) throw new Error("Empty response from Anthropic");
 
   // Extract JSON if wrapped in markdown fences
-  const jsonMatch = text.match(/```json\s*([\s\S]*?)```/) || text.match(/({[\s\S]*})/);
+  const jsonMatch =
+    text.match(/```json\s*([\s\S]*?)```/) || text.match(/({[\s\S]*})/);
   const json = jsonMatch ? jsonMatch[1] : text;
 
   return JSON.parse(json) as T;
@@ -101,10 +117,11 @@ export const anthropicProvider: AIProvider = {
     objectName,
     objectDescription,
     notesText,
-    relationsText
+    relationsText,
+    language
   ): Promise<PersonProfile> {
     return callAnthropic<PersonProfile>(
-      buildSystemPrompt(PERSON_SHAPE),
+      buildSystemPrompt(PERSON_SHAPE, language),
       buildUserContent(
         objectName,
         objectDescription,
@@ -118,10 +135,11 @@ export const anthropicProvider: AIProvider = {
     objectName,
     objectDescription,
     notesText,
-    relationsText
+    relationsText,
+    language
   ): Promise<SelfState> {
     return callAnthropic<SelfState>(
-      buildSystemPrompt(SELF_SHAPE),
+      buildSystemPrompt(SELF_SHAPE, language),
       buildUserContent(objectName, objectDescription, notesText, relationsText)
     );
   },
@@ -129,10 +147,11 @@ export const anthropicProvider: AIProvider = {
   async generateEventInsight(
     objectName,
     objectDescription,
-    notesText
+    notesText,
+    language
   ): Promise<EventGoalInsight> {
     return callAnthropic<EventGoalInsight>(
-      buildSystemPrompt(EVENT_SHAPE),
+      buildSystemPrompt(EVENT_SHAPE, language),
       buildUserContent(objectName, objectDescription, notesText)
     );
   },

@@ -10,26 +10,31 @@ import {
   Settings,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-const navItems = [
-  { href: "/home", label: "Home", icon: Home },
-  { href: "/objects", label: "Objects", icon: Users },
-  { href: "/create-object", label: "New Object", icon: PlusCircle },
-  { href: "/create-note", label: "New Note", icon: StickyNote },
-];
+import { useTranslation } from "@/lib/useTranslation";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const { t } = useTranslation();
+
+  // Sidebar / bottom nav order is driven by this single array config.
+  const navItems = [
+    { href: "/home", label: t("navHome"), icon: Home },
+    { href: "/objects", label: t("navObjects"), icon: Users },
+    { href: "/create-note", label: t("navNewNote"), icon: StickyNote },
+    { href: "/create-object", label: t("navNewObject"), icon: PlusCircle },
+  ];
+
+  const settingsItem = { href: "/settings", label: t("navSettings"), icon: Settings };
 
   return (
-    <div className="min-h-screen bg-white text-slate-900">
+    <div className="min-h-screen bg-white text-slate-900 dark:bg-slate-900 dark:text-slate-100">
       {/* Desktop sidebar */}
-      <aside className="fixed left-0 top-0 z-40 hidden h-full w-60 flex-col border-r border-slate-100 bg-white px-4 py-6 md:flex">
+      <aside className="fixed left-0 top-0 z-40 hidden h-full w-60 flex-col border-r border-slate-100 bg-white px-4 py-6 md:flex dark:border-slate-800 dark:bg-slate-900">
         <Link href="/home" className="mb-8 flex items-center gap-2 px-2">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600 text-white font-bold">
             L
           </div>
-          <span className="text-lg font-semibold tracking-tight">LifeOS</span>
+          <span className="text-lg font-semibold tracking-tight">{t("appName")}</span>
         </Link>
 
         <nav className="flex flex-1 flex-col gap-1">
@@ -43,8 +48,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 className={cn(
                   "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
                   active
-                    ? "bg-indigo-50 text-indigo-700"
-                    : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                    ? "bg-indigo-50 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300"
+                    : "text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100"
                 )}
               >
                 <Icon className="h-4 w-4" />
@@ -55,11 +60,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </nav>
 
         <Link
-          href="#"
-          className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-slate-500 hover:bg-slate-50"
+          href="/settings"
+          className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-slate-500 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-800"
         >
           <Settings className="h-4 w-4" />
-          Settings
+          {t("navSettings")}
         </Link>
       </aside>
 
@@ -69,8 +74,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </main>
 
       {/* Mobile bottom nav */}
-      <nav className="fixed bottom-0 left-0 z-50 flex h-16 w-full items-center justify-around border-t border-slate-100 bg-white md:hidden">
-        {navItems.map((item) => {
+      <nav className="fixed bottom-0 left-0 z-50 flex h-16 w-full items-center justify-around border-t border-slate-100 bg-white md:hidden dark:border-slate-800 dark:bg-slate-900">
+        {[...navItems, settingsItem].map((item) => {
           const Icon = item.icon;
           const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
           return (
@@ -78,8 +83,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               key={item.href}
               href={item.href}
               className={cn(
-                "flex flex-col items-center justify-center gap-1 px-3 py-2 text-xs font-medium transition-colors",
-                active ? "text-indigo-700" : "text-slate-500"
+                "flex flex-col items-center justify-center gap-1 px-2 py-2 text-xs font-medium transition-colors",
+                active ? "text-indigo-700 dark:text-indigo-300" : "text-slate-500 dark:text-slate-400"
               )}
             >
               <Icon className="h-5 w-5" />

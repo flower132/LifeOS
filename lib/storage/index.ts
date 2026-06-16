@@ -1,5 +1,4 @@
-import { LocalStorageAdapter } from "./localStorageAdapter";
-import { SupabaseAdapter } from "./supabaseAdapter";
+import { LocalStorageAdapter, STORAGE_VERSION } from "./localStorageAdapter";
 import { StorageAdapter } from "./types";
 
 function createStorageAdapter(): StorageAdapter {
@@ -7,7 +6,12 @@ function createStorageAdapter(): StorageAdapter {
   const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   if (supabaseUrl && supabaseKey) {
-    return new SupabaseAdapter(supabaseUrl, supabaseKey);
+    // SupabaseAdapter is a placeholder and will crash the app if selected.
+    // Until it is fully implemented, always fall back to LocalStorageAdapter.
+     
+    console.warn(
+      "[LifeOS] Supabase env vars detected but SupabaseAdapter is not implemented. Falling back to localStorage."
+    );
   }
 
   return new LocalStorageAdapter();
@@ -15,4 +19,4 @@ function createStorageAdapter(): StorageAdapter {
 
 export const storage = createStorageAdapter();
 export type { StorageAdapter };
-export { LocalStorageAdapter, SupabaseAdapter };
+export { LocalStorageAdapter, STORAGE_VERSION };

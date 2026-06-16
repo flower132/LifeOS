@@ -12,8 +12,8 @@ export function ObjectList({
 }: ObjectListProps) {
   if (objects.length === 0) {
     return (
-      <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-8 text-center">
-        <p className="text-sm text-slate-500">{emptyMessage}</p>
+      <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-8 text-center dark:border-slate-800 dark:bg-slate-800">
+        <p className="text-sm text-slate-500 dark:text-slate-400">{emptyMessage}</p>
       </div>
     );
   }

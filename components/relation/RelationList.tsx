@@ -1,5 +1,5 @@
 import { Relation } from "@/lib/types";
-import { useObjectStore } from "@/stores";
+import { useObjectStore } from "@/stores/objectStore";
 import { formatDate } from "@/lib/utils";
 
 interface RelationListProps {

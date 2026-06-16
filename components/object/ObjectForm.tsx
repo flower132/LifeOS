@@ -3,75 +3,102 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { LifeObjectType, LIFE_OBJECT_TYPES } from "@/lib/types";
-import { useObjectStore } from "@/stores";
+import { useObjectStore } from "@/stores/objectStore";
 import { TagSelect } from "../tag/TagSelect";
+import { useTranslation } from "@/lib/useTranslation";
 
 export function ObjectForm() {
   const router = useRouter();
-  const { addObject } = useObjectStore();
-  const [name, setName] = useState("");
+  const addObject = useObjectStore((s) => s.addObject);
+  const { t } = useTranslation();
   const [type, setType] = useState<LifeObjectType>("person");
+  const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [tagIds, setTagIds] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const canSubmit = !submitting && name.trim().length > 0;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) return;
+    if (!canSubmit) return;
 
+    const trimmedName = name.trim();
+    const trimmedDescription = description.trim();
+    if (!trimmedName) {
+      setError(t("objectNameRequired"));
+      return;
+    }
+
+    setError(null);
     setSubmitting(true);
-    const created = await addObject({
-      type,
-      name: name.trim(),
-      description: description.trim() || undefined,
-      tag_ids: tagIds,
-    });
-    setSubmitting(false);
-    router.push(`/objects/${created.id}`);
+    try {
+      const created = await addObject({
+        type,
+        name: trimmedName,
+        description: trimmedDescription || undefined,
+        tag_ids: tagIds,
+      });
+      router.push(`/objects/${created.id}`);
+    } catch (err) {
+      console.error("Failed to create object:", err);
+      setError(err instanceof Error ? err.message : t("failedToCreateObject"));
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
     <form onSubmit={handleSubmit} className="mx-auto max-w-2xl space-y-6">
+      {error && (
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-300">
+          {error}
+        </div>
+      )}
+
       <div className="space-y-2">
-        <label className="text-sm font-medium text-slate-700">Type</label>
+        <label className="text-sm font-medium text-slate-700 dark:text-slate-300">{t("type")}</label>
         <select
+          name="type"
           value={type}
           onChange={(e) => setType(e.target.value as LifeObjectType)}
-          className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+          className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
         >
-          {LIFE_OBJECT_TYPES.map((t) => (
-            <option key={t} value={t}>
-              {t.charAt(0).toUpperCase() + t.slice(1)}
+          {LIFE_OBJECT_TYPES.map((typeOption) => (
+            <option key={typeOption} value={typeOption}>
+              {t(typeOption)}
             </option>
           ))}
         </select>
       </div>
 
       <div className="space-y-2">
-        <label className="text-sm font-medium text-slate-700">Name</label>
+        <label className="text-sm font-medium text-slate-700 dark:text-slate-300">{t("name")}</label>
         <input
+          name="name"
           type="text"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="e.g. Alice, Buy a house, Product idea"
-          required
-          className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+          placeholder={t("namePlaceholder")}
+          className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
         />
       </div>
 
       <div className="space-y-2">
-        <label className="text-sm font-medium text-slate-700">Description</label>
+        <label className="text-sm font-medium text-slate-700 dark:text-slate-300">{t("description")}</label>
         <textarea
+          name="description"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
-          placeholder="Optional context..."
+          placeholder={t("descriptionPlaceholder")}
           rows={4}
-          className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+          className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
         />
       </div>
 
       <div className="space-y-2">
-        <label className="text-sm font-medium text-slate-700">Tags</label>
+        <label className="text-sm font-medium text-slate-700 dark:text-slate-300">{t("tags")}</label>
         <TagSelect selectedTagIds={tagIds} onChange={setTagIds} />
       </div>
 
@@ -79,16 +106,16 @@ export function ObjectForm() {
         <button
           type="button"
           onClick={() => router.back()}
-          className="rounded-lg px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50"
+          className="rounded-lg px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800"
         >
-          Cancel
+          {t("cancel")}
         </button>
         <button
           type="submit"
-          disabled={submitting || !name.trim()}
-          className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
+          disabled={!canSubmit}
+          className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-indigo-600 dark:hover:bg-indigo-700"
         >
-          {submitting ? "Creating..." : "Create Object"}
+          {submitting ? t("creating") : t("createObjectTitle")}
         </button>
       </div>
     </form>

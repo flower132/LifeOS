@@ -3,11 +3,20 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --accent: 217 91% 60%;
+  --accent-foreground: 0 0% 100%;
+}
+
+.dark {
+  --background: #0f172a;
+  --foreground: #f8fafc;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
@@ -17,6 +26,39 @@ body {
   color: var(--foreground);
   font-family: var(--font-sans), ui-sans-serif, system-ui, -apple-system,
     BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+/* Accent-aware utility helpers */
+.bg-accent {
+  background-color: hsl(var(--accent));
+}
+
+.text-accent {
+  color: hsl(var(--accent));
+}
+
+.border-accent {
+  border-color: hsl(var(--accent));
+}
+
+.ring-accent {
+  --tw-ring-color: hsl(var(--accent));
+}
+
+.focus\:border-accent:focus {
+  border-color: hsl(var(--accent));
+}
+
+.focus\:ring-accent:focus {
+  --tw-ring-color: hsl(var(--accent) / 0.3);
+}
+
+.hover\:bg-accent:hover {
+  background-color: hsl(var(--accent));
+}
+
+.hover\:text-accent:hover {
+  color: hsl(var(--accent));
 }
 
 /* Note content minimal markdown styling */
@@ -65,4 +107,14 @@ body {
   padding-left: 0.75rem;
   color: #475569;
   margin-bottom: 0.75em;
+}
+
+.dark .note-content code,
+.dark .note-content pre {
+  background-color: #1e293b;
+}
+
+.dark .note-content blockquote {
+  border-left-color: #334155;
+  color: #94a3b8;
 }

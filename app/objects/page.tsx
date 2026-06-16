@@ -4,28 +4,30 @@ import Link from "next/link";
 import { Search, PlusCircle } from "lucide-react";
 import { useState } from "react";
 import { LIFE_OBJECT_TYPES, LifeObjectType } from "@/lib/types";
-import { useObjectStore } from "@/stores";
+import { useObjectStore } from "@/stores/objectStore";
 import { ObjectList } from "@/components/object/ObjectList";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "@/lib/useTranslation";
 
 const filterTabs: ("all" | LifeObjectType)[] = [
   "all",
   ...LIFE_OBJECT_TYPES,
 ];
 
-const tabLabels: Record<"all" | LifeObjectType, string> = {
-  all: "All",
-  person: "People",
-  self: "Self",
-  event: "Events",
-  idea: "Ideas",
-  goal: "Goals",
-};
-
 export default function ObjectsPage() {
   const { objects, loaded } = useObjectStore();
+  const { t } = useTranslation();
   const [filter, setFilter] = useState<"all" | LifeObjectType>("all");
   const [query, setQuery] = useState("");
+
+  const tabLabels: Record<"all" | LifeObjectType, string> = {
+    all: t("all"),
+    person: t("people"),
+    self: t("self"),
+    event: t("events"),
+    idea: t("ideas"),
+    goal: t("goals"),
+  };
 
   const filtered = objects
     .filter((obj) => (filter === "all" ? true : obj.type === filter))
@@ -37,16 +39,16 @@ export default function ObjectsPage() {
     );
 
   return (
-    <div className="min-h-screen bg-white">
-      <header className="border-b border-slate-100 bg-white px-6 py-5">
+    <div className="min-h-screen bg-white dark:bg-slate-900">
+      <header className="border-b border-slate-100 bg-white px-6 py-5 dark:border-slate-800 dark:bg-slate-900">
         <div className="mx-auto max-w-5xl">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
-                Objects
+              <h1 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-white">
+                {t("objectsTitle")}
               </h1>
-              <p className="mt-1 text-sm text-slate-500">
-                People, events, goals, ideas — your life data.
+              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                {t("objectsSubtitle")}
               </p>
             </div>
             <Link
@@ -54,7 +56,7 @@ export default function ObjectsPage() {
               className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
             >
               <PlusCircle className="h-4 w-4" />
-              New Object
+              {t("newObject")}
             </Link>
           </div>
         </div>
@@ -85,8 +87,8 @@ export default function ObjectsPage() {
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search objects..."
-              className="w-full rounded-lg border border-slate-200 py-2 pl-9 pr-3 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 sm:w-64"
+              placeholder={t("searchObjects")}
+              className="w-full rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm text-slate-900 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
             />
           </div>
         </div>
@@ -96,14 +98,14 @@ export default function ObjectsPage() {
             {Array.from({ length: 6 }).map((_, i) => (
               <div
                 key={i}
-                className="h-32 animate-pulse rounded-xl bg-slate-100"
+                className="h-32 animate-pulse rounded-xl bg-slate-100 dark:bg-slate-800"
               />
             ))}
           </div>
         ) : (
           <ObjectList
             objects={filtered}
-            emptyMessage={`No ${filter === "all" ? "" : tabLabels[filter].toLowerCase()} objects found.`}
+            emptyMessage={filter === "all" ? t("noObjectsFound") : `${t("noObjectsFound")}`}
           />
         )}
       </div>

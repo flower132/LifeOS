@@ -1,0 +1,403 @@
+export type Language = "zh" | "en";
+
+const translations: Record<Language, Record<string, string>> = {
+  en: {
+    appName: "LifeOS",
+    appDescription: "Life Data Structure System",
+
+    // Navigation
+    navNewNote: "New Note",
+    navObject: "Object",
+    navObjects: "Objects",
+    navHome: "Home",
+    navNewObject: "New Object",
+    navSettings: "Settings",
+
+    // Home
+    homeTitle: "Home",
+    homeSubtitle: "Your life data structure, at a glance.",
+    recentObjects: "Recent Objects",
+    recentNotes: "Recent Notes",
+    noObjectsYet: "No objects yet. Create your first object to get started.",
+    createObject: "Create object",
+    noNotesYet: "No notes yet. Capture a thought above.",
+    viewAll: "View all",
+    new: "New",
+    loading: "Loading...",
+
+    // Objects
+    objectsTitle: "Objects",
+    objectsSubtitle: "People, events, goals, ideas — your life data.",
+    newObject: "New Object",
+    searchObjects: "Search objects...",
+    all: "All",
+    people: "People",
+    self: "Self",
+    events: "Events",
+    ideas: "Ideas",
+    goals: "Goals",
+    noObjectsFound: "No objects found.",
+
+    // Create Object
+    createObjectTitle: "Create Object",
+    createObjectSubtitle: "A person, event, goal, idea, or yourself.",
+    type: "Type",
+    name: "Name",
+    namePlaceholder: "e.g. Alice, Buy a house, Product idea",
+    description: "Description",
+    descriptionPlaceholder: "Optional context...",
+    tags: "Tags",
+    addTags: "Add tags...",
+    cancel: "Cancel",
+    creating: "Creating...",
+
+    // Object Detail
+    backToObjects: "Objects",
+    deleteObject: "Delete object",
+    deleteConfirm: "Delete \"{name}\"? This will also remove its notes and relations.",
+    tagsSection: "Tags",
+    aiUnderstanding: "AI Understanding",
+    relations: "Relations",
+    notesTimeline: "Notes Timeline",
+    addNote: "Add note",
+    objectNotFound: "Object not found",
+
+    // Object types
+    person: "Person",
+    event: "Event",
+    idea: "Idea",
+    goal: "Goal",
+
+    // Form validation
+    objectNameRequired: "Object name is required",
+    failedToCreateObject: "Failed to create object",
+    pleaseSelectObject: "Please select an object",
+    noteContentRequired: "Note content is required",
+    failedToCreateNote: "Failed to create note",
+    failedToCreateTag: "Failed to create tag",
+    failedToCreateRelation: "Failed to create relation",
+    failedToImportData: "Failed to import data",
+
+    // Relation types
+    family: "Family",
+    friend: "Friend",
+    colleague: "Colleague",
+    mentor: "Mentor",
+    partner: "Partner",
+    custom: "Custom",
+
+    // Notes
+    createNoteTitle: "Create Note",
+    createNoteSubtitle: "Record a thought, event, or observation.",
+    linkToObject: "Link to Object",
+    selectObject: "Select an object...",
+    content: "Content",
+    contentPlaceholder: "Write what happened, what you thought, or what you noticed...",
+    saving: "Saving...",
+    saveNote: "Save Note",
+    backToObject: "Back to object",
+
+    // Relations
+    toObject: "To Object",
+    relationType: "Relation Type",
+    relationNotePlaceholder: "Optional context about the relationship",
+    strength: "Strength",
+    addRelation: "Add Relation",
+    adding: "Adding...",
+
+    // TagSelect
+    recentTags: "Recent",
+    allTags: "All tags",
+    createTag: "Create {name}",
+    noMatchingTags: "No matching tags",
+    typeToCreateTag: "Type to create a tag",
+
+    // Settings
+    settingsTitle: "Settings",
+    settingsSubtitle: "Configure your LifeOS preferences.",
+    general: "General",
+    appearance: "Appearance",
+    language: "Language",
+    english: "English",
+    chinese: "中文",
+    theme: "Theme",
+    light: "Light",
+    dark: "Dark",
+    system: "System",
+    dateFormat: "Date Format",
+    timeFormat: "Time Format",
+    hour: "hour",
+    accentColor: "Accent Color",
+    blue: "Blue",
+    green: "Green",
+    purple: "Purple",
+    orange: "Orange",
+    dataManagement: "Data Management",
+    storage: "Storage",
+    storageDescription: "All data is stored locally in your browser via localStorage.",
+    storageUsage: "Storage Usage",
+    exportData: "Export Data",
+    exportJson: "Export JSON",
+    exportMarkdown: "Export Markdown",
+    exporting: "Exporting...",
+    importJson: "Import JSON",
+    importing: "Importing...",
+    clearCache: "Clear All Data",
+    clearing: "Clearing...",
+    clearCacheConfirm: "Are you sure? This will permanently delete all local data and cannot be undone.",
+    about: "About",
+    aboutDescription: "LifeOS — Life Data Structure System",
+    version: "Version",
+    storageType: "Storage Type",
+    localStorage: "localStorage",
+    buildTime: "Build Time",
+
+    // AI
+    aiSettings: "AI Settings",
+    aiEnabled: "AI Enabled",
+    aiPrivacyMode: "Privacy Mode",
+    aiPrivacyModeDescription: "Force local mock provider and disable external AI APIs.",
+    aiProvider: "AI Provider",
+    aiModel: "Model",
+    currentProvider: "Current Provider",
+    openaiKey: "OpenAI Key",
+    anthropicKey: "Anthropic Key",
+    keyStoredLocally: "Key is stored locally in your browser",
+    providerMock: "Local Mock",
+    providerOpenAI: "OpenAI",
+    providerAnthropic: "Anthropic",
+
+    // Error Boundary
+    errorTitle: "Something went wrong",
+    errorDescription: "The app encountered an unexpected error.",
+    errorDataSafe: "Your data is safe in localStorage.",
+    reload: "Reload",
+    backToHome: "Home",
+
+    // AI Insights
+    aiPersonProfile: "AI Person Profile",
+    aiSelfState: "AI Self State",
+    aiEventGoalInsight: "AI Insight",
+    personalityTraits: "Personality Traits",
+    recentPatterns: "Recent Patterns",
+    relationship: "Relationship",
+    attentionNeeded: "Attention Needed",
+    interactionLevel: "Interaction level",
+    currentState: "Current State",
+    emotionalTrend: "Emotional Trend",
+    focusAreas: "Focus Areas",
+    risks: "Risks",
+    recommendations: "Recommendations",
+    progressInsight: "Progress Insight",
+    blockers: "Blockers",
+    aiUnavailable: "AI insight unavailable.",
+
+    // Quick Capture
+    quickCaptureTitle: "Quick capture",
+    noteContentPlaceholder: "What happened? What are you thinking?",
+  },
+  zh: {
+    appName: "LifeOS",
+    appDescription: "人生数据结构系统",
+
+    // Navigation
+    navNewNote: "新建笔记",
+    navObject: "对象",
+    navObjects: "对象",
+    navHome: "首页",
+    navNewObject: "新建对象",
+    navSettings: "设置",
+
+    // Home
+    homeTitle: "首页",
+    homeSubtitle: "你的人生数据结构，一目了然。",
+    recentObjects: "最近对象",
+    recentNotes: "最近笔记",
+    noObjectsYet: "还没有对象。创建第一个对象开始吧。",
+    createObject: "创建对象",
+    noNotesYet: "还没有笔记。在上方记录一个想法。",
+    viewAll: "查看全部",
+    new: "新建",
+    loading: "加载中...",
+
+    // Objects
+    objectsTitle: "对象",
+    objectsSubtitle: "人物、事件、目标、想法——你的人生数据。",
+    newObject: "新建对象",
+    searchObjects: "搜索对象...",
+    all: "全部",
+    people: "人物",
+    self: "自己",
+    events: "事件",
+    ideas: "想法",
+    goals: "目标",
+    noObjectsFound: "未找到对象。",
+
+    // Create Object
+    createObjectTitle: "创建对象",
+    createObjectSubtitle: "一个人、事件、目标、想法，或你自己。",
+    type: "类型",
+    name: "名称",
+    namePlaceholder: "例如：Alice、买房、产品想法",
+    description: "描述",
+    descriptionPlaceholder: "可选的上下文...",
+    tags: "标签",
+    addTags: "添加标签...",
+    cancel: "取消",
+    creating: "创建中...",
+
+    // Object Detail
+    backToObjects: "对象",
+    deleteObject: "删除对象",
+    deleteConfirm: "删除\"{name}\"？这将同时删除其笔记和关系。",
+    tagsSection: "标签",
+    aiUnderstanding: "AI 理解",
+    relations: "关系",
+    notesTimeline: "笔记时间线",
+    addNote: "添加笔记",
+    objectNotFound: "未找到对象",
+
+    // Object types
+    person: "人物",
+    event: "事件",
+    idea: "想法",
+    goal: "目标",
+
+    // Form validation
+    objectNameRequired: "对象名称不能为空",
+    failedToCreateObject: "创建对象失败",
+    pleaseSelectObject: "请选择一个对象",
+    noteContentRequired: "笔记内容不能为空",
+    failedToCreateNote: "创建笔记失败",
+    failedToCreateTag: "创建标签失败",
+    failedToCreateRelation: "创建关系失败",
+    failedToImportData: "导入数据失败",
+
+    // Relation types
+    family: "家人",
+    friend: "朋友",
+    colleague: "同事",
+    mentor: "导师",
+    partner: "伴侣",
+    custom: "自定义",
+
+    // Notes
+    createNoteTitle: "创建笔记",
+    createNoteSubtitle: "记录一个想法、事件或观察。",
+    linkToObject: "关联对象",
+    selectObject: "选择一个对象...",
+    content: "内容",
+    contentPlaceholder: "写下发生了什么、你的想法或观察到的内容...",
+    saving: "保存中...",
+    saveNote: "保存笔记",
+    backToObject: "返回对象",
+
+    // Relations
+    toObject: "关联到对象",
+    relationType: "关系类型",
+    relationNotePlaceholder: "关于这段关系的可选说明",
+    strength: "强度",
+    addRelation: "添加关系",
+    adding: "添加中...",
+
+    // TagSelect
+    recentTags: "最近使用",
+    allTags: "全部标签",
+    createTag: "创建 {name}",
+    noMatchingTags: "没有匹配的标签",
+    typeToCreateTag: "输入以创建标签",
+
+    // Settings
+    settingsTitle: "设置",
+    settingsSubtitle: "配置你的 LifeOS 偏好。",
+    general: "通用",
+    appearance: "外观",
+    language: "语言",
+    english: "English",
+    chinese: "中文",
+    theme: "主题",
+    light: "浅色",
+    dark: "深色",
+    system: "跟随系统",
+    dateFormat: "日期格式",
+    timeFormat: "时间格式",
+    hour: "小时",
+    accentColor: "主题色",
+    blue: "蓝色",
+    green: "绿色",
+    purple: "紫色",
+    orange: "橙色",
+    dataManagement: "数据管理",
+    storage: "存储",
+    storageDescription: "所有数据都通过 localStorage 存储在你的浏览器中。",
+    storageUsage: "存储占用",
+    exportData: "导出数据",
+    exportJson: "导出 JSON",
+    exportMarkdown: "导出 Markdown",
+    exporting: "导出中...",
+    importJson: "导入 JSON",
+    importing: "导入中...",
+    clearCache: "清空数据",
+    clearing: "清空中...",
+    clearCacheConfirm: "确定要清空所有本地数据吗？此操作不可恢复。",
+    about: "关于",
+    aboutDescription: "LifeOS — 人生数据结构系统",
+    version: "版本",
+    storageType: "存储类型",
+    localStorage: "本地存储",
+    buildTime: "构建时间",
+
+    // AI
+    aiSettings: "AI 设置",
+    aiEnabled: "AI 开关",
+    aiPrivacyMode: "隐私模式",
+    aiPrivacyModeDescription: "强制使用本地 Mock Provider，禁用外部 AI API。",
+    aiProvider: "AI 提供商",
+    aiModel: "模型",
+    currentProvider: "当前提供商",
+    openaiKey: "OpenAI 密钥",
+    anthropicKey: "Anthropic 密钥",
+    keyStoredLocally: "密钥保存在你的本地浏览器中",
+    providerMock: "本地 Mock",
+    providerOpenAI: "OpenAI",
+    providerAnthropic: "Anthropic",
+
+    // Error Boundary
+    errorTitle: "出现错误",
+    errorDescription: "应用遇到了意外错误。",
+    errorDataSafe: "你的数据安全地保存在 localStorage 中。",
+    reload: "重新加载",
+    backToHome: "返回首页",
+
+    // AI Insights
+    aiPersonProfile: "AI 人物画像",
+    aiSelfState: "AI 自我状态",
+    aiEventGoalInsight: "AI 洞察",
+    personalityTraits: "性格特征",
+    recentPatterns: "近期模式",
+    relationship: "关系",
+    attentionNeeded: "需要关注",
+    interactionLevel: "互动频率",
+    currentState: "当前状态",
+    emotionalTrend: "情绪趋势",
+    focusAreas: "关注焦点",
+    risks: "风险",
+    recommendations: "建议",
+    progressInsight: "进展洞察",
+    blockers: "阻碍",
+    aiUnavailable: "AI 洞察暂不可用。",
+
+    // Quick Capture
+    quickCaptureTitle: "快速记录",
+    noteContentPlaceholder: "发生了什么？你在想什么？",
+  },
+};
+
+export function t(key: string, language: Language, vars: Record<string, string> = {}): string {
+  const dict = translations[language] || translations.en;
+  let text = dict[key] ?? translations.en[key] ?? key;
+  Object.entries(vars).forEach(([k, v]) => {
+    text = text.replace(new RegExp(`\\{${k}\\}`, "g"), v);
+  });
+  return text;
+}

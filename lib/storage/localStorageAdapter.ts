@@ -5,38 +5,198 @@ import {
   Relation,
   Tag,
 } from "@/lib/types";
-import { StorageAdapter } from "./types";
+import {
+  isValidLifeObject,
+  isValidNote,
+  isValidRelation,
+  isValidTag,
+  validateInputObject,
+  validateInputNote,
+  validateInputRelation,
+  validateInputTag,
+} from "@/lib/validation";
+import { AppSettings, StorageAdapter } from "./types";
+
+const STORAGE_VERSION = 1;
+const VERSION_KEY = "lifeos_version";
 
 const KEYS = {
   objects: "lifeos_objects",
   notes: "lifeos_notes",
   relations: "lifeos_relations",
   tags: "lifeos_tags",
+  settings: "lifeos_settings",
 };
 
-function getItem<T>(key: string, defaultValue: T): T {
+const ENTITY_KEYS = [
+  KEYS.objects,
+  KEYS.notes,
+  KEYS.relations,
+  KEYS.tags,
+  KEYS.settings,
+];
+
+class StorageError extends Error {
+  constructor(
+    message: string,
+    public readonly code: "quota_exceeded" | "corrupted" | "validation"
+  ) {
+    super(message);
+    this.name = "StorageError";
+  }
+}
+
+function safeGetItem<T>(key: string, defaultValue: T): T {
   if (typeof window === "undefined") return defaultValue;
   try {
     const raw = window.localStorage.getItem(key);
-    return raw ? (JSON.parse(raw) as T) : defaultValue;
-  } catch {
+    if (raw === null) return defaultValue;
+    return JSON.parse(raw) as T;
+  } catch (err) {
+     
+    console.error(
+      `[LifeOS] localStorage corruption detected for key "${key}":`,
+      err
+    );
     return defaultValue;
   }
 }
 
-function setItem<T>(key: string, value: T): void {
+function safeSetItem<T>(key: string, value: T): void {
   if (typeof window === "undefined") return;
-  window.localStorage.setItem(key, JSON.stringify(value));
+  try {
+    window.localStorage.setItem(key, JSON.stringify(value));
+  } catch (err) {
+    if (
+      err instanceof Error &&
+      (err.name === "QuotaExceededError" ||
+        err.name === "NS_ERROR_DOM_QUOTA_REACHED")
+    ) {
+      throw new StorageError(
+        `localStorage quota exceeded while writing "${key}". Consider exporting and clearing old data.`,
+        "quota_exceeded"
+      );
+    }
+    throw err;
+  }
+}
+
+function backupKey(key: string): string {
+  return `${key}_backup_${Date.now()}`;
+}
+
+function maybeBackup(key: string): void {
+  if (typeof window === "undefined") return;
+  const raw = window.localStorage.getItem(key);
+  if (!raw) return;
+
+  const backups = Object.keys(window.localStorage)
+    .filter((k) => k.startsWith(`${key}_backup_`))
+    .sort();
+
+  // Keep at most 3 backups per entity type to avoid unbounded growth.
+  if (backups.length >= 3) {
+    backups
+      .slice(0, backups.length - 2)
+      .forEach((k) => window.localStorage.removeItem(k));
+  }
+
+  try {
+    window.localStorage.setItem(backupKey(key), raw);
+  } catch {
+    // Backup is best-effort; do not fail the main operation if backup fails.
+  }
 }
 
 function now(): string {
   return new Date().toISOString();
 }
 
+async function recalcTagUsage(): Promise<void> {
+  const tags = safeGetItem<Tag[]>(KEYS.tags, []);
+  if (tags.length === 0) return;
+
+  const counts = new Map<string, number>();
+  const objects = safeGetItem<LifeObject[]>(KEYS.objects, []);
+
+  for (const obj of objects) {
+    for (const id of obj.tag_ids) {
+      counts.set(id, (counts.get(id) || 0) + 1);
+    }
+  }
+
+  const updated = tags.map((tag) => {
+    const next = counts.get(tag.id) || 0;
+    if (tag.usageCount === next) return tag;
+    return { ...tag, usageCount: next };
+  });
+
+  safeSetItem(KEYS.tags, updated);
+}
+
+async function assertObjectExists(objectId: string, label: string): Promise<void> {
+  const exists = (await localStorageAdapter.getObjects()).some(
+    (object) => object.id === objectId
+  );
+  if (!exists) {
+    throw new StorageError(`${label} object does not exist`, "validation");
+  }
+}
+
+async function assertTagsExist(tagIds: string[]): Promise<void> {
+  if (tagIds.length === 0) return;
+  const tagIdSet = new Set((await localStorageAdapter.getTags()).map((tag) => tag.id));
+  const missing = tagIds.filter((id) => !tagIdSet.has(id));
+  if (missing.length > 0) {
+    throw new StorageError(`Unknown tag id(s): ${missing.join(", ")}`, "validation");
+  }
+}
+
+function filterValid<T>(
+  items: unknown[],
+  validator: (item: unknown) => item is T,
+  entityName: string
+): T[] {
+  const valid: T[] = [];
+  for (const item of items) {
+    if (validator(item)) {
+      valid.push(item);
+    } else {
+       
+      console.warn(`[LifeOS] Dropped invalid ${entityName}:`, item);
+    }
+  }
+  return valid;
+}
+
 export class LocalStorageAdapter implements StorageAdapter {
+  // Version
+  async getStorageVersion(): Promise<number> {
+    return safeGetItem<number>(VERSION_KEY, 0);
+  }
+
+  async setStorageVersion(version: number): Promise<void> {
+    safeSetItem(VERSION_KEY, version);
+  }
+
+  async migrateIfNeeded(): Promise<void> {
+    const version = await this.getStorageVersion();
+    if (version >= STORAGE_VERSION) return;
+
+    // Placeholder for future migrations. Currently v0 -> v1 is a no-op
+    // because the schema already matches the TypeScript types.
+     
+    console.log(
+      `[LifeOS] Migrating storage from version ${version} to ${STORAGE_VERSION}`
+    );
+
+    await this.setStorageVersion(STORAGE_VERSION);
+  }
+
   // Objects
   async getObjects(): Promise<LifeObject[]> {
-    return getItem<LifeObject[]>(KEYS.objects, []);
+    const items = safeGetItem<unknown[]>(KEYS.objects, []);
+    return filterValid(items, isValidLifeObject, "object");
   }
 
   async getObjectById(id: string): Promise<LifeObject | null> {
@@ -47,6 +207,8 @@ export class LocalStorageAdapter implements StorageAdapter {
   async createObject(
     obj: Omit<LifeObject, "id" | "created_at" | "updated_at">
   ): Promise<LifeObject> {
+    validateInputObject(obj);
+    await assertTagsExist(obj.tag_ids);
     const objects = await this.getObjects();
     const created: LifeObject = {
       ...obj,
@@ -54,7 +216,9 @@ export class LocalStorageAdapter implements StorageAdapter {
       created_at: now(),
       updated_at: now(),
     };
-    setItem(KEYS.objects, [...objects, created]);
+    maybeBackup(KEYS.objects);
+    safeSetItem(KEYS.objects, [...objects, created]);
+    await recalcTagUsage();
     return created;
   }
 
@@ -65,30 +229,51 @@ export class LocalStorageAdapter implements StorageAdapter {
     const objects = await this.getObjects();
     const index = objects.findIndex((o) => o.id === id);
     if (index === -1) throw new Error(`Object ${id} not found`);
+
+    if (updates.type && !["person", "self", "event", "idea", "goal"].includes(updates.type)) {
+      throw new Error(`Invalid object type: ${updates.type}`);
+    }
+    if (updates.name !== undefined && updates.name.trim().length === 0) {
+      throw new Error("Object name cannot be empty");
+    }
+    if (updates.tag_ids !== undefined) {
+      await assertTagsExist(updates.tag_ids);
+    }
+
     const updated: LifeObject = {
       ...objects[index],
       ...updates,
       updated_at: now(),
     };
     objects[index] = updated;
-    setItem(KEYS.objects, objects);
+    maybeBackup(KEYS.objects);
+    safeSetItem(KEYS.objects, objects);
+    await recalcTagUsage();
     return updated;
   }
 
   async deleteObject(id: string): Promise<void> {
     const objects = (await this.getObjects()).filter((o) => o.id !== id);
-    setItem(KEYS.objects, objects);
+    maybeBackup(KEYS.objects);
+    safeSetItem(KEYS.objects, objects);
+
     const notes = (await this.getNotes()).filter((n) => n.object_id !== id);
-    setItem(KEYS.notes, notes);
+    maybeBackup(KEYS.notes);
+    safeSetItem(KEYS.notes, notes);
+
     const relations = (await this.getRelations()).filter(
       (r) => r.source_object_id !== id && r.target_object_id !== id
     );
-    setItem(KEYS.relations, relations);
+    maybeBackup(KEYS.relations);
+    safeSetItem(KEYS.relations, relations);
+
+    await recalcTagUsage();
   }
 
   // Notes
   async getNotes(): Promise<Note[]> {
-    return getItem<Note[]>(KEYS.notes, []);
+    const items = safeGetItem<unknown[]>(KEYS.notes, []);
+    return filterValid(items, isValidNote, "note");
   }
 
   async getNotesByObjectId(objectId: string): Promise<Note[]> {
@@ -101,27 +286,30 @@ export class LocalStorageAdapter implements StorageAdapter {
       );
   }
 
-  async createNote(
-    note: Omit<Note, "id" | "created_at">
-  ): Promise<Note> {
+  async createNote(note: Omit<Note, "id" | "created_at">): Promise<Note> {
+    validateInputNote(note);
+    await assertObjectExists(note.object_id, "Note target");
     const notes = await this.getNotes();
     const created: Note = {
       ...note,
       id: uuidv4(),
       created_at: now(),
     };
-    setItem(KEYS.notes, [created, ...notes]);
+    maybeBackup(KEYS.notes);
+    safeSetItem(KEYS.notes, [created, ...notes]);
     return created;
   }
 
   async deleteNote(id: string): Promise<void> {
     const notes = (await this.getNotes()).filter((n) => n.id !== id);
-    setItem(KEYS.notes, notes);
+    maybeBackup(KEYS.notes);
+    safeSetItem(KEYS.notes, notes);
   }
 
   // Relations
   async getRelations(): Promise<Relation[]> {
-    return getItem<Relation[]>(KEYS.relations, []);
+    const items = safeGetItem<unknown[]>(KEYS.relations, []);
+    return filterValid(items, isValidRelation, "relation");
   }
 
   async getRelationsByObjectId(objectId: string): Promise<Relation[]> {
@@ -139,40 +327,103 @@ export class LocalStorageAdapter implements StorageAdapter {
   async createRelation(
     relation: Omit<Relation, "id" | "created_at">
   ): Promise<Relation> {
+    validateInputRelation(relation);
+    if (relation.source_object_id === relation.target_object_id) {
+      throw new StorageError("Relation source and target must be different", "validation");
+    }
+    await Promise.all([
+      assertObjectExists(relation.source_object_id, "Relation source"),
+      assertObjectExists(relation.target_object_id, "Relation target"),
+    ]);
     const relations = await this.getRelations();
     const created: Relation = {
       ...relation,
       id: uuidv4(),
       created_at: now(),
     };
-    setItem(KEYS.relations, [created, ...relations]);
+    maybeBackup(KEYS.relations);
+    safeSetItem(KEYS.relations, [created, ...relations]);
     return created;
   }
 
   async deleteRelation(id: string): Promise<void> {
     const relations = (await this.getRelations()).filter((r) => r.id !== id);
-    setItem(KEYS.relations, relations);
+    maybeBackup(KEYS.relations);
+    safeSetItem(KEYS.relations, relations);
   }
 
   // Tags
   async getTags(): Promise<Tag[]> {
-    return getItem<Tag[]>(KEYS.tags, []);
+    const items = safeGetItem<unknown[]>(KEYS.tags, []);
+    return filterValid(items, isValidTag, "tag");
   }
 
-  async createTag(tag: Omit<Tag, "id">): Promise<Tag> {
+  async createTag(
+    tag: Omit<Tag, "id" | "createdAt" | "usageCount">
+  ): Promise<Tag> {
+    validateInputTag(tag);
     const tags = await this.getTags();
     const created: Tag = {
       ...tag,
       id: uuidv4(),
+      createdAt: now(),
+      usageCount: 0,
     };
-    setItem(KEYS.tags, [...tags, created]);
+    maybeBackup(KEYS.tags);
+    safeSetItem(KEYS.tags, [...tags, created]);
     return created;
+  }
+
+  async updateTag(
+    id: string,
+    updates: Partial<Omit<Tag, "id" | "createdAt">>
+  ): Promise<Tag> {
+    const tags = await this.getTags();
+    const index = tags.findIndex((t) => t.id === id);
+    if (index === -1) throw new Error(`Tag ${id} not found`);
+    if (updates.name !== undefined && updates.name.trim().length === 0) {
+      throw new Error("Tag name cannot be empty");
+    }
+    const updated: Tag = {
+      ...tags[index],
+      ...updates,
+    };
+    tags[index] = updated;
+    maybeBackup(KEYS.tags);
+    safeSetItem(KEYS.tags, tags);
+    return updated;
   }
 
   async deleteTag(id: string): Promise<void> {
     const tags = (await this.getTags()).filter((t) => t.id !== id);
-    setItem(KEYS.tags, tags);
+    maybeBackup(KEYS.tags);
+    safeSetItem(KEYS.tags, tags);
+
+    const objects = await this.getObjects();
+    const updatedObjects = objects.map((object) => {
+      if (!object.tag_ids.includes(id)) return object;
+      return {
+        ...object,
+        tag_ids: object.tag_ids.filter((tagId) => tagId !== id),
+        updated_at: now(),
+      };
+    });
+    maybeBackup(KEYS.objects);
+    safeSetItem(KEYS.objects, updatedObjects);
+    await recalcTagUsage();
+  }
+
+  // Settings
+  async getSettings(): Promise<Partial<AppSettings>> {
+    return safeGetItem<Partial<AppSettings>>(KEYS.settings, {});
+  }
+
+  async setSettings(settings: Partial<AppSettings>): Promise<void> {
+    const current = await this.getSettings();
+    maybeBackup(KEYS.settings);
+    safeSetItem(KEYS.settings, { ...current, ...settings });
   }
 }
 
 export const localStorageAdapter = new LocalStorageAdapter();
+export { StorageError, STORAGE_VERSION, ENTITY_KEYS };

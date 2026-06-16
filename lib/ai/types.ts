@@ -21,24 +21,29 @@ export interface EventGoalInsight {
   blockers: string[];
 }
 
+export type Language = "zh" | "en";
+
 export interface AIProvider {
   generatePersonProfile(
     objectName: string,
     objectDescription: string | undefined,
     notesText: string,
-    relationsText: string
+    relationsText: string,
+    language: Language
   ): Promise<PersonProfile>;
 
   generateSelfState(
     objectName: string,
     objectDescription: string | undefined,
     notesText: string,
-    relationsText: string
+    relationsText: string,
+    language: Language
   ): Promise<SelfState>;
 
   generateEventInsight(
     objectName: string,
     objectDescription: string | undefined,
-    notesText: string
+    notesText: string,
+    language: Language
   ): Promise<EventGoalInsight>;
 }
