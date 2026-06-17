@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { LifeObject, Note, Relation } from "@/lib/types";
-import { aiService, SelfState } from "@/lib/ai";
+import { aiService, SelfInsight } from "@/lib/ai";
 import { Sparkles } from "lucide-react";
 import { useTranslation } from "@/lib/useTranslation";
 
@@ -20,7 +20,7 @@ export function SelfInsightCard({
   getObjectName,
 }: SelfInsightCardProps) {
   const { t } = useTranslation();
-  const [insight, setInsight] = useState<SelfState | null>(null);
+  const [insight, setInsight] = useState<SelfInsight | null>(null);
   const [loading, setLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
 
@@ -49,6 +49,11 @@ export function SelfInsightCard({
     };
   }, [object, notes, relations, getObjectName]);
 
+  const summary = insight?.summary ?? "";
+  const focusAreas = insight?.focus_areas ?? [];
+  const strengths = insight?.strengths ?? [];
+  const weaknesses = insight?.weaknesses ?? [];
+
   return (
     <div className="rounded-xl border border-indigo-100 bg-indigo-50/50 p-5 dark:border-indigo-900 dark:bg-indigo-950/30">
       <div className="mb-4 flex items-center gap-2">
@@ -67,52 +72,50 @@ export function SelfInsightCard({
         <p className="text-sm text-slate-500 dark:text-slate-400">{t("aiUnavailable")}</p>
       ) : (
         <div className="space-y-4">
-          <p className="text-sm leading-relaxed text-slate-700 dark:text-slate-300">
-            {insight.current_state}
-          </p>
-
-          {insight.emotional_trend && (
-            <div>
-              <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                {t("emotionalTrend")}
-              </p>
-              <p className="text-sm text-slate-700 dark:text-slate-300">{insight.emotional_trend}</p>
-            </div>
+          {summary && (
+            <p className="text-sm leading-relaxed text-slate-700 dark:text-slate-300">
+              {summary}
+            </p>
           )}
 
-          {insight.focus_areas.length > 0 && (
+          {(focusAreas?.length ?? 0) > 0 && (
             <div>
               <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
                 {t("focusAreas")}
               </p>
               <ul className="list-disc space-y-1 pl-4 text-sm text-slate-700 dark:text-slate-300">
-                {insight.focus_areas.map((item, i) => (
+                {focusAreas.map((item, i) => (
                   <li key={i}>{item}</li>
                 ))}
               </ul>
             </div>
           )}
 
-          {insight.risks.length > 0 && (
+          {(strengths?.length ?? 0) > 0 && (
+            <div>
+              <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                {t("personalityTraits")}
+              </p>
+              <ul className="flex flex-wrap gap-2">
+                {strengths.map((item, i) => (
+                  <li
+                    key={i}
+                    className="rounded-full bg-white px-2.5 py-1 text-xs text-slate-700 shadow-sm dark:bg-slate-800 dark:text-slate-200"
+                  >
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {(weaknesses?.length ?? 0) > 0 && (
             <div>
               <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
                 {t("risks")}
               </p>
               <ul className="list-disc space-y-1 pl-4 text-sm text-slate-700 dark:text-slate-300">
-                {insight.risks.map((item, i) => (
-                  <li key={i}>{item}</li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          {insight.recommendations.length > 0 && (
-            <div>
-              <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                {t("recommendations")}
-              </p>
-              <ul className="list-disc space-y-1 pl-4 text-sm text-slate-700 dark:text-slate-300">
-                {insight.recommendations.map((item, i) => (
+                {weaknesses.map((item, i) => (
                   <li key={i}>{item}</li>
                 ))}
               </ul>

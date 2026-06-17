@@ -6,9 +6,14 @@ import {
   AIProviderConfig,
   EventGoalInsight,
   Language,
-  PersonProfile,
-  SelfState,
+  PersonInsight,
+  SelfInsight,
 } from "./types";
+import {
+  normalizeEventGoalInsight,
+  normalizePersonInsight,
+  normalizeSelfInsight,
+} from "./normalize";
 
 function getLanguage(): Language {
   if (typeof window === "undefined") return "en";
@@ -78,11 +83,11 @@ function relationsToText(
     .join("\n");
 }
 
-function safeJsonParse<T>(text: string): T {
+function safeJsonParse(text: string): unknown {
   const cleaned = text
     .replace(/^[\s\S]*?(\{)/, "$1")
     .replace(/(\})[\s\S]*$/, "$1");
-  return JSON.parse(cleaned) as T;
+  return JSON.parse(cleaned);
 }
 
 function buildPrompt(
@@ -133,15 +138,12 @@ class AIService {
     notes: Note[],
     relations: Relation[],
     getObjectName: (id: string) => string
-  ): Promise<PersonProfile> {
+  ): Promise<PersonInsight> {
     const shape = JSON.stringify(
       {
-        summary: "string",
-        personality_traits: ["string"],
-        recent_behavior_patterns: ["string"],
-        relationship_summary: "string",
-        interaction_level: "high | medium | low",
-        attention_needed: ["string"],
+        traits: ["string"],
+        relationship_status: "string",
+        notes: "string",
       },
       null,
       2
@@ -157,7 +159,7 @@ class AIService {
     );
 
     const text = await this.generate(prompt);
-    return safeJsonParse<PersonProfile>(text);
+    return normalizePersonInsight(safeJsonParse(text));
   }
 
   async generateSelfState(
@@ -165,14 +167,13 @@ class AIService {
     notes: Note[],
     relations: Relation[],
     getObjectName: (id: string) => string
-  ): Promise<SelfState> {
+  ): Promise<SelfInsight> {
     const shape = JSON.stringify(
       {
-        current_state: "string",
-        emotional_trend: "string",
         focus_areas: ["string"],
-        risks: ["string"],
-        recommendations: ["string"],
+        strengths: ["string"],
+        weaknesses: ["string"],
+        summary: "string",
       },
       null,
       2
@@ -188,7 +189,7 @@ class AIService {
     );
 
     const text = await this.generate(prompt);
-    return safeJsonParse<SelfState>(text);
+    return normalizeSelfInsight(safeJsonParse(text));
   }
 
   async generateEventInsight(
@@ -215,9 +216,9 @@ class AIService {
     );
 
     const text = await this.generate(prompt);
-    return safeJsonParse<EventGoalInsight>(text);
+    return normalizeEventGoalInsight(safeJsonParse(text));
   }
 }
 
 export const aiService = new AIService();
-export type { PersonProfile, SelfState, EventGoalInsight };
+export type { PersonInsight, SelfInsight, EventGoalInsight };

@@ -1,26 +1,3 @@
-export interface PersonProfile {
-  summary: string;
-  personality_traits: string[];
-  recent_behavior_patterns: string[];
-  relationship_summary: string;
-  interaction_level: "high" | "medium" | "low";
-  attention_needed: string[];
-}
-
-export interface SelfState {
-  current_state: string;
-  emotional_trend: string;
-  focus_areas: string[];
-  risks: string[];
-  recommendations: string[];
-}
-
-export interface EventGoalInsight {
-  summary: string;
-  progress_insight: string;
-  blockers: string[];
-}
-
 export type Language = "zh" | "en";
 
 export type AIProviderId =
@@ -77,3 +54,10 @@ export const DEFAULT_PROVIDER_CONFIGS: Record<
 export function isValidAIProviderId(value: string): value is AIProviderId {
   return value in DEFAULT_PROVIDER_CONFIGS;
 }
+
+// AI output types are re-exported from schemas to keep a single source of truth.
+export type {
+  SelfInsight,
+  PersonInsight,
+  EventGoalInsight,
+} from "./schemas";

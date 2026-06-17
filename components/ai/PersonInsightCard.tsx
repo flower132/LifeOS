@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { LifeObject, Note, Relation } from "@/lib/types";
-import { aiService, PersonProfile } from "@/lib/ai";
-import { Sparkles, User } from "lucide-react";
+import { aiService, PersonInsight } from "@/lib/ai";
+import { Sparkles } from "lucide-react";
 import { useTranslation } from "@/lib/useTranslation";
 
 interface PersonInsightCardProps {
@@ -20,7 +20,7 @@ export function PersonInsightCard({
   getObjectName,
 }: PersonInsightCardProps) {
   const { t } = useTranslation();
-  const [insight, setInsight] = useState<PersonProfile | null>(null);
+  const [insight, setInsight] = useState<PersonInsight | null>(null);
   const [loading, setLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
 
@@ -49,6 +49,10 @@ export function PersonInsightCard({
     };
   }, [object, notes, relations, getObjectName]);
 
+  const traits = insight?.traits ?? [];
+  const relationshipStatus = insight?.relationship_status ?? "";
+  const notesText = insight?.notes ?? "";
+
   return (
     <div className="rounded-xl border border-indigo-100 bg-indigo-50/50 p-5 dark:border-indigo-900 dark:bg-indigo-950/30">
       <div className="mb-4 flex items-center gap-2">
@@ -67,17 +71,19 @@ export function PersonInsightCard({
         <p className="text-sm text-slate-500 dark:text-slate-400">{t("aiUnavailable")}</p>
       ) : (
         <div className="space-y-4">
-          <p className="text-sm leading-relaxed text-slate-700 dark:text-slate-300">
-            {insight.summary}
-          </p>
+          {notesText && (
+            <p className="text-sm leading-relaxed text-slate-700 dark:text-slate-300">
+              {notesText}
+            </p>
+          )}
 
-          {insight.personality_traits.length > 0 && (
+          {(traits?.length ?? 0) > 0 && (
             <div>
               <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
                 {t("personalityTraits")}
               </p>
               <ul className="flex flex-wrap gap-2">
-                {insight.personality_traits.map((trait, i) => (
+                {traits.map((trait, i) => (
                   <li
                     key={i}
                     className="rounded-full bg-white px-2.5 py-1 text-xs text-slate-700 shadow-sm dark:bg-slate-800 dark:text-slate-200"
@@ -89,48 +95,16 @@ export function PersonInsightCard({
             </div>
           )}
 
-          {insight.recent_behavior_patterns.length > 0 && (
-            <div>
-              <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                {t("recentPatterns")}
-              </p>
-              <ul className="list-disc space-y-1 pl-4 text-sm text-slate-700 dark:text-slate-300">
-                {insight.recent_behavior_patterns.map((pattern, i) => (
-                  <li key={i}>{pattern}</li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          {insight.relationship_summary && (
+          {relationshipStatus && (
             <div>
               <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
                 {t("relationship")}
               </p>
-              <p className="text-sm text-slate-700 dark:text-slate-300">{insight.relationship_summary}</p>
-            </div>
-          )}
-
-          {insight.attention_needed.length > 0 && (
-            <div>
-              <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                {t("attentionNeeded")}
+              <p className="text-sm text-slate-700 dark:text-slate-300">
+                {relationshipStatus}
               </p>
-              <ul className="list-disc space-y-1 pl-4 text-sm text-slate-700 dark:text-slate-300">
-                {insight.attention_needed.map((item, i) => (
-                  <li key={i}>{item}</li>
-                ))}
-              </ul>
             </div>
           )}
-
-          <div className="flex items-center gap-2 pt-2">
-            <User className="h-3.5 w-3.5 text-slate-400" />
-            <span className="text-xs text-slate-500 dark:text-slate-400">
-              {t("interactionLevel")}: {" "}
-              <span className="font-medium text-slate-700 dark:text-slate-300">{insight.interaction_level}</span>
-            </span>
-          </div>
         </div>
       )}
     </div>

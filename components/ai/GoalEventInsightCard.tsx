@@ -37,6 +37,10 @@ export function GoalEventInsightCard({ object, notes }: GoalEventInsightCardProp
     };
   }, [object, notes]);
 
+  const summary = insight?.summary ?? "";
+  const progressInsight = insight?.progress_insight ?? "";
+  const blockers = insight?.blockers ?? [];
+
   return (
     <div className="rounded-xl border border-indigo-100 bg-indigo-50/50 p-5 dark:border-indigo-900 dark:bg-indigo-950/30">
       <div className="mb-4 flex items-center gap-2">
@@ -55,24 +59,28 @@ export function GoalEventInsightCard({ object, notes }: GoalEventInsightCardProp
         <p className="text-sm text-slate-500 dark:text-slate-400">{t("aiUnavailable")}</p>
       ) : (
         <div className="space-y-4">
-          <p className="text-sm leading-relaxed text-slate-700 dark:text-slate-300">{insight.summary}</p>
+          {summary && (
+            <p className="text-sm leading-relaxed text-slate-700 dark:text-slate-300">
+              {summary}
+            </p>
+          )}
 
-          {insight.progress_insight && (
+          {progressInsight && (
             <div>
               <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
                 {t("progressInsight")}
               </p>
-              <p className="text-sm text-slate-700 dark:text-slate-300">{insight.progress_insight}</p>
+              <p className="text-sm text-slate-700 dark:text-slate-300">{progressInsight}</p>
             </div>
           )}
 
-          {insight.blockers.length > 0 && (
+          {(blockers?.length ?? 0) > 0 && (
             <div>
               <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
                 {t("blockers")}
               </p>
               <ul className="list-disc space-y-1 pl-4 text-sm text-slate-700 dark:text-slate-300">
-                {insight.blockers.map((item, i) => (
+                {blockers.map((item, i) => (
                   <li key={i}>{item}</li>
                 ))}
               </ul>

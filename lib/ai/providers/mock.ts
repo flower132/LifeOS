@@ -12,22 +12,18 @@ export function createMockProvider(
 
       if (isPerson) {
         return JSON.stringify({
-          summary: "A person in your life. Data is insufficient for a detailed profile.",
-          personality_traits: ["No clear patterns recorded yet."],
-          recent_behavior_patterns: ["No recent interactions recorded."],
-          relationship_summary: "Relationship context is sparse.",
-          interaction_level: "low",
-          attention_needed: ["Add more notes to build a richer profile."],
+          traits: ["No clear patterns recorded yet."],
+          relationship_status: "Relationship context is sparse.",
+          notes: "A person in your life. Data is insufficient for a detailed profile.",
         });
       }
 
       if (isSelf) {
         return JSON.stringify({
-          current_state: "Current state is unclear due to limited data.",
-          emotional_trend: "No strong trend detected.",
           focus_areas: ["Record more notes to identify focus areas."],
-          risks: ["Insufficient data to assess risks."],
-          recommendations: ["Keep capturing daily reflections."],
+          strengths: ["Insufficient data to assess strengths."],
+          weaknesses: ["Insufficient data to assess weaknesses."],
+          summary: "Current state is unclear due to limited data.",
         });
       }
 
