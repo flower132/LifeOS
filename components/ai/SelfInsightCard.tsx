@@ -50,9 +50,15 @@ export function SelfInsightCard({
   }, [object, notes, relations, getObjectName]);
 
   const summary = insight?.summary ?? "";
-  const focusAreas = insight?.focus_areas ?? [];
-  const strengths = insight?.strengths ?? [];
-  const weaknesses = insight?.weaknesses ?? [];
+  const focusAreas = Array.isArray(insight?.focus_areas)
+    ? insight.focus_areas
+    : [];
+  const strengths = Array.isArray(insight?.strengths)
+    ? insight.strengths
+    : [];
+  const weaknesses = Array.isArray(insight?.weaknesses)
+    ? insight.weaknesses
+    : [];
 
   return (
     <div className="rounded-xl border border-indigo-100 bg-indigo-50/50 p-5 dark:border-indigo-900 dark:bg-indigo-950/30">

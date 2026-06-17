@@ -49,7 +49,7 @@ export function PersonInsightCard({
     };
   }, [object, notes, relations, getObjectName]);
 
-  const traits = insight?.traits ?? [];
+  const traits = Array.isArray(insight?.traits) ? insight.traits : [];
   const relationshipStatus = insight?.relationship_status ?? "";
   const notesText = insight?.notes ?? "";
 

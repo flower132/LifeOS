@@ -152,13 +152,16 @@ async function assertObjectExists(objectId: string, label: string): Promise<void
   }
 }
 
-async function assertTagsExist(tagIds: string[]): Promise<void> {
-  if (tagIds.length === 0) return;
-  const tagIdSet = new Set((await localStorageAdapter.getTags()).map((tag) => tag.id));
-  const missing = tagIds.filter((id) => !tagIdSet.has(id));
-  if (missing.length > 0) {
-    throw new StorageError(`Unknown tag id(s): ${missing.join(", ")}`, "validation");
+function sanitizeTagIds(tagIds: string[], existingTagIds: Set<string>): string[] {
+  const sanitized: string[] = [];
+  for (const id of tagIds) {
+    if (existingTagIds.has(id)) {
+      sanitized.push(id);
+    } else {
+      console.warn(`[LifeOS] Removing invalid tag reference: ${id}`);
+    }
   }
+  return sanitized;
 }
 
 function filterValid<T>(
@@ -246,7 +249,28 @@ export class LocalStorageAdapter implements StorageAdapter {
   // Objects
   async getObjects(): Promise<LifeObject[]> {
     const items = safeGetItem<unknown[]>(KEYS.objects, []);
-    return filterValid(items, isValidLifeObject, "object");
+    const valid = filterValid(items, isValidLifeObject, "object");
+
+    // Sanitize tag references so old/corrupt data cannot reference deleted tags.
+    const existingTagIds = new Set(
+      (await localStorageAdapter.getTags()).map((tag) => tag.id)
+    );
+    let mutated = false;
+    const sanitized = valid.map((obj) => {
+      const cleanIds = sanitizeTagIds(obj.tag_ids, existingTagIds);
+      if (cleanIds.length !== obj.tag_ids.length) {
+        mutated = true;
+        return { ...obj, tag_ids: cleanIds };
+      }
+      return obj;
+    });
+
+    if (mutated) {
+      safeSetItem(KEYS.objects, sanitized);
+      await recalcTagUsage();
+    }
+
+    return sanitized;
   }
 
   async getObjectById(id: string): Promise<LifeObject | null> {
@@ -258,10 +282,14 @@ export class LocalStorageAdapter implements StorageAdapter {
     obj: Omit<LifeObject, "id" | "created_at" | "updated_at">
   ): Promise<LifeObject> {
     validateInputObject(obj);
-    await assertTagsExist(obj.tag_ids);
+    const existingTagIds = new Set(
+      (await localStorageAdapter.getTags()).map((tag) => tag.id)
+    );
+    const sanitizedTagIds = sanitizeTagIds(obj.tag_ids, existingTagIds);
     const objects = await this.getObjects();
     const created: LifeObject = {
       ...obj,
+      tag_ids: sanitizedTagIds,
       id: uuidv4(),
       created_at: now(),
       updated_at: now(),
@@ -287,7 +315,10 @@ export class LocalStorageAdapter implements StorageAdapter {
       throw new Error("Object name cannot be empty");
     }
     if (updates.tag_ids !== undefined) {
-      await assertTagsExist(updates.tag_ids);
+      const existingTagIds = new Set(
+        (await localStorageAdapter.getTags()).map((tag) => tag.id)
+      );
+      updates.tag_ids = sanitizeTagIds(updates.tag_ids, existingTagIds);
     }
 
     const updated: LifeObject = {

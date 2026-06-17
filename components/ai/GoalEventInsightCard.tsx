@@ -39,7 +39,7 @@ export function GoalEventInsightCard({ object, notes }: GoalEventInsightCardProp
 
   const summary = insight?.summary ?? "";
   const progressInsight = insight?.progress_insight ?? "";
-  const blockers = insight?.blockers ?? [];
+  const blockers = Array.isArray(insight?.blockers) ? insight.blockers : [];
 
   return (
     <div className="rounded-xl border border-indigo-100 bg-indigo-50/50 p-5 dark:border-indigo-900 dark:bg-indigo-950/30">

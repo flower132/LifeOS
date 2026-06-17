@@ -239,6 +239,23 @@ export function TagSelect({ selectedTagIds, onChange }: TagSelectProps) {
     }
   };
 
+  const finalizeTag = () => {
+    if (!trimmedQuery || dropdownItems.length === 0) {
+      setOpen(false);
+      return;
+    }
+    const item = dropdownItems[activeIndex] ?? dropdownItems[0];
+    if (!item) {
+      setOpen(false);
+      return;
+    }
+    if (item.id === "__create__") {
+      void createTag(item.name);
+    } else {
+      toggleTag(item.id);
+    }
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "ArrowDown") {
       e.preventDefault();
@@ -326,6 +343,13 @@ export function TagSelect({ selectedTagIds, onChange }: TagSelectProps) {
             setCreateError(null);
           }}
           onFocus={() => setOpen(true)}
+          onBlur={() => {
+            // Delay finalize so clicks on dropdown items can fire first.
+            window.setTimeout(() => {
+              if (containerRef.current?.contains(document.activeElement)) return;
+              finalizeTag();
+            }, 150);
+          }}
           onKeyDown={handleKeyDown}
           placeholder={selectedTags.length === 0 ? t("addTags") : ""}
           className="min-w-[80px] flex-1 bg-transparent px-1 py-1 text-sm text-slate-900 outline-none placeholder:text-slate-400 dark:text-white"
