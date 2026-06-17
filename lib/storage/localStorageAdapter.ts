@@ -4,20 +4,27 @@ import {
   Note,
   Relation,
   Tag,
+  Template,
+  TemplateCreateInput,
+  TemplateUpdateInput,
+  TEMPLATE_CATEGORIES,
 } from "@/lib/types";
 import {
   isValidLifeObject,
   isValidNote,
   isValidRelation,
   isValidTag,
+  isValidTemplate,
   validateInputObject,
   validateInputNote,
   validateInputRelation,
   validateInputTag,
+  validateInputTemplate,
 } from "@/lib/validation";
 import { AppSettings, StorageAdapter } from "./types";
+import { DEFAULT_TEMPLATES } from "@/lib/templates/defaultTemplates";
 
-const STORAGE_VERSION = 1;
+const STORAGE_VERSION = 2;
 const VERSION_KEY = "lifeos_version";
 
 const KEYS = {
@@ -25,6 +32,7 @@ const KEYS = {
   notes: "lifeos_notes",
   relations: "lifeos_relations",
   tags: "lifeos_tags",
+  templates: "lifeos_templates",
   settings: "lifeos_settings",
 };
 
@@ -33,6 +41,7 @@ const ENTITY_KEYS = [
   KEYS.notes,
   KEYS.relations,
   KEYS.tags,
+  KEYS.templates,
   KEYS.settings,
 ];
 
@@ -183,14 +192,55 @@ export class LocalStorageAdapter implements StorageAdapter {
     const version = await this.getStorageVersion();
     if (version >= STORAGE_VERSION) return;
 
-    // Placeholder for future migrations. Currently v0 -> v1 is a no-op
-    // because the schema already matches the TypeScript types.
-     
     console.log(
       `[LifeOS] Migrating storage from version ${version} to ${STORAGE_VERSION}`
     );
 
+    if (version < 2) {
+      await this.migrateV1ToV2();
+    }
+
     await this.setStorageVersion(STORAGE_VERSION);
+  }
+
+  private async migrateV1ToV2(): Promise<void> {
+    // Inject default templates on first run.
+    const templates = await this.getTemplates();
+    if (templates.length === 0) {
+      const initial = DEFAULT_TEMPLATES.map((template) => ({
+        ...template,
+        id: uuidv4(),
+        createdAt: now(),
+        updatedAt: now(),
+        usageCount: 0,
+      }));
+      safeSetItem(KEYS.templates, initial);
+    }
+
+    // Migrate old AI settings schema to new unified schema.
+    const settings = await this.getSettings();
+    if (
+      settings.aiProvider === "openai" &&
+      !settings.aiApiKey &&
+      settings.openaiKey
+    ) {
+      settings.aiApiKey = settings.openaiKey;
+      settings.aiBaseUrl = "https://api.openai.com/v1";
+      if (!settings.aiModel || settings.aiModel === "default") {
+        settings.aiModel = "gpt-4o-mini";
+      }
+    } else if (
+      settings.aiProvider === "anthropic" &&
+      !settings.aiApiKey &&
+      settings.anthropicKey
+    ) {
+      settings.aiApiKey = settings.anthropicKey;
+      settings.aiBaseUrl = "https://api.anthropic.com/v1";
+      if (!settings.aiModel || settings.aiModel === "default") {
+        settings.aiModel = "claude-3-5-sonnet-latest";
+      }
+    }
+    await this.setSettings(settings);
   }
 
   // Objects
@@ -270,6 +320,13 @@ export class LocalStorageAdapter implements StorageAdapter {
     await recalcTagUsage();
   }
 
+  async setObjects(objects: LifeObject[]): Promise<void> {
+    const valid = filterValid(objects, isValidLifeObject, "object");
+    maybeBackup(KEYS.objects);
+    safeSetItem(KEYS.objects, valid);
+    await recalcTagUsage();
+  }
+
   // Notes
   async getNotes(): Promise<Note[]> {
     const items = safeGetItem<unknown[]>(KEYS.notes, []);
@@ -304,6 +361,12 @@ export class LocalStorageAdapter implements StorageAdapter {
     const notes = (await this.getNotes()).filter((n) => n.id !== id);
     maybeBackup(KEYS.notes);
     safeSetItem(KEYS.notes, notes);
+  }
+
+  async setNotes(notes: Note[]): Promise<void> {
+    const valid = filterValid(notes, isValidNote, "note");
+    maybeBackup(KEYS.notes);
+    safeSetItem(KEYS.notes, valid);
   }
 
   // Relations
@@ -350,6 +413,12 @@ export class LocalStorageAdapter implements StorageAdapter {
     const relations = (await this.getRelations()).filter((r) => r.id !== id);
     maybeBackup(KEYS.relations);
     safeSetItem(KEYS.relations, relations);
+  }
+
+  async setRelations(relations: Relation[]): Promise<void> {
+    const valid = filterValid(relations, isValidRelation, "relation");
+    maybeBackup(KEYS.relations);
+    safeSetItem(KEYS.relations, valid);
   }
 
   // Tags
@@ -411,6 +480,75 @@ export class LocalStorageAdapter implements StorageAdapter {
     maybeBackup(KEYS.objects);
     safeSetItem(KEYS.objects, updatedObjects);
     await recalcTagUsage();
+  }
+
+  async setTags(tags: Tag[]): Promise<void> {
+    const valid = filterValid(tags, isValidTag, "tag");
+    maybeBackup(KEYS.tags);
+    safeSetItem(KEYS.tags, valid);
+    await recalcTagUsage();
+  }
+
+  // Templates
+  async getTemplates(): Promise<Template[]> {
+    const items = safeGetItem<unknown[]>(KEYS.templates, []);
+    return filterValid(items, isValidTemplate, "template");
+  }
+
+  async createTemplate(template: TemplateCreateInput): Promise<Template> {
+    validateInputTemplate(template);
+    const templates = await this.getTemplates();
+    const created: Template = {
+      ...template,
+      id: uuidv4(),
+      createdAt: now(),
+      updatedAt: now(),
+      usageCount: 0,
+    };
+    maybeBackup(KEYS.templates);
+    safeSetItem(KEYS.templates, [...templates, created]);
+    return created;
+  }
+
+  async updateTemplate(
+    id: string,
+    updates: TemplateUpdateInput
+  ): Promise<Template> {
+    const templates = await this.getTemplates();
+    const index = templates.findIndex((t) => t.id === id);
+    if (index === -1) throw new Error(`Template ${id} not found`);
+
+    if (updates.name !== undefined && updates.name.trim().length === 0) {
+      throw new Error("Template name cannot be empty");
+    }
+    if (
+      updates.category !== undefined &&
+      !TEMPLATE_CATEGORIES.includes(updates.category)
+    ) {
+      throw new Error(`Invalid template category: ${updates.category}`);
+    }
+
+    const updated: Template = {
+      ...templates[index],
+      ...updates,
+      updatedAt: now(),
+    };
+    templates[index] = updated;
+    maybeBackup(KEYS.templates);
+    safeSetItem(KEYS.templates, templates);
+    return updated;
+  }
+
+  async deleteTemplate(id: string): Promise<void> {
+    const templates = (await this.getTemplates()).filter((t) => t.id !== id);
+    maybeBackup(KEYS.templates);
+    safeSetItem(KEYS.templates, templates);
+  }
+
+  async setTemplates(templates: Template[]): Promise<void> {
+    const valid = filterValid(templates, isValidTemplate, "template");
+    maybeBackup(KEYS.templates);
+    safeSetItem(KEYS.templates, valid);
   }
 
   // Settings

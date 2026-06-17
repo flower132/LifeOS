@@ -7,13 +7,25 @@ import { useObjectStore } from "@/stores/objectStore";
 import { TagSelect } from "../tag/TagSelect";
 import { useTranslation } from "@/lib/useTranslation";
 
-export function ObjectForm() {
+interface ObjectFormProps {
+  initialDescription?: string;
+  templateName?: string;
+  type?: LifeObjectType;
+  lockType?: boolean;
+}
+
+export function ObjectForm({
+  initialDescription,
+  templateName,
+  type: initialType = "person",
+  lockType = false,
+}: ObjectFormProps) {
   const router = useRouter();
   const addObject = useObjectStore((s) => s.addObject);
   const { t } = useTranslation();
-  const [type, setType] = useState<LifeObjectType>("person");
+  const [type, setType] = useState<LifeObjectType>(initialType);
   const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
+  const [description, setDescription] = useState(initialDescription ?? "");
   const [tagIds, setTagIds] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -58,12 +70,15 @@ export function ObjectForm() {
       )}
 
       <div className="space-y-2">
-        <label className="text-sm font-medium text-slate-700 dark:text-slate-300">{t("type")}</label>
+        <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+          {t("type")}
+        </label>
         <select
           name="type"
           value={type}
+          disabled={lockType}
           onChange={(e) => setType(e.target.value as LifeObjectType)}
-          className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+          className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 disabled:cursor-not-allowed disabled:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:disabled:bg-slate-800"
         >
           {LIFE_OBJECT_TYPES.map((typeOption) => (
             <option key={typeOption} value={typeOption}>
@@ -86,13 +101,29 @@ export function ObjectForm() {
       </div>
 
       <div className="space-y-2">
-        <label className="text-sm font-medium text-slate-700 dark:text-slate-300">{t("description")}</label>
+        <div className="flex items-center justify-between">
+          <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+            {t("description")}
+          </label>
+          {templateName && (
+            <span className="inline-flex items-center gap-1 text-xs text-indigo-600 dark:text-indigo-400">
+              {t("preFilledFromTemplate", { name: templateName })}
+              <button
+                type="button"
+                onClick={() => setDescription("")}
+                className="ml-1 rounded px-1 text-xs text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+              >
+                {t("clearTemplate")}
+              </button>
+            </span>
+          )}
+        </div>
         <textarea
           name="description"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           placeholder={t("descriptionPlaceholder")}
-          rows={4}
+          rows={8}
           className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
         />
       </div>

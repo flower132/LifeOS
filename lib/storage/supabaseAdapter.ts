@@ -3,6 +3,9 @@ import {
   Note,
   Relation,
   Tag,
+  Template,
+  TemplateCreateInput,
+  TemplateUpdateInput,
 } from "@/lib/types";
 import { AppSettings, StorageAdapter } from "./types";
 
@@ -69,6 +72,10 @@ export class SupabaseAdapter implements StorageAdapter {
     throw new Error("SupabaseAdapter.deleteObject not implemented");
   }
 
+  async setObjects(objects: LifeObject[]): Promise<void> {
+    throw new Error("SupabaseAdapter.setObjects not implemented");
+  }
+
   // Notes
   async getNotes(): Promise<Note[]> {
     throw new Error("SupabaseAdapter.getNotes not implemented");
@@ -84,6 +91,10 @@ export class SupabaseAdapter implements StorageAdapter {
 
   async deleteNote(id: string): Promise<void> {
     throw new Error("SupabaseAdapter.deleteNote not implemented");
+  }
+
+  async setNotes(notes: Note[]): Promise<void> {
+    throw new Error("SupabaseAdapter.setNotes not implemented");
   }
 
   // Relations
@@ -103,6 +114,10 @@ export class SupabaseAdapter implements StorageAdapter {
 
   async deleteRelation(id: string): Promise<void> {
     throw new Error("SupabaseAdapter.deleteRelation not implemented");
+  }
+
+  async setRelations(relations: Relation[]): Promise<void> {
+    throw new Error("SupabaseAdapter.setRelations not implemented");
   }
 
   // Tags
@@ -125,6 +140,34 @@ export class SupabaseAdapter implements StorageAdapter {
 
   async deleteTag(id: string): Promise<void> {
     throw new Error("SupabaseAdapter.deleteTag not implemented");
+  }
+
+  async setTags(tags: Tag[]): Promise<void> {
+    throw new Error("SupabaseAdapter.setTags not implemented");
+  }
+
+  // Templates
+  async getTemplates(): Promise<Template[]> {
+    throw new Error("SupabaseAdapter.getTemplates not implemented");
+  }
+
+  async createTemplate(template: TemplateCreateInput): Promise<Template> {
+    throw new Error("SupabaseAdapter.createTemplate not implemented");
+  }
+
+  async updateTemplate(
+    id: string,
+    updates: TemplateUpdateInput
+  ): Promise<Template> {
+    throw new Error("SupabaseAdapter.updateTemplate not implemented");
+  }
+
+  async deleteTemplate(id: string): Promise<void> {
+    throw new Error("SupabaseAdapter.deleteTemplate not implemented");
+  }
+
+  async setTemplates(templates: Template[]): Promise<void> {
+    throw new Error("SupabaseAdapter.setTemplates not implemented");
   }
 
   async getSettings(): Promise<Partial<AppSettings>> {

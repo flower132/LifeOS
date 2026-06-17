@@ -3,7 +3,12 @@ import {
   Note,
   Relation,
   Tag,
+  Template,
+  TemplateCreateInput,
+  TemplateUpdateInput,
 } from "@/lib/types";
+
+import { AIProviderId } from "@/lib/ai/types";
 
 export type DateFormat = "YYYY-MM-DD" | "MM/DD/YYYY" | "DD/MM/YYYY";
 export type TimeFormat = "24h" | "12h";
@@ -17,10 +22,13 @@ export type AppSettings = {
   timeFormat: TimeFormat;
   aiEnabled: boolean;
   aiPrivacyMode: boolean;
-  aiProvider: "mock" | "openai" | "anthropic";
+  aiProvider: AIProviderId;
   aiModel: string;
-  openaiKey: string;
-  anthropicKey: string;
+  aiBaseUrl: string;
+  aiApiKey: string;
+  // Deprecated: kept for migration from old settings schema.
+  openaiKey?: string;
+  anthropicKey?: string;
 };
 
 export interface StorageAdapter {
@@ -40,12 +48,14 @@ export interface StorageAdapter {
     updates: Partial<Omit<LifeObject, "id" | "created_at" | "updated_at">>
   ): Promise<LifeObject>;
   deleteObject(id: string): Promise<void>;
+  setObjects(objects: LifeObject[]): Promise<void>;
 
   // Notes
   getNotes(): Promise<Note[]>;
   getNotesByObjectId(objectId: string): Promise<Note[]>;
   createNote(note: Omit<Note, "id" | "created_at">): Promise<Note>;
   deleteNote(id: string): Promise<void>;
+  setNotes(notes: Note[]): Promise<void>;
 
   // Relations
   getRelations(): Promise<Relation[]>;
@@ -54,12 +64,24 @@ export interface StorageAdapter {
     relation: Omit<Relation, "id" | "created_at">
   ): Promise<Relation>;
   deleteRelation(id: string): Promise<void>;
+  setRelations(relations: Relation[]): Promise<void>;
 
   // Tags
   getTags(): Promise<Tag[]>;
   createTag(tag: Omit<Tag, "id" | "createdAt" | "usageCount">): Promise<Tag>;
   updateTag(id: string, updates: Partial<Omit<Tag, "id" | "createdAt">>): Promise<Tag>;
   deleteTag(id: string): Promise<void>;
+  setTags(tags: Tag[]): Promise<void>;
+
+  // Templates
+  getTemplates(): Promise<Template[]>;
+  createTemplate(template: TemplateCreateInput): Promise<Template>;
+  updateTemplate(
+    id: string,
+    updates: TemplateUpdateInput
+  ): Promise<Template>;
+  deleteTemplate(id: string): Promise<void>;
+  setTemplates(templates: Template[]): Promise<void>;
 
   // Settings
   getSettings(): Promise<Partial<AppSettings>>;

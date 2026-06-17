@@ -1,4 +1,11 @@
-import { LifeObject, Note, Relation, Tag } from "./types";
+import {
+  LifeObject,
+  Note,
+  Relation,
+  Tag,
+  Template,
+  TemplateCreateInput,
+} from "./types";
 
 const VALID_OBJECT_TYPES = new Set([
   "person",
@@ -14,6 +21,16 @@ const VALID_RELATION_TYPES = new Set([
   "colleague",
   "mentor",
   "partner",
+  "custom",
+]);
+
+const VALID_TEMPLATE_CATEGORIES = new Set([
+  "person",
+  "self",
+  "goal",
+  "event",
+  "idea",
+  "task",
   "custom",
 ]);
 
@@ -133,5 +150,37 @@ export function validateInputTag(
 ): void {
   if (!tag.name || tag.name.trim().length === 0) {
     throw new Error("Tag name is required");
+  }
+}
+
+export function isValidTemplate(obj: unknown): obj is Template {
+  if (!obj || typeof obj !== "object") return false;
+  const t = obj as Record<string, unknown>;
+
+  if (!isValidId(t.id)) return false;
+  if (typeof t.name !== "string" || t.name.trim().length === 0) return false;
+  if (!VALID_TEMPLATE_CATEGORIES.has(t.category as string)) return false;
+  if (typeof t.isDefault !== "boolean") return false;
+  if (typeof t.content !== "string") return false;
+  if (!isValidIsoDate(t.createdAt)) return false;
+  if (!isValidIsoDate(t.updatedAt)) return false;
+  if (typeof t.usageCount !== "number" || t.usageCount < 0) return false;
+  if (t.lastUsedAt !== undefined && !isValidIsoDate(t.lastUsedAt)) return false;
+
+  return true;
+}
+
+export function validateInputTemplate(template: TemplateCreateInput): void {
+  if (!template.name || template.name.trim().length === 0) {
+    throw new Error("Template name is required");
+  }
+  if (!VALID_TEMPLATE_CATEGORIES.has(template.category)) {
+    throw new Error(`Invalid template category: ${template.category}`);
+  }
+  if (typeof template.isDefault !== "boolean") {
+    throw new Error("Template isDefault must be a boolean");
+  }
+  if (typeof template.content !== "string") {
+    throw new Error("Template content must be a string");
   }
 }

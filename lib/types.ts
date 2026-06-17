@@ -75,4 +75,43 @@ export const TAG_COLORS = [
   "#64748b",
 ];
 
+export type TemplateCategory =
+  | "person"
+  | "self"
+  | "goal"
+  | "event"
+  | "idea"
+  | "task"
+  | "custom";
+
+export const TEMPLATE_CATEGORIES: TemplateCategory[] = [
+  "person",
+  "self",
+  "goal",
+  "event",
+  "idea",
+  "task",
+  "custom",
+];
+
+export interface Template {
+  id: string;
+  name: string;
+  category: TemplateCategory;
+  isDefault: boolean;
+  content: string;
+  createdAt: string;
+  updatedAt: string;
+  usageCount: number;
+  lastUsedAt?: string;
+}
+
+export type TemplateCreateInput = Omit<
+  Template,
+  "id" | "createdAt" | "updatedAt" | "usageCount"
+>;
+
+export type TemplateUpdateInput = Partial<Omit<Template, "id" | "createdAt">>;
+
 export type WithRequired<T, K extends keyof T> = T & Required<Pick<T, K>>;
+

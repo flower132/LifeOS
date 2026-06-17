@@ -2,6 +2,7 @@ import { useObjectStore } from "./objectStore";
 import { useNoteStore } from "./noteStore";
 import { useRelationStore } from "./relationStore";
 import { useTagStore } from "./tagStore";
+import { useTemplateStore } from "./templateStore";
 import { useSettingsStore } from "./settingsStore";
 
 /**
@@ -14,6 +15,7 @@ export async function hydrateStores(): Promise<void> {
     useNoteStore.getState().hydrate(),
     useRelationStore.getState().hydrate(),
     useTagStore.getState().hydrate(),
+    useTemplateStore.getState().hydrate(),
     useSettingsStore.getState().hydrate(),
   ]);
 }
@@ -28,5 +30,6 @@ export function persistStores(): void {
   useNoteStore.getState().persist();
   useRelationStore.getState().persist();
   useTagStore.getState().persist();
+  useTemplateStore.getState().persist();
   useSettingsStore.getState().persist();
 }

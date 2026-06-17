@@ -1,5 +1,7 @@
 import { storage } from "./storage";
-import { LifeObject, Note, Relation, Tag } from "./types";
+import { LifeObject, Note, Relation, Tag, Template } from "./types";
+
+const STORAGE_VERSION = 2;
 
 export interface ExportedData {
   version: number;
@@ -8,25 +10,28 @@ export interface ExportedData {
   notes: unknown;
   relations: unknown;
   tags: unknown;
+  templates: unknown;
   settings: unknown;
 }
 
 export async function exportAllData(): Promise<ExportedData> {
-  const [objects, notes, relations, tags, settings] = await Promise.all([
+  const [objects, notes, relations, tags, templates, settings] = await Promise.all([
     storage.getObjects(),
     storage.getNotes(),
     storage.getRelations(),
     storage.getTags(),
+    storage.getTemplates(),
     storage.getSettings(),
   ]);
 
   return {
-    version: 1,
+    version: 2,
     exportedAt: new Date().toISOString(),
     objects,
     notes,
     relations,
     tags,
+    templates,
     settings,
   };
 }
@@ -149,7 +154,7 @@ export async function importAllData(data: unknown): Promise<void> {
 
   const payload = data as Record<string, unknown>;
   const version = typeof payload.version === "number" ? payload.version : 0;
-  if (version !== 1) {
+  if (version < 1 || version > 2) {
     throw new Error(`Unsupported export version: ${version}`);
   }
 
@@ -157,22 +162,19 @@ export async function importAllData(data: unknown): Promise<void> {
   const notes = Array.isArray(payload.notes) ? (payload.notes as Note[]) : [];
   const relations = Array.isArray(payload.relations) ? (payload.relations as Relation[]) : [];
   const tags = Array.isArray(payload.tags) ? (payload.tags as Tag[]) : [];
+  const templates = Array.isArray(payload.templates) ? (payload.templates as Template[]) : [];
   const settings = payload.settings && typeof payload.settings === "object" ? payload.settings : {};
 
-  // Write to localStorage via storage adapter. Validation happens inside adapter.
+  // Write through the storage adapter. Validation happens inside the adapter.
   await Promise.all([
-    storage.setStorageVersion(1),
+    storage.setStorageVersion(STORAGE_VERSION),
     storage.setSettings(settings),
+    storage.setObjects(objects),
+    storage.setNotes(notes),
+    storage.setRelations(relations),
+    storage.setTags(tags),
+    storage.setTemplates(templates),
   ]);
-
-  // Directly write entity arrays because storage adapter lacks bulk write APIs.
-  // We use the storage singleton's underlying localStorage keys for simplicity.
-  if (typeof window !== "undefined") {
-    window.localStorage.setItem("lifeos_objects", JSON.stringify(objects));
-    window.localStorage.setItem("lifeos_notes", JSON.stringify(notes));
-    window.localStorage.setItem("lifeos_relations", JSON.stringify(relations));
-    window.localStorage.setItem("lifeos_tags", JSON.stringify(tags));
-  }
 }
 
 export function calculateStorageUsage(): number {
@@ -202,6 +204,7 @@ export async function clearAllData(): Promise<void> {
     "lifeos_notes",
     "lifeos_relations",
     "lifeos_tags",
+    "lifeos_templates",
     "lifeos_settings",
     "lifeos_version",
     "lifeos_recent_tags",

@@ -1,6 +1,11 @@
 import { create } from "zustand";
 import { storage } from "@/lib/storage";
 import { AppSettings } from "@/lib/storage/types";
+import {
+  AIProviderId,
+  DEFAULT_PROVIDER_CONFIGS,
+  isValidAIProviderId,
+} from "@/lib/ai/types";
 
 export type Language = AppSettings["language"];
 export type Theme = AppSettings["theme"];
@@ -19,7 +24,9 @@ const DEFAULT_SETTINGS: AppSettings = {
   aiEnabled: true,
   aiPrivacyMode: false,
   aiProvider: "mock",
-  aiModel: "default",
+  aiModel: DEFAULT_PROVIDER_CONFIGS.mock.model,
+  aiBaseUrl: DEFAULT_PROVIDER_CONFIGS.mock.baseUrl,
+  aiApiKey: "",
   openaiKey: "",
   anthropicKey: "",
 };
@@ -41,8 +48,8 @@ interface SettingsState extends AppSettings {
   setAIPrivacyMode: (enabled: boolean) => Promise<void>;
   setAIProvider: (provider: AIProvider) => Promise<void>;
   setAIModel: (model: string) => Promise<void>;
-  setOpenAIKey: (key: string) => Promise<void>;
-  setAnthropicKey: (key: string) => Promise<void>;
+  setAIBaseUrl: (baseUrl: string) => Promise<void>;
+  setAIApiKey: (apiKey: string) => Promise<void>;
   reset: () => Promise<void>;
 }
 
@@ -73,34 +80,73 @@ function coerceTimeFormat(value: string): TimeFormat {
   return value === "12h" ? "12h" : "24h";
 }
 
-function coerceAIProvider(value: string): AIProvider {
-  if (value === "openai" || value === "anthropic") return value;
-  return "mock";
+function coerceAIProvider(value: string): AIProviderId {
+  return isValidAIProviderId(value) ? value : "mock";
+}
+
+function migrateLegacyAISettings(raw: Partial<AppSettings>): Partial<AppSettings> {
+  const migrated: Partial<AppSettings> = { ...raw };
+
+  // If the new unified key is already set, nothing to migrate.
+  if (migrated.aiApiKey) return migrated;
+
+  const provider = coerceAIProvider(migrated.aiProvider ?? "mock");
+  const defaults = DEFAULT_PROVIDER_CONFIGS[provider];
+
+  if (provider === "openai" && migrated.openaiKey) {
+    migrated.aiApiKey = migrated.openaiKey;
+    migrated.aiBaseUrl = defaults.baseUrl;
+    migrated.aiModel =
+      migrated.aiModel && migrated.aiModel !== "default"
+        ? migrated.aiModel
+        : defaults.model;
+  } else if (provider === "anthropic" && migrated.anthropicKey) {
+    migrated.aiApiKey = migrated.anthropicKey;
+    migrated.aiBaseUrl = defaults.baseUrl;
+    migrated.aiModel =
+      migrated.aiModel && migrated.aiModel !== "default"
+        ? migrated.aiModel
+        : defaults.model;
+  }
+
+  return migrated;
 }
 
 function mergeWithDefaults(raw: Partial<AppSettings>): AppSettings {
+  const migrated = migrateLegacyAISettings(raw);
+  const provider = coerceAIProvider(migrated.aiProvider ?? DEFAULT_SETTINGS.aiProvider);
+  const defaults = DEFAULT_PROVIDER_CONFIGS[provider];
+
   return {
     ...DEFAULT_SETTINGS,
-    language: coerceLanguage(raw.language ?? DEFAULT_SETTINGS.language),
-    theme: coerceTheme(raw.theme ?? DEFAULT_SETTINGS.theme),
+    language: coerceLanguage(migrated.language ?? DEFAULT_SETTINGS.language),
+    theme: coerceTheme(migrated.theme ?? DEFAULT_SETTINGS.theme),
     themeColor: coerceThemeColor(
-      raw.themeColor ?? DEFAULT_SETTINGS.themeColor
+      migrated.themeColor ?? DEFAULT_SETTINGS.themeColor
     ),
     accentColor: coerceAccentColor(
-      raw.accentColor ?? DEFAULT_SETTINGS.accentColor
+      migrated.accentColor ?? DEFAULT_SETTINGS.accentColor
     ),
-    dateFormat: coerceDateFormat(raw.dateFormat ?? DEFAULT_SETTINGS.dateFormat),
-    timeFormat: coerceTimeFormat(raw.timeFormat ?? DEFAULT_SETTINGS.timeFormat),
+    dateFormat: coerceDateFormat(migrated.dateFormat ?? DEFAULT_SETTINGS.dateFormat),
+    timeFormat: coerceTimeFormat(migrated.timeFormat ?? DEFAULT_SETTINGS.timeFormat),
     aiEnabled:
-      raw.aiEnabled !== undefined ? Boolean(raw.aiEnabled) : DEFAULT_SETTINGS.aiEnabled,
+      migrated.aiEnabled !== undefined ? Boolean(migrated.aiEnabled) : DEFAULT_SETTINGS.aiEnabled,
     aiPrivacyMode:
-      raw.aiPrivacyMode !== undefined
-        ? Boolean(raw.aiPrivacyMode)
+      migrated.aiPrivacyMode !== undefined
+        ? Boolean(migrated.aiPrivacyMode)
         : DEFAULT_SETTINGS.aiPrivacyMode,
-    aiProvider: coerceAIProvider(raw.aiProvider ?? DEFAULT_SETTINGS.aiProvider),
-    aiModel: typeof raw.aiModel === "string" ? raw.aiModel : DEFAULT_SETTINGS.aiModel,
-    openaiKey: typeof raw.openaiKey === "string" ? raw.openaiKey : DEFAULT_SETTINGS.openaiKey,
-    anthropicKey: typeof raw.anthropicKey === "string" ? raw.anthropicKey : DEFAULT_SETTINGS.anthropicKey,
+    aiProvider: provider,
+    aiModel:
+      typeof migrated.aiModel === "string" && migrated.aiModel.length > 0
+        ? migrated.aiModel
+        : defaults.model,
+    aiBaseUrl:
+      typeof migrated.aiBaseUrl === "string" && migrated.aiBaseUrl.length > 0
+        ? migrated.aiBaseUrl
+        : defaults.baseUrl,
+    aiApiKey: typeof migrated.aiApiKey === "string" ? migrated.aiApiKey : DEFAULT_SETTINGS.aiApiKey,
+    openaiKey: typeof migrated.openaiKey === "string" ? migrated.openaiKey : DEFAULT_SETTINGS.openaiKey,
+    anthropicKey: typeof migrated.anthropicKey === "string" ? migrated.anthropicKey : DEFAULT_SETTINGS.anthropicKey,
   };
 }
 
@@ -136,6 +182,8 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       aiPrivacyMode: state.aiPrivacyMode,
       aiProvider: state.aiProvider,
       aiModel: state.aiModel,
+      aiBaseUrl: state.aiBaseUrl,
+      aiApiKey: state.aiApiKey,
       openaiKey: state.openaiKey,
       anthropicKey: state.anthropicKey,
     });
@@ -232,21 +280,21 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     }
   },
 
-  setOpenAIKey: async (openaiKey) => {
-    set({ openaiKey });
+  setAIBaseUrl: async (aiBaseUrl) => {
+    set({ aiBaseUrl });
     try {
-      await storage.setSettings({ openaiKey });
+      await storage.setSettings({ aiBaseUrl });
     } catch (err) {
-      set({ error: err instanceof Error ? err.message : "Failed to save OpenAI key" });
+      set({ error: err instanceof Error ? err.message : "Failed to save AI base URL" });
     }
   },
 
-  setAnthropicKey: async (anthropicKey) => {
-    set({ anthropicKey });
+  setAIApiKey: async (aiApiKey) => {
+    set({ aiApiKey });
     try {
-      await storage.setSettings({ anthropicKey });
+      await storage.setSettings({ aiApiKey });
     } catch (err) {
-      set({ error: err instanceof Error ? err.message : "Failed to save Anthropic key" });
+      set({ error: err instanceof Error ? err.message : "Failed to save AI API key" });
     }
   },
 

@@ -18,6 +18,7 @@ import {
 import { useSettingsStore } from "@/stores/settingsStore";
 import { hydrateStores } from "@/stores";
 import { useTranslation } from "@/lib/useTranslation";
+import { AIProviderId } from "@/lib/ai/types";
 import {
   exportAllData,
   downloadJson,
@@ -44,8 +45,8 @@ export default function SettingsPage() {
     aiPrivacyMode,
     aiProvider,
     aiModel,
-    openaiKey,
-    anthropicKey,
+    aiBaseUrl,
+    aiApiKey,
     loaded,
     error,
     setLanguage,
@@ -57,8 +58,8 @@ export default function SettingsPage() {
     setAIPrivacyMode,
     setAIProvider,
     setAIModel,
-    setOpenAIKey,
-    setAnthropicKey,
+    setAIBaseUrl,
+    setAIApiKey,
   } = useSettingsStore();
 
   const [exportingJson, setExportingJson] = useState(false);
@@ -76,6 +77,20 @@ export default function SettingsPage() {
         return t("providerOpenAI");
       case "anthropic":
         return t("providerAnthropic");
+      case "deepseek":
+        return t("providerDeepSeek");
+      case "kimi":
+        return t("providerKimi");
+      case "gemini":
+        return t("providerGemini");
+      case "openrouter":
+        return t("providerOpenRouter");
+      case "siliconflow":
+        return t("providerSiliconFlow");
+      case "ollama":
+        return t("providerOllama");
+      case "custom":
+        return t("providerCustom");
       default:
         return t("providerMock");
     }
@@ -444,13 +459,20 @@ export default function SettingsPage() {
               <select
                 value={aiProvider}
                 onChange={(e) =>
-                  void setAIProvider(e.target.value as "mock" | "openai" | "anthropic")
+                  void setAIProvider(e.target.value as AIProviderId)
                 }
                 className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent dark:border-slate-700 dark:bg-slate-900 dark:text-white"
               >
                 <option value="mock">{t("providerMock")}</option>
                 <option value="openai">{t("providerOpenAI")}</option>
                 <option value="anthropic">{t("providerAnthropic")}</option>
+                <option value="deepseek">{t("providerDeepSeek")}</option>
+                <option value="kimi">{t("providerKimi")}</option>
+                <option value="gemini">{t("providerGemini")}</option>
+                <option value="openrouter">{t("providerOpenRouter")}</option>
+                <option value="siliconflow">{t("providerSiliconFlow")}</option>
+                <option value="ollama">{t("providerOllama")}</option>
+                <option value="custom">{t("providerCustom")}</option>
               </select>
               <p className="text-xs text-slate-500 dark:text-slate-400">
                 {t("currentProvider")}: {activeProviderLabel}
@@ -465,36 +487,33 @@ export default function SettingsPage() {
                 type="text"
                 value={aiModel}
                 onChange={(e) => void setAIModel(e.target.value)}
-                placeholder="default"
+                placeholder={t("aiModelPlaceholder")}
                 className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent dark:border-slate-700 dark:bg-slate-900 dark:text-white"
               />
             </div>
 
             <div className="space-y-1">
               <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                {t("openaiKey")}
+                {t("aiBaseUrl")}
               </span>
               <input
-                type="password"
-                value={openaiKey}
-                onChange={(e) => void setOpenAIKey(e.target.value)}
-                placeholder="sk-..."
+                type="text"
+                value={aiBaseUrl}
+                onChange={(e) => void setAIBaseUrl(e.target.value)}
+                placeholder={t("aiBaseUrlPlaceholder")}
                 className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent dark:border-slate-700 dark:bg-slate-900 dark:text-white"
               />
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                {t("keyStoredLocally")}
-              </p>
             </div>
 
             <div className="space-y-1">
               <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                {t("anthropicKey")}
+                {t("aiApiKey")}
               </span>
               <input
                 type="password"
-                value={anthropicKey}
-                onChange={(e) => void setAnthropicKey(e.target.value)}
-                placeholder="sk-ant-..."
+                value={aiApiKey}
+                onChange={(e) => void setAIApiKey(e.target.value)}
+                placeholder={t("aiApiKeyPlaceholder")}
                 className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent dark:border-slate-700 dark:bg-slate-900 dark:text-white"
               />
               <p className="text-xs text-slate-500 dark:text-slate-400">

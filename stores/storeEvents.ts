@@ -3,7 +3,8 @@ export type StoreEvent =
   | "tagsChanged"
   | "notesChanged"
   | "relationsChanged"
-  | "settingsChanged";
+  | "settingsChanged"
+  | "templatesChanged";
 
 const listeners = new Map<StoreEvent, Set<() => void>>();
 

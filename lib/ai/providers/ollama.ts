@@ -1,0 +1,1 @@
+export { createOllamaProvider } from "../factory";

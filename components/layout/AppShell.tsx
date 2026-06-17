@@ -8,6 +8,7 @@ import {
   PlusCircle,
   StickyNote,
   Settings,
+  LayoutTemplate,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/lib/useTranslation";
@@ -16,8 +17,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { t } = useTranslation();
 
-  // Sidebar / bottom nav order is driven by this single array config.
-  const navItems = [
+  // Sidebar / bottom nav order is driven by these arrays.
+  // Desktop sidebar shows Templates; mobile bottom nav has limited space and does not.
+  const desktopNavItems = [
+    { href: "/create-note", label: t("navNewNote"), icon: StickyNote },
+    { href: "/objects", label: t("navObjects"), icon: Users },
+    { href: "/create-object", label: t("navNewObject"), icon: PlusCircle },
+    { href: "/templates", label: t("navTemplates"), icon: LayoutTemplate },
+    { href: "/home", label: t("navHome"), icon: Home },
+  ];
+
+  const mobileNavItems = [
     { href: "/home", label: t("navHome"), icon: Home },
     { href: "/objects", label: t("navObjects"), icon: Users },
     { href: "/create-note", label: t("navNewNote"), icon: StickyNote },
@@ -38,7 +48,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </Link>
 
         <nav className="flex flex-1 flex-col gap-1">
-          {navItems.map((item) => {
+          {desktopNavItems.map((item) => {
             const Icon = item.icon;
             const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
             return (
@@ -75,7 +85,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       {/* Mobile bottom nav */}
       <nav className="fixed bottom-0 left-0 z-50 flex h-16 w-full items-center justify-around border-t border-slate-100 bg-white md:hidden dark:border-slate-800 dark:bg-slate-900">
-        {[...navItems, settingsItem].map((item) => {
+        {[...mobileNavItems, settingsItem].map((item) => {
           const Icon = item.icon;
           const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
           return (
