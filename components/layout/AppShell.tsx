@@ -58,7 +58,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 className={cn(
                   "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
                   active
-                    ? "bg-indigo-50 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300"
+                    ? "bg-accent/10 text-accent dark:bg-accent/10 dark:text-accent"
                     : "text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100"
                 )}
               >
@@ -94,7 +94,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               href={item.href}
               className={cn(
                 "flex flex-col items-center justify-center gap-1 px-2 py-2 text-xs font-medium transition-colors",
-                active ? "text-indigo-700 dark:text-indigo-300" : "text-slate-500 dark:text-slate-400"
+                active ? "text-accent" : "text-slate-500 dark:text-slate-400"
               )}
             >
               <Icon className="h-5 w-5" />

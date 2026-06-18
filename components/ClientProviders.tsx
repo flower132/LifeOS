@@ -20,11 +20,13 @@ function getEffectiveThemeColor(
 }
 
 function applyTheme(themeColor: "light" | "dark"): void {
+  const html = document.documentElement;
   if (themeColor === "dark") {
-    document.documentElement.classList.add("dark");
+    html.classList.add("dark");
   } else {
-    document.documentElement.classList.remove("dark");
+    html.classList.remove("dark");
   }
+  html.setAttribute("data-theme", themeColor);
 }
 
 function applyAccentColor(accentColor: "blue" | "green" | "purple" | "orange"): void {

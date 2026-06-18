@@ -338,3 +338,9 @@
 2026-06-17 07:04:51 | Edit | /Users/temp/Vibe_Project/LifeOS/components/tag/TagSelect.tsx
 2026-06-17 07:06:33 | Edit | /Users/temp/Vibe_Project/LifeOS/lib/storage/localStorageAdapter.ts
 2026-06-17 07:06:46 | Edit | /Users/temp/Vibe_Project/LifeOS/components/tag/TagSelect.tsx
+2026-06-18 07:03:37 | Edit | /Users/temp/Vibe_Project/LifeOS/app/settings/page.tsx
+2026-06-18 07:04:55 | Edit | /Users/temp/Vibe_Project/LifeOS/app/settings/page.tsx
+2026-06-18 07:05:47 | Edit | /Users/temp/Vibe_Project/LifeOS/components/ClientProviders.tsx
+2026-06-18 07:06:29 | Edit | /Users/temp/Vibe_Project/LifeOS/components/layout/AppShell.tsx
+2026-06-18 07:06:42 | Edit | /Users/temp/Vibe_Project/LifeOS/components/layout/AppShell.tsx
+2026-06-18 08:42:20 | Edit | /Users/temp/Vibe_Project/LifeOS/app/globals.css

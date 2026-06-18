@@ -5,9 +5,7 @@ import Link from "next/link";
 import {
   ArrowLeft,
   Settings,
-  Languages,
   Monitor,
-  Palette,
   Database,
   Bot,
   Info,
@@ -194,77 +192,38 @@ export default function SettingsPage() {
 
         {/* General */}
         <SectionCard icon={Monitor} title={t("general")}>
-          <div className="space-y-4">
-            <div className="space-y-1">
+          <div className="space-y-5">
+            <div className="space-y-2">
               <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
                 {t("language")}
               </label>
-              <select
-                value={language}
-                onChange={(e) => void setLanguage(e.target.value as "zh" | "en")}
-                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent dark:border-slate-700 dark:bg-slate-900 dark:text-white"
-              >
-                <option value="en">{t("english")}</option>
-                <option value="zh">{t("chinese")}</option>
-              </select>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => void setLanguage("zh")}
+                  className={`rounded-lg border px-4 py-2.5 text-sm font-medium transition-colors ${
+                    language === "zh"
+                      ? "border-accent bg-accent/10 text-accent"
+                      : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
+                  }`}
+                >
+                  简体中文
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void setLanguage("en")}
+                  className={`rounded-lg border px-4 py-2.5 text-sm font-medium transition-colors ${
+                    language === "en"
+                      ? "border-accent bg-accent/10 text-accent"
+                      : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
+                  }`}
+                >
+                  English
+                </button>
+              </div>
             </div>
 
-            <div className="space-y-1">
-              <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                {t("theme")}
-              </label>
-              <select
-                value={theme}
-                onChange={(e) =>
-                  void setTheme(e.target.value as "light" | "dark" | "system")
-                }
-                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent dark:border-slate-700 dark:bg-slate-900 dark:text-white"
-              >
-                <option value="light">{t("light")}</option>
-                <option value="dark">{t("dark")}</option>
-                <option value="system">{t("system")}</option>
-              </select>
-            </div>
-
-            <div className="space-y-1">
-              <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                {t("dateFormat")}
-              </label>
-              <select
-                value={dateFormat}
-                onChange={(e) =>
-                  void setDateFormat(
-                    e.target.value as "YYYY-MM-DD" | "MM/DD/YYYY" | "DD/MM/YYYY"
-                  )
-                }
-                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent dark:border-slate-700 dark:bg-slate-900 dark:text-white"
-              >
-                <option value="YYYY-MM-DD">YYYY-MM-DD</option>
-                <option value="MM/DD/YYYY">MM/DD/YYYY</option>
-                <option value="DD/MM/YYYY">DD/MM/YYYY</option>
-              </select>
-            </div>
-
-            <div className="space-y-1">
-              <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                {t("timeFormat")}
-              </label>
-              <select
-                value={timeFormat}
-                onChange={(e) => void setTimeFormat(e.target.value as "24h" | "12h")}
-                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent dark:border-slate-700 dark:bg-slate-900 dark:text-white"
-              >
-                <option value="24h">24 {t("hour")}</option>
-                <option value="12h">12 {t("hour")}</option>
-              </select>
-            </div>
-          </div>
-        </SectionCard>
-
-        {/* Appearance */}
-        <SectionCard icon={Palette} title={t("appearance")}>
-          <div className="space-y-4">
-            <div className="space-y-1">
+            <div className="space-y-2">
               <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
                 {t("theme")}
               </label>
@@ -276,7 +235,7 @@ export default function SettingsPage() {
                     onClick={() => void setTheme(themeOption)}
                     className={`rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
                       theme === themeOption
-                        ? "border-accent bg-indigo-50 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300"
+                        ? "border-accent bg-accent/10 text-accent"
                         : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
                     }`}
                   >
@@ -286,7 +245,7 @@ export default function SettingsPage() {
               </div>
             </div>
 
-            <div className="space-y-1">
+            <div className="space-y-2">
               <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
                 {t("accentColor")}
               </label>
@@ -298,7 +257,7 @@ export default function SettingsPage() {
                     onClick={() => void setAccentColor(color)}
                     className={`flex flex-col items-center gap-2 rounded-lg border px-3 py-3 text-sm transition-colors ${
                       accentColor === color
-                        ? "border-accent bg-indigo-50 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300"
+                        ? "border-accent bg-accent/10 text-accent"
                         : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
                     }`}
                   >
@@ -320,34 +279,39 @@ export default function SettingsPage() {
                 ))}
               </div>
             </div>
-          </div>
-        </SectionCard>
 
-        {/* Language */}
-        <SectionCard icon={Languages} title={t("language")}>
-          <div className="grid grid-cols-2 gap-3">
-            <button
-              type="button"
-              onClick={() => void setLanguage("zh")}
-              className={`rounded-lg border px-4 py-3 text-sm font-medium transition-colors ${
-                language === "zh"
-                  ? "border-accent bg-indigo-50 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300"
-                  : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
-              }`}
-            >
-              简体中文
-            </button>
-            <button
-              type="button"
-              onClick={() => void setLanguage("en")}
-              className={`rounded-lg border px-4 py-3 text-sm font-medium transition-colors ${
-                language === "en"
-                  ? "border-accent bg-indigo-50 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300"
-                  : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
-              }`}
-            >
-              English
-            </button>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                {t("dateFormat")}
+              </label>
+              <select
+                value={dateFormat}
+                onChange={(e) =>
+                  void setDateFormat(
+                    e.target.value as "YYYY-MM-DD" | "MM/DD/YYYY" | "DD/MM/YYYY"
+                  )
+                }
+                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+              >
+                <option value="YYYY-MM-DD">YYYY-MM-DD</option>
+                <option value="MM/DD/YYYY">MM/DD/YYYY</option>
+                <option value="DD/MM/YYYY">DD/MM/YYYY</option>
+              </select>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                {t("timeFormat")}
+              </label>
+              <select
+                value={timeFormat}
+                onChange={(e) => void setTimeFormat(e.target.value as "24h" | "12h")}
+                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+              >
+                <option value="24h">24 {t("hour")}</option>
+                <option value="12h">12 {t("hour")}</option>
+              </select>
+            </div>
           </div>
         </SectionCard>
 
