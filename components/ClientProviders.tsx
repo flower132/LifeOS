@@ -53,10 +53,10 @@ function applySettings(settings: ReturnType<typeof useSettingsStore.getState>): 
 
 function HydrationSkeleton() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-white dark:bg-slate-900">
+    <div className="flex min-h-screen items-center justify-center bg-background">
       <div className="space-y-3 text-center">
-        <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-indigo-600 border-t-transparent" />
-        <p className="text-sm text-slate-500 dark:text-slate-400">Loading LifeOS...</p>
+        <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-accent border-t-transparent" />
+        <p className="text-sm text-muted-foreground">Loading LifeOS...</p>
       </div>
     </div>
   );

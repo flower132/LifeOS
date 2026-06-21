@@ -24,16 +24,16 @@ export function ObjectCard({ object }: ObjectCardProps) {
   return (
     <Link
       href={`/objects/${object.id}`}
-      className="group flex flex-col rounded-xl border border-slate-100 bg-white p-4 shadow-sm transition-all hover:border-indigo-100 hover:shadow-md dark:border-slate-800 dark:bg-slate-800 dark:hover:border-indigo-900"
+      className="group flex flex-col rounded-xl border border-border bg-background p-4 shadow-sm transition-all hover:border-accent/20 hover:shadow-md"
     >
       <div className="mb-2 flex items-center justify-between">
         <ObjectTypeBadge type={object.type} />
       </div>
-      <h3 className="mb-1 text-base font-semibold text-slate-900 group-hover:text-indigo-700 dark:text-white dark:group-hover:text-indigo-300">
+      <h3 className="mb-1 text-base font-semibold text-foreground group-hover:text-accent">
         {object.name}
       </h3>
       {object.description ? (
-        <p className="mb-3 line-clamp-2 text-sm text-slate-500 dark:text-slate-400">
+        <p className="mb-3 line-clamp-2 text-sm text-muted-foreground">
           {object.description}
         </p>
       ) : (

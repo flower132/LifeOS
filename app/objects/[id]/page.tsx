@@ -57,10 +57,10 @@ export default function ObjectDetailPage() {
 
   if (!objectsLoaded) {
     return (
-      <div className="min-h-screen bg-white px-6 py-10 dark:bg-slate-900">
+      <div className="min-h-screen bg-background px-6 py-10">
         <div className="mx-auto max-w-4xl space-y-6">
-          <div className="h-8 w-48 animate-pulse rounded bg-slate-100 dark:bg-slate-800" />
-          <div className="h-32 animate-pulse rounded-xl bg-slate-100 dark:bg-slate-800" />
+          <div className="h-8 w-48 animate-pulse rounded bg-muted" />
+          <div className="h-32 animate-pulse rounded-xl bg-muted" />
         </div>
       </div>
     );
@@ -68,12 +68,12 @@ export default function ObjectDetailPage() {
 
   if (!object) {
     return (
-      <div className="min-h-screen bg-white px-6 py-10 dark:bg-slate-900">
+      <div className="min-h-screen bg-background px-6 py-10">
         <div className="mx-auto max-w-4xl text-center">
-          <h1 className="text-xl font-semibold text-slate-900 dark:text-white">{t("objectNotFound")}</h1>
+          <h1 className="text-xl font-semibold text-foreground">{t("objectNotFound")}</h1>
           <Link
             href="/objects"
-            className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-indigo-600"
+            className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-accent"
           >
             <ArrowLeft className="h-4 w-4" />
             {t("backToObjects")}
@@ -84,30 +84,30 @@ export default function ObjectDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white dark:bg-slate-900">
-      <header className="border-b border-slate-100 bg-white px-6 py-5 dark:border-slate-800 dark:bg-slate-900">
+    <div className="min-h-screen bg-background">
+      <header className="border-b border-border bg-background px-6 py-5">
         <div className="mx-auto flex max-w-4xl items-start justify-between">
           <div className="space-y-1">
             <Link
               href="/objects"
-              className="mb-2 inline-flex items-center gap-1 text-xs font-medium text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200"
+              className="mb-2 inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground"
             >
               <ArrowLeft className="h-3.5 w-3.5" />
               {t("backToObjects")}
             </Link>
             <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-white">
+              <h1 className="text-2xl font-semibold tracking-tight text-foreground">
                 {object.name}
               </h1>
               <ObjectTypeBadge type={object.type} />
             </div>
             {object.description && (
-              <p className="max-w-2xl text-sm text-slate-500 dark:text-slate-400">{object.description}</p>
+              <p className="max-w-2xl text-sm text-muted-foreground">{object.description}</p>
             )}
           </div>
           <button
             onClick={handleDelete}
-            className="rounded-lg p-2 text-slate-400 hover:bg-red-50 hover:text-red-600"
+            className="rounded-lg p-2 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
             title={t("deleteObject")}
           >
             <Trash2 className="h-4 w-4" />
@@ -119,12 +119,12 @@ export default function ObjectDetailPage() {
         {/* Tags */}
         <section className="space-y-3">
           <div className="flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-slate-400 dark:text-slate-500" />
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+            <Sparkles className="h-4 w-4 text-muted-foreground" />
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
               {t("tagsSection")}
             </h2>
           </div>
-          <div className="rounded-xl border border-slate-100 bg-white p-4 dark:border-slate-800 dark:bg-slate-800">
+          <div className="rounded-xl border border-border bg-card p-4">
             <TagSelect
               selectedTagIds={object.tag_ids}
               onChange={handleTagChange}
@@ -142,8 +142,8 @@ export default function ObjectDetailPage() {
         {/* AI Insight */}
         <section className="space-y-3">
           <div className="flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-indigo-500" />
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+            <Sparkles className="h-4 w-4 text-accent" />
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
               {t("aiUnderstanding")}
             </h2>
           </div>
@@ -171,8 +171,8 @@ export default function ObjectDetailPage() {
         {/* Relations */}
         <section className="space-y-3">
           <div className="flex items-center gap-2">
-            <LinkIcon className="h-4 w-4 text-slate-400 dark:text-slate-500" />
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+            <LinkIcon className="h-4 w-4 text-muted-foreground" />
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
               {t("relations")}
             </h2>
           </div>
@@ -186,14 +186,14 @@ export default function ObjectDetailPage() {
         <section className="space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <StickyNote className="h-4 w-4 text-slate-400 dark:text-slate-500" />
-              <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+              <StickyNote className="h-4 w-4 text-muted-foreground" />
+              <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
                 {t("notesTimeline")}
               </h2>
             </div>
             <Link
               href={`/create-note?objectId=${object.id}`}
-              className="text-sm font-medium text-indigo-600 hover:text-indigo-700"
+              className="text-sm font-medium text-accent hover:text-accent/90"
             >
               + {t("addNote")}
             </Link>

@@ -303,10 +303,10 @@ export function TagSelect({ selectedTagIds, onChange }: TagSelectProps) {
           setOpen(true);
           inputRef.current?.focus();
         }}
-        className={`flex min-h-[42px] flex-wrap items-center gap-2 rounded-lg border bg-white px-2 py-1.5 text-sm transition-colors dark:border-slate-700 dark:bg-slate-900 ${
+        className={`flex min-h-[42px] flex-wrap items-center gap-2 rounded-lg border bg-background px-2 py-1.5 text-sm transition-colors ${
           open
             ? "border-accent ring-2 ring-accent"
-            : "border-slate-200 hover:border-slate-300"
+            : "border-input hover:border-accent/50"
         }`}
       >
         {selectedTags.map((tag) => (
@@ -352,28 +352,28 @@ export function TagSelect({ selectedTagIds, onChange }: TagSelectProps) {
           }}
           onKeyDown={handleKeyDown}
           placeholder={selectedTags.length === 0 ? t("addTags") : ""}
-          className="min-w-[80px] flex-1 bg-transparent px-1 py-1 text-sm text-slate-900 outline-none placeholder:text-slate-400 dark:text-white"
+          className="min-w-[80px] flex-1 bg-transparent px-1 py-1 text-sm text-foreground outline-none placeholder:text-muted-foreground"
         />
       </div>
 
       {createError && (
-        <div className="mt-1 text-xs text-red-600 dark:text-red-400">{createError}</div>
+        <div className="mt-1 text-xs text-destructive">{createError}</div>
       )}
 
       {open && (
         <div
           ref={listRef}
-          className="absolute z-50 mt-1 max-h-64 w-full overflow-auto rounded-lg border border-slate-100 bg-white py-1 shadow-lg dark:border-slate-800 dark:bg-slate-800"
+          className="absolute z-50 mt-1 max-h-64 w-full overflow-auto rounded-lg border border-border bg-background py-1 shadow-lg"
         >
           {dropdownItems.length === 0 ? (
-            <div className="px-3 py-2 text-sm text-slate-500 dark:text-slate-400">
+            <div className="px-3 py-2 text-sm text-muted-foreground">
               {trimmedQuery ? t("noMatchingTags") : t("typeToCreateTag")}
             </div>
           ) : (
             <ul className="py-1">
               {showRecentSection && (
                 <>
-                  <li className="px-3 py-1 text-xs font-medium text-slate-400 dark:text-slate-500">
+                  <li className="px-3 py-1 text-xs font-medium text-muted-foreground">
                     {t("recentTags")}
                   </li>
                   {recentTags.map((item, index) => (
@@ -391,7 +391,7 @@ export function TagSelect({ selectedTagIds, onChange }: TagSelectProps) {
               )}
               {showHistorySection && (
                 <>
-                  <li className="px-3 py-1 text-xs font-medium text-slate-400 dark:text-slate-500">
+                  <li className="px-3 py-1 text-xs font-medium text-muted-foreground">
                     {t("allTags")}
                   </li>
                   {historicalTags.map((item, index) => {
@@ -455,14 +455,14 @@ function TagOption({
         onClick={onClick}
         className={`flex w-full items-center justify-between px-3 py-2 text-left text-sm transition-colors ${
           active
-            ? "bg-indigo-50 text-indigo-900 dark:bg-indigo-950 dark:text-indigo-300"
-            : "text-slate-700 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-700"
+            ? "bg-accent/10 text-accent"
+            : "text-foreground hover:bg-muted"
         }`}
       >
         <div className="flex items-center gap-2">
           {isCreate ? (
             <>
-              <Plus className="h-3.5 w-3.5 text-indigo-500" />
+              <Plus className="h-3.5 w-3.5 text-accent" />
               <span>{t("createTag", { name: item.name })}</span>
             </>
           ) : (
@@ -476,7 +476,7 @@ function TagOption({
           )}
         </div>
         {!isCreate && (
-          <span className="text-xs text-slate-400 dark:text-slate-500">
+          <span className="text-xs text-muted-foreground">
             {item.usageCount}
           </span>
         )}

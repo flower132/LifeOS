@@ -24,12 +24,12 @@ export function TemplateList({
 }: TemplateListProps) {
   return (
     <section className="space-y-4">
-      <h2 className="text-base font-semibold text-slate-900 dark:text-white">
+      <h2 className="text-base font-semibold text-foreground">
         {title}
       </h2>
       {templates.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-8 text-center dark:border-slate-800 dark:bg-slate-800">
-          <p className="text-sm text-slate-500 dark:text-slate-400">{emptyText}</p>
+        <div className="rounded-xl border border-dashed border-border bg-muted p-8 text-center">
+          <p className="text-sm text-muted-foreground">{emptyText}</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">

@@ -93,23 +93,23 @@ export default function TemplatesPage() {
 
   if (!loaded) {
     return (
-      <div className="min-h-screen bg-white px-6 py-10 dark:bg-slate-900">
+      <div className="min-h-screen bg-background px-6 py-10">
         <div className="mx-auto max-w-5xl space-y-6">
-          <div className="h-8 w-48 animate-pulse rounded bg-slate-100 dark:bg-slate-800" />
-          <div className="h-32 animate-pulse rounded-xl bg-slate-100 dark:bg-slate-800" />
-          <div className="h-32 animate-pulse rounded-xl bg-slate-100 dark:bg-slate-800" />
+          <div className="h-8 w-48 animate-pulse rounded bg-muted" />
+          <div className="h-32 animate-pulse rounded-xl bg-muted" />
+          <div className="h-32 animate-pulse rounded-xl bg-muted" />
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-white dark:bg-slate-900">
-      <header className="border-b border-slate-100 bg-white px-6 py-5 dark:border-slate-800 dark:bg-slate-900">
+    <div className="min-h-screen bg-background">
+      <header className="border-b border-border bg-background px-6 py-5">
         <div className="mx-auto max-w-5xl">
           <Link
             href="/home"
-            className="mb-2 inline-flex items-center gap-1 text-xs font-medium text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200"
+            className="mb-2 inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
             {t("backToHome")}
@@ -117,12 +117,12 @@ export default function TemplatesPage() {
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <div className="flex items-center gap-3">
-                <LayoutTemplate className="h-6 w-6 text-slate-700 dark:text-slate-200" />
-                <h1 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-white">
+                <LayoutTemplate className="h-6 w-6 text-foreground" />
+                <h1 className="text-2xl font-semibold tracking-tight text-foreground">
                   {t("templatesTitle")}
                 </h1>
               </div>
-              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+              <p className="mt-1 text-sm text-muted-foreground">
                 {t("templatesSubtitle")}
               </p>
             </div>
@@ -132,7 +132,7 @@ export default function TemplatesPage() {
                 setEditingTemplate(null);
                 setShowForm(true);
               }}
-              className="inline-flex items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 dark:bg-indigo-600 dark:hover:bg-indigo-700"
+              className="inline-flex items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:bg-accent/90"
             >
               <PlusCircle className="h-4 w-4" />
               {t("newTemplate")}
@@ -144,19 +144,19 @@ export default function TemplatesPage() {
       <div className="mx-auto max-w-5xl space-y-8 px-6 py-8">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder={t("searchTemplates")}
-              className="w-full rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-9 text-sm text-slate-900 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+              className="w-full rounded-lg border border-input bg-background py-2 pl-9 pr-9 text-sm text-foreground outline-none focus:border-accent focus:ring-2 focus:ring-accent"
             />
             {search && (
               <button
                 type="button"
                 onClick={() => setSearch("")}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -168,7 +168,7 @@ export default function TemplatesPage() {
             onChange={(e) =>
               setCategory(e.target.value as TemplateCategory | "all")
             }
-            className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+            className="rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-accent focus:ring-2 focus:ring-accent"
           >
             <option value="all">{t("allCategories")}</option>
             {TEMPLATE_CATEGORIES.map((cat) => (
@@ -216,9 +216,9 @@ export default function TemplatesPage() {
 
       {showForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-xl border border-slate-100 bg-white p-6 shadow-xl dark:border-slate-800 dark:bg-slate-900">
+          <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-xl border border-border bg-card p-6 shadow-xl">
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
+              <h2 className="text-lg font-semibold text-card-foreground">
                 {editingTemplate ? t("editTemplate") : t("newTemplate")}
               </h2>
               <button
@@ -227,7 +227,7 @@ export default function TemplatesPage() {
                   setShowForm(false);
                   setEditingTemplate(null);
                 }}
-                className="rounded-lg p-1 text-slate-400 hover:bg-slate-50 hover:text-slate-600 dark:hover:bg-slate-800"
+                className="rounded-lg p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
               >
                 <X className="h-5 w-5" />
               </button>

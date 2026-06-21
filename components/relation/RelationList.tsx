@@ -12,8 +12,8 @@ export function RelationList({ objectId, relations }: RelationListProps) {
 
   if (relations.length === 0) {
     return (
-      <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-6 text-center">
-        <p className="text-sm text-slate-500">No relations yet. Relations give the system its structure.</p>
+      <div className="rounded-xl border border-dashed border-border bg-muted p-6 text-center">
+        <p className="text-sm text-muted-foreground">No relations yet. Relations give the system its structure.</p>
       </div>
     );
   }
@@ -29,17 +29,17 @@ export function RelationList({ objectId, relations }: RelationListProps) {
         return (
           <div
             key={relation.id}
-            className="flex items-center justify-between rounded-lg border border-slate-100 bg-white p-3"
+            className="flex items-center justify-between rounded-lg border border-border bg-background p-3"
           >
             <div className="flex items-center gap-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-50 text-xs font-bold text-indigo-700">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-accent/10 text-xs font-bold text-accent">
                 {other?.name.charAt(0).toUpperCase() || "?"}
               </div>
               <div>
-                <p className="text-sm font-medium text-slate-900">
+                <p className="text-sm font-medium text-foreground">
                   {other?.name || "Unknown"}
                 </p>
-                <p className="text-xs text-slate-500">
+                <p className="text-xs text-muted-foreground">
                   {relation.type}
                   {relation.strength !== undefined &&
                     ` • ${Math.round(relation.strength * 100)}%`}
@@ -48,11 +48,11 @@ export function RelationList({ objectId, relations }: RelationListProps) {
             </div>
             <div className="text-right">
               {relation.note && (
-                <p className="max-w-[200px] truncate text-xs text-slate-500">
+                <p className="max-w-[200px] truncate text-xs text-muted-foreground">
                   {relation.note}
                 </p>
               )}
-              <p className="text-xs text-slate-400">{formatDate(relation.created_at)}</p>
+              <p className="text-xs text-muted-foreground">{formatDate(relation.created_at)}</p>
             </div>
           </div>
         );

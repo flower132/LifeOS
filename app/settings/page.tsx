@@ -151,33 +151,33 @@ export default function SettingsPage() {
 
   if (!loaded) {
     return (
-      <div className="min-h-screen bg-white px-6 py-10 dark:bg-slate-900">
+      <div className="min-h-screen bg-background px-6 py-10">
         <div className="mx-auto max-w-2xl space-y-6">
-          <div className="h-8 w-48 animate-pulse rounded bg-slate-100 dark:bg-slate-800" />
-          <div className="h-32 animate-pulse rounded-xl bg-slate-100 dark:bg-slate-800" />
+          <div className="h-8 w-48 animate-pulse rounded bg-muted" />
+          <div className="h-32 animate-pulse rounded-xl bg-muted" />
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-white dark:bg-slate-900">
-      <header className="border-b border-slate-100 bg-white px-6 py-5 dark:border-slate-800 dark:bg-slate-900">
+    <div className="min-h-screen bg-background">
+      <header className="border-b border-border bg-background px-6 py-5">
         <div className="mx-auto max-w-2xl">
           <Link
             href="/home"
-            className="mb-2 inline-flex items-center gap-1 text-xs font-medium text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200"
+            className="mb-2 inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
             {t("backToHome")}
           </Link>
           <div className="flex items-center gap-3">
-            <Settings className="h-6 w-6 text-slate-700 dark:text-slate-200" />
-            <h1 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-white">
+            <Settings className="h-6 w-6 text-foreground" />
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">
               {t("settingsTitle")}
             </h1>
           </div>
-          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+          <p className="mt-1 text-sm text-muted-foreground">
             {t("settingsSubtitle")}
           </p>
         </div>
@@ -185,7 +185,7 @@ export default function SettingsPage() {
 
       <div className="mx-auto max-w-2xl space-y-6 px-6 py-8">
         {error && (
-          <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-300">
+          <div className="rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
             {error}
           </div>
         )}
@@ -194,7 +194,7 @@ export default function SettingsPage() {
         <SectionCard icon={Monitor} title={t("general")}>
           <div className="space-y-5">
             <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+              <label className="text-sm font-medium text-foreground">
                 {t("language")}
               </label>
               <div className="grid grid-cols-2 gap-3">
@@ -204,7 +204,7 @@ export default function SettingsPage() {
                   className={`rounded-lg border px-4 py-2.5 text-sm font-medium transition-colors ${
                     language === "zh"
                       ? "border-accent bg-accent/10 text-accent"
-                      : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
+                      : "border-input bg-background text-foreground hover:bg-muted"
                   }`}
                 >
                   简体中文
@@ -215,7 +215,7 @@ export default function SettingsPage() {
                   className={`rounded-lg border px-4 py-2.5 text-sm font-medium transition-colors ${
                     language === "en"
                       ? "border-accent bg-accent/10 text-accent"
-                      : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
+                      : "border-input bg-background text-foreground hover:bg-muted"
                   }`}
                 >
                   English
@@ -224,7 +224,7 @@ export default function SettingsPage() {
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+              <label className="text-sm font-medium text-foreground">
                 {t("theme")}
               </label>
               <div className="grid grid-cols-3 gap-3">
@@ -236,7 +236,7 @@ export default function SettingsPage() {
                     className={`rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
                       theme === themeOption
                         ? "border-accent bg-accent/10 text-accent"
-                        : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
+                        : "border-input bg-background text-foreground hover:bg-muted"
                     }`}
                   >
                     {t(themeOption)}
@@ -246,7 +246,7 @@ export default function SettingsPage() {
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+              <label className="text-sm font-medium text-foreground">
                 {t("accentColor")}
               </label>
               <div className="grid grid-cols-4 gap-3">
@@ -258,7 +258,7 @@ export default function SettingsPage() {
                     className={`flex flex-col items-center gap-2 rounded-lg border px-3 py-3 text-sm transition-colors ${
                       accentColor === color
                         ? "border-accent bg-accent/10 text-accent"
-                        : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
+                        : "border-input bg-background text-foreground hover:bg-muted"
                     }`}
                   >
                     <span
@@ -281,7 +281,7 @@ export default function SettingsPage() {
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+              <label className="text-sm font-medium text-foreground">
                 {t("dateFormat")}
               </label>
               <select
@@ -291,7 +291,7 @@ export default function SettingsPage() {
                     e.target.value as "YYYY-MM-DD" | "MM/DD/YYYY" | "DD/MM/YYYY"
                   )
                 }
-                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent"
               >
                 <option value="YYYY-MM-DD">YYYY-MM-DD</option>
                 <option value="MM/DD/YYYY">MM/DD/YYYY</option>
@@ -300,13 +300,13 @@ export default function SettingsPage() {
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+              <label className="text-sm font-medium text-foreground">
                 {t("timeFormat")}
               </label>
               <select
                 value={timeFormat}
                 onChange={(e) => void setTimeFormat(e.target.value as "24h" | "12h")}
-                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent"
               >
                 <option value="24h">24 {t("hour")}</option>
                 <option value="12h">12 {t("hour")}</option>
@@ -317,20 +317,20 @@ export default function SettingsPage() {
 
         {/* Data Management */}
         <SectionCard icon={Database} title={t("dataManagement")}>
-          <p className="mb-4 text-sm text-slate-500 dark:text-slate-400">
+          <p className="mb-4 text-sm text-muted-foreground">
             {t("storageDescription")}
           </p>
-          <div className="mb-4 flex items-center justify-between rounded-lg bg-slate-50 px-4 py-3 dark:bg-slate-800">
-            <span className="text-sm text-slate-600 dark:text-slate-300">
+          <div className="mb-4 flex items-center justify-between rounded-lg bg-muted px-4 py-3">
+            <span className="text-sm text-muted-foreground">
               {t("storageUsage")}
             </span>
-            <span className="text-sm font-medium text-slate-900 dark:text-white">
+            <span className="text-sm font-medium text-foreground">
               {formatStorageUsage(storageUsage)}
             </span>
           </div>
 
           {importError && (
-            <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-300">
+            <div className="mb-4 rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
               {importError}
             </div>
           )}
@@ -348,7 +348,7 @@ export default function SettingsPage() {
               type="button"
               onClick={() => void handleExportJson()}
               disabled={exportingJson}
-              className="inline-flex items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50 dark:bg-indigo-600 dark:hover:bg-indigo-700"
+              className="inline-flex items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:bg-accent/90 disabled:opacity-50"
             >
               <Download className="h-4 w-4" />
               {exportingJson ? t("exporting") : t("exportJson")}
@@ -357,7 +357,7 @@ export default function SettingsPage() {
               type="button"
               onClick={() => void handleExportMarkdown()}
               disabled={exportingMarkdown}
-              className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+              className="inline-flex items-center justify-center gap-2 rounded-lg border border-input bg-background px-4 py-2 text-sm font-medium text-foreground hover:bg-muted disabled:opacity-50"
             >
               <Download className="h-4 w-4" />
               {exportingMarkdown ? t("exporting") : t("exportMarkdown")}
@@ -369,7 +369,7 @@ export default function SettingsPage() {
               type="button"
               onClick={handleImportClick}
               disabled={importing}
-              className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+              className="inline-flex items-center justify-center gap-2 rounded-lg border border-input bg-background px-4 py-2 text-sm font-medium text-foreground hover:bg-muted disabled:opacity-50"
             >
               <Upload className="h-4 w-4" />
               {importing ? t("importing") : t("importJson")}
@@ -378,7 +378,7 @@ export default function SettingsPage() {
               type="button"
               onClick={() => void handleClear()}
               disabled={clearing}
-              className="inline-flex items-center justify-center gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-100 disabled:opacity-50 dark:border-red-900 dark:bg-red-950 dark:text-red-300 dark:hover:bg-red-900"
+              className="inline-flex items-center justify-center gap-2 rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-2 text-sm font-medium text-destructive hover:bg-destructive/20 disabled:opacity-50"
             >
               <Trash2 className="h-4 w-4" />
               {clearing ? t("clearing") : t("clearCache")}
@@ -390,34 +390,34 @@ export default function SettingsPage() {
         <SectionCard icon={Bot} title={t("aiSettings")}>
           <div className="space-y-4">
             <label className="flex items-center justify-between">
-              <span className="text-sm text-slate-700 dark:text-slate-300">
+              <span className="text-sm text-foreground">
                 {t("aiEnabled")}
               </span>
               <input
                 type="checkbox"
                 checked={aiEnabled}
                 onChange={(e) => void setAIEnabled(e.target.checked)}
-                className="h-5 w-5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                className="h-5 w-5 rounded border-input text-accent focus:ring-accent"
               />
             </label>
 
             <label className="flex items-center justify-between">
-              <span className="text-sm text-slate-700 dark:text-slate-300">
+              <span className="text-sm text-foreground">
                 {t("aiPrivacyMode")}
               </span>
               <input
                 type="checkbox"
                 checked={aiPrivacyMode}
                 onChange={(e) => void setAIPrivacyMode(e.target.checked)}
-                className="h-5 w-5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                className="h-5 w-5 rounded border-input text-accent focus:ring-accent"
               />
             </label>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
+            <p className="text-xs text-muted-foreground">
               {t("aiPrivacyModeDescription")}
             </p>
 
             <div className="space-y-1">
-              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+              <span className="text-sm font-medium text-foreground">
                 {t("aiProvider")}
               </span>
               <select
@@ -425,7 +425,7 @@ export default function SettingsPage() {
                 onChange={(e) =>
                   void setAIProvider(e.target.value as AIProviderId)
                 }
-                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent"
               >
                 <option value="mock">{t("providerMock")}</option>
                 <option value="openai">{t("providerOpenAI")}</option>
@@ -438,13 +438,13 @@ export default function SettingsPage() {
                 <option value="ollama">{t("providerOllama")}</option>
                 <option value="custom">{t("providerCustom")}</option>
               </select>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
+              <p className="text-xs text-muted-foreground">
                 {t("currentProvider")}: {activeProviderLabel}
               </p>
             </div>
 
             <div className="space-y-1">
-              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+              <span className="text-sm font-medium text-foreground">
                 {t("aiModel")}
               </span>
               <input
@@ -452,12 +452,12 @@ export default function SettingsPage() {
                 value={aiModel}
                 onChange={(e) => void setAIModel(e.target.value)}
                 placeholder={t("aiModelPlaceholder")}
-                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent"
               />
             </div>
 
             <div className="space-y-1">
-              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+              <span className="text-sm font-medium text-foreground">
                 {t("aiBaseUrl")}
               </span>
               <input
@@ -465,12 +465,12 @@ export default function SettingsPage() {
                 value={aiBaseUrl}
                 onChange={(e) => void setAIBaseUrl(e.target.value)}
                 placeholder={t("aiBaseUrlPlaceholder")}
-                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent"
               />
             </div>
 
             <div className="space-y-1">
-              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+              <span className="text-sm font-medium text-foreground">
                 {t("aiApiKey")}
               </span>
               <input
@@ -478,9 +478,9 @@ export default function SettingsPage() {
                 value={aiApiKey}
                 onChange={(e) => void setAIApiKey(e.target.value)}
                 placeholder={t("aiApiKeyPlaceholder")}
-                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent"
               />
-              <p className="text-xs text-slate-500 dark:text-slate-400">
+              <p className="text-xs text-muted-foreground">
                 {t("keyStoredLocally")}
               </p>
             </div>
@@ -491,24 +491,24 @@ export default function SettingsPage() {
         <SectionCard icon={Info} title={t("about")}>
           <div className="space-y-3 text-sm">
             <div className="flex items-center justify-between">
-              <span className="text-slate-600 dark:text-slate-300">{t("version")}</span>
-              <span className="font-medium text-slate-900 dark:text-white">
+              <span className="text-muted-foreground">{t("version")}</span>
+              <span className="font-medium text-foreground">
                 {pkg.version}
               </span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-slate-600 dark:text-slate-300">{t("storageType")}</span>
-              <span className="font-medium text-slate-900 dark:text-white">
+              <span className="text-muted-foreground">{t("storageType")}</span>
+              <span className="font-medium text-foreground">
                 {t("localStorage")}
               </span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-slate-600 dark:text-slate-300">{t("buildTime")}</span>
-              <span className="font-medium text-slate-900 dark:text-white">
+              <span className="text-muted-foreground">{t("buildTime")}</span>
+              <span className="font-medium text-foreground">
                 {process.env.NEXT_PUBLIC_BUILD_TIME || new Date().toISOString()}
               </span>
             </div>
-            <p className="text-slate-500 dark:text-slate-400">{t("aboutDescription")}</p>
+            <p className="text-muted-foreground">{t("aboutDescription")}</p>
           </div>
         </SectionCard>
       </div>
@@ -526,10 +526,10 @@ function SectionCard({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-xl border border-slate-100 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-800">
+    <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
       <div className="mb-4 flex items-center gap-2">
-        <Icon className="h-5 w-5 text-slate-500 dark:text-slate-400" />
-        <h2 className="text-base font-semibold text-slate-900 dark:text-white">
+        <Icon className="h-5 w-5 text-muted-foreground" />
+        <h2 className="text-base font-semibold text-card-foreground">
           {title}
         </h2>
       </div>

@@ -39,9 +39,9 @@ export function QuickCapture() {
   };
 
   return (
-    <div className="rounded-xl border border-slate-100 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-800">
+    <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
       <form onSubmit={handleSubmit} className="space-y-3">
-        <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400">
+        <div className="flex items-center gap-2 text-muted-foreground">
           <PenLine className="h-4 w-4" />
           <span className="text-sm font-medium">{t("quickCaptureTitle")}</span>
         </div>
@@ -49,7 +49,7 @@ export function QuickCapture() {
         <select
           value={objectId}
           onChange={(e) => setObjectId(e.target.value)}
-          className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+          className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent"
         >
           <option value="" disabled>{t("linkToObject")}</option>
           {sortedObjects.map((obj) => (
@@ -64,14 +64,14 @@ export function QuickCapture() {
           onChange={(e) => setContent(e.target.value)}
           placeholder={t("noteContentPlaceholder")}
           rows={3}
-          className="w-full resize-none rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+          className="w-full resize-none rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent"
         />
 
         <div className="flex justify-end">
           <button
             type="submit"
             disabled={submitting || !objectId || !content.trim()}
-            className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50 dark:bg-indigo-600 dark:hover:bg-indigo-700"
+            className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:bg-accent/90 disabled:opacity-50"
           >
             {submitting ? t("saving") : t("saveNote")}
           </button>

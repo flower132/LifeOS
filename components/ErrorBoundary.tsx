@@ -36,27 +36,27 @@ export class ErrorBoundary extends React.Component<Props, State> {
   render() {
     if (this.state.hasError) {
       return (
-        <div className="flex min-h-screen flex-col items-center justify-center bg-white px-6 text-center dark:bg-slate-900">
+        <div className="flex min-h-screen flex-col items-center justify-center bg-background px-6 text-center">
           <div className="max-w-md space-y-4">
-            <h1 className="text-2xl font-semibold text-slate-900 dark:text-white">
+            <h1 className="text-2xl font-semibold text-foreground">
               出现错误
             </h1>
-            <p className="text-sm text-slate-500 dark:text-slate-400">
+            <p className="text-sm text-muted-foreground">
               应用遇到了意外错误。你的数据安全地保存在 localStorage 中。
             </p>
-            <p className="text-xs text-slate-400 dark:text-slate-500">
+            <p className="text-xs text-muted-foreground">
               The app encountered an unexpected error. Your data is safe in
               localStorage.
             </p>
             {this.state.error && (
-              <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-left text-xs text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-300">
+              <div className="rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 text-left text-xs text-destructive">
                 {this.state.error.message}
               </div>
             )}
             <div className="flex items-center justify-center gap-3 pt-2">
               <Link
                 href="/home"
-                className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 dark:bg-indigo-600 dark:hover:bg-indigo-700"
+                className="inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:bg-accent/90"
               >
                 <Home className="h-4 w-4" />
                 返回首页
@@ -64,7 +64,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
               <button
                 type="button"
                 onClick={this.handleReload}
-                className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+                className="inline-flex items-center gap-2 rounded-lg border border-input bg-background px-4 py-2 text-sm font-medium text-foreground hover:bg-muted"
               >
                 <RotateCcw className="h-4 w-4" />
                 重新加载

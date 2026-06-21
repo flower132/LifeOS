@@ -42,44 +42,44 @@ export function GoalEventInsightCard({ object, notes }: GoalEventInsightCardProp
   const blockers = Array.isArray(insight?.blockers) ? insight.blockers : [];
 
   return (
-    <div className="rounded-xl border border-indigo-100 bg-indigo-50/50 p-5 dark:border-indigo-900 dark:bg-indigo-950/30">
+    <div className="rounded-xl border border-accent/20 bg-accent/5 p-5">
       <div className="mb-4 flex items-center gap-2">
-        <Sparkles className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
-        <h3 className="text-sm font-semibold text-indigo-900 dark:text-indigo-200">
+        <Sparkles className="h-4 w-4 text-accent" />
+        <h3 className="text-sm font-semibold text-foreground">
           {t("aiEventGoalInsight")}
         </h3>
       </div>
 
       {loading ? (
         <div className="space-y-2">
-          <div className="h-4 w-3/4 animate-pulse rounded bg-indigo-100 dark:bg-indigo-900" />
-          <div className="h-4 w-1/2 animate-pulse rounded bg-indigo-100 dark:bg-indigo-900" />
+          <div className="h-4 w-3/4 animate-pulse rounded bg-accent/10" />
+          <div className="h-4 w-1/2 animate-pulse rounded bg-accent/10" />
         </div>
       ) : hasError || !insight ? (
-        <p className="text-sm text-slate-500 dark:text-slate-400">{t("aiUnavailable")}</p>
+        <p className="text-sm text-muted-foreground">{t("aiUnavailable")}</p>
       ) : (
         <div className="space-y-4">
           {summary && (
-            <p className="text-sm leading-relaxed text-slate-700 dark:text-slate-300">
+            <p className="text-sm leading-relaxed text-foreground">
               {summary}
             </p>
           )}
 
           {progressInsight && (
             <div>
-              <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+              <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 {t("progressInsight")}
               </p>
-              <p className="text-sm text-slate-700 dark:text-slate-300">{progressInsight}</p>
+              <p className="text-sm text-foreground">{progressInsight}</p>
             </div>
           )}
 
           {(blockers?.length ?? 0) > 0 && (
             <div>
-              <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+              <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 {t("blockers")}
               </p>
-              <ul className="list-disc space-y-1 pl-4 text-sm text-slate-700 dark:text-slate-300">
+              <ul className="list-disc space-y-1 pl-4 text-sm text-foreground">
                 {blockers.map((item, i) => (
                   <li key={i}>{item}</li>
                 ))}

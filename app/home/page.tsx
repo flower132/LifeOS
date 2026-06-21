@@ -31,13 +31,13 @@ export default function HomePage() {
     .slice(0, 6);
 
   return (
-    <div className="min-h-screen bg-white dark:bg-slate-900">
-      <header className="border-b border-slate-100 bg-white px-6 py-5 dark:border-slate-800 dark:bg-slate-900">
+    <div className="min-h-screen bg-background">
+      <header className="border-b border-border bg-background px-6 py-5">
         <div className="mx-auto max-w-5xl">
-          <h1 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-white">
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
             {t("homeTitle")}
           </h1>
-          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+          <p className="mt-1 text-sm text-muted-foreground">
             {t("homeSubtitle")}
           </p>
         </div>
@@ -49,14 +49,14 @@ export default function HomePage() {
         <section>
           <div className="mb-4 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Users className="h-4 w-4 text-slate-400 dark:text-slate-500" />
-              <h2 className="text-base font-semibold text-slate-900 dark:text-white">
+              <Users className="h-4 w-4 text-muted-foreground" />
+              <h2 className="text-base font-semibold text-foreground">
                 {t("recentObjects")}
               </h2>
             </div>
             <Link
               href="/create-object"
-              className="inline-flex items-center gap-1 rounded-lg bg-slate-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-slate-800 dark:bg-indigo-600 dark:hover:bg-indigo-700"
+              className="inline-flex items-center gap-1 rounded-lg bg-accent px-3 py-1.5 text-sm font-medium text-accent-foreground hover:bg-accent/90"
             >
               <PlusCircle className="h-3.5 w-3.5" />
               {t("new")}
@@ -68,7 +68,7 @@ export default function HomePage() {
               {Array.from({ length: 3 }).map((_, i) => (
                 <div
                   key={i}
-                  className="h-32 animate-pulse rounded-xl bg-slate-100 dark:bg-slate-800"
+                  className="h-32 animate-pulse rounded-xl bg-muted"
                 />
               ))}
             </div>
@@ -79,11 +79,11 @@ export default function HomePage() {
               ))}
             </div>
           ) : (
-            <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-8 text-center dark:border-slate-800 dark:bg-slate-800">
-              <p className="text-sm text-slate-500 dark:text-slate-400">{t("noObjectsYet")}</p>
+            <div className="rounded-xl border border-dashed border-border bg-muted p-8 text-center">
+              <p className="text-sm text-muted-foreground">{t("noObjectsYet")}</p>
               <Link
                 href="/create-object"
-                className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-indigo-600 hover:text-indigo-700"
+                className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-accent hover:text-accent/90"
               >
                 <PlusCircle className="h-3.5 w-3.5" />
                 {t("createObject")}
@@ -95,14 +95,14 @@ export default function HomePage() {
         <section>
           <div className="mb-4 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <StickyNote className="h-4 w-4 text-slate-400 dark:text-slate-500" />
-              <h2 className="text-base font-semibold text-slate-900 dark:text-white">
+              <StickyNote className="h-4 w-4 text-muted-foreground" />
+              <h2 className="text-base font-semibold text-foreground">
                 {t("recentNotes")}
               </h2>
             </div>
             <Link
               href="/create-note"
-              className="text-sm font-medium text-indigo-600 hover:text-indigo-700"
+              className="text-sm font-medium text-accent hover:text-accent/90"
             >
               {t("viewAll")}
             </Link>
@@ -113,7 +113,7 @@ export default function HomePage() {
               {Array.from({ length: 3 }).map((_, i) => (
                 <div
                   key={i}
-                  className="h-24 animate-pulse rounded-xl bg-slate-100 dark:bg-slate-800"
+                  className="h-24 animate-pulse rounded-xl bg-muted"
                 />
               ))}
             </div>
@@ -124,8 +124,8 @@ export default function HomePage() {
               ))}
             </div>
           ) : (
-            <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-8 text-center dark:border-slate-800 dark:bg-slate-800">
-              <p className="text-sm text-slate-500 dark:text-slate-400">{t("noNotesYet")}</p>
+            <div className="rounded-xl border border-dashed border-border bg-muted p-8 text-center">
+              <p className="text-sm text-muted-foreground">{t("noNotesYet")}</p>
             </div>
           )}
         </section>

@@ -44,7 +44,7 @@ export function DevTools() {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="fixed bottom-4 right-4 z-50 rounded-lg bg-slate-900 px-3 py-2 text-xs font-medium text-white shadow-lg hover:bg-slate-800"
+        className="fixed bottom-4 right-4 z-50 rounded-lg bg-accent px-3 py-2 text-xs font-medium text-accent-foreground shadow-lg hover:bg-accent/90"
       >
         DevTools
       </button>
@@ -52,48 +52,48 @@ export function DevTools() {
   }
 
   return (
-    <div className="fixed bottom-4 right-4 z-50 w-80 max-h-[80vh] overflow-auto rounded-xl border border-slate-200 bg-white p-4 shadow-xl dark:border-slate-700 dark:bg-slate-900">
+    <div className="fixed bottom-4 right-4 z-50 w-80 max-h-[80vh] overflow-auto rounded-xl border border-border bg-card p-4 shadow-xl">
       <div className="mb-3 flex items-center justify-between">
-        <span className="text-sm font-semibold text-slate-900 dark:text-white">
+        <span className="text-sm font-semibold text-card-foreground">
           LifeOS DevTools
         </span>
         <button
           type="button"
           onClick={() => setOpen(false)}
-          className="text-xs text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200"
+          className="text-xs text-muted-foreground hover:text-foreground"
         >
           Close
         </button>
       </div>
 
       <div className="space-y-2 text-xs">
-        <div className="flex justify-between rounded bg-slate-50 px-2 py-1 dark:bg-slate-800">
-          <span className="text-slate-500">Objects</span>
-          <span className="font-medium text-slate-900 dark:text-white">{objects.length}</span>
+        <div className="flex justify-between rounded bg-muted px-2 py-1">
+          <span className="text-muted-foreground">Objects</span>
+          <span className="font-medium text-foreground">{objects.length}</span>
         </div>
-        <div className="flex justify-between rounded bg-slate-50 px-2 py-1 dark:bg-slate-800">
-          <span className="text-slate-500">Notes</span>
-          <span className="font-medium text-slate-900 dark:text-white">{notes.length}</span>
+        <div className="flex justify-between rounded bg-muted px-2 py-1">
+          <span className="text-muted-foreground">Notes</span>
+          <span className="font-medium text-foreground">{notes.length}</span>
         </div>
-        <div className="flex justify-between rounded bg-slate-50 px-2 py-1 dark:bg-slate-800">
-          <span className="text-slate-500">Relations</span>
-          <span className="font-medium text-slate-900 dark:text-white">{relations.length}</span>
+        <div className="flex justify-between rounded bg-muted px-2 py-1">
+          <span className="text-muted-foreground">Relations</span>
+          <span className="font-medium text-foreground">{relations.length}</span>
         </div>
-        <div className="flex justify-between rounded bg-slate-50 px-2 py-1 dark:bg-slate-800">
-          <span className="text-slate-500">Tags</span>
-          <span className="font-medium text-slate-900 dark:text-white">{tags.length}</span>
+        <div className="flex justify-between rounded bg-muted px-2 py-1">
+          <span className="text-muted-foreground">Tags</span>
+          <span className="font-medium text-foreground">{tags.length}</span>
         </div>
-        <div className="flex justify-between rounded bg-slate-50 px-2 py-1 dark:bg-slate-800">
-          <span className="text-slate-500">Storage usage</span>
-          <span className="font-medium text-slate-900 dark:text-white">{formatBytes(calculateStorageUsage())}</span>
+        <div className="flex justify-between rounded bg-muted px-2 py-1">
+          <span className="text-muted-foreground">Storage usage</span>
+          <span className="font-medium text-foreground">{formatBytes(calculateStorageUsage())}</span>
         </div>
-        <div className="flex justify-between rounded bg-slate-50 px-2 py-1 dark:bg-slate-800">
-          <span className="text-slate-500">Hydrated</span>
-          <span className="font-medium text-slate-900 dark:text-white">{settingsLoaded ? "yes" : "no"}</span>
+        <div className="flex justify-between rounded bg-muted px-2 py-1">
+          <span className="text-muted-foreground">Hydrated</span>
+          <span className="font-medium text-foreground">{settingsLoaded ? "yes" : "no"}</span>
         </div>
-        <div className="flex justify-between rounded bg-slate-50 px-2 py-1 dark:bg-slate-800">
-          <span className="text-slate-500">Storage version</span>
-          <span className="font-medium text-slate-900 dark:text-white">{STORAGE_VERSION}</span>
+        <div className="flex justify-between rounded bg-muted px-2 py-1">
+          <span className="text-muted-foreground">Storage version</span>
+          <span className="font-medium text-foreground">{STORAGE_VERSION}</span>
         </div>
       </div>
 
@@ -119,7 +119,7 @@ export function DevTools() {
             a.click();
             URL.revokeObjectURL(url);
           }}
-          className="w-full rounded-lg bg-slate-900 px-3 py-2 text-xs font-medium text-white hover:bg-slate-800"
+          className="w-full rounded-lg bg-accent px-3 py-2 text-xs font-medium text-accent-foreground hover:bg-accent/90"
         >
           Export data
         </button>
@@ -132,7 +132,7 @@ export function DevTools() {
               window.location.reload();
             }
           }}
-          className="w-full rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-medium text-red-700 hover:bg-red-100"
+          className="w-full rounded-lg border border-destructive/20 bg-destructive/10 px-3 py-2 text-xs font-medium text-destructive hover:bg-destructive/20"
         >
           Clear all data
         </button>

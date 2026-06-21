@@ -91,17 +91,17 @@ export default function CreateObjectPage() {
   };
 
   return (
-    <div className="min-h-screen bg-white dark:bg-slate-900">
-      <header className="border-b border-slate-100 bg-white px-6 py-5 dark:border-slate-800 dark:bg-slate-900">
+    <div className="min-h-screen bg-background">
+      <header className="border-b border-border bg-background px-6 py-5">
         <div className="mx-auto max-w-2xl">
           <Link
             href="/objects"
-            className="mb-2 inline-flex items-center gap-1 text-xs font-medium text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200"
+            className="mb-2 inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
             {t("backToObjects")}
           </Link>
-          <h1 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-white">
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
             {step === "type" && t("chooseType")}
             {step === "template" && t("chooseTemplate")}
             {step === "form" &&
@@ -109,13 +109,13 @@ export default function CreateObjectPage() {
                 type: t(type),
               })}
           </h1>
-          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+          <p className="mt-1 text-sm text-muted-foreground">
             {step === "type" && t("chooseTypeSubtitle")}
             {step === "template" && t("chooseTemplateSubtitle")}
             {step === "form" && t("createObjectSubtitle")}
           </p>
 
-          <div className="mt-4 flex items-center gap-2 text-xs text-slate-400">
+          <div className="mt-4 flex items-center gap-2 text-xs text-muted-foreground">
             {[
               { key: "type", label: t("type") },
               { key: "template", label: t("selectTemplate") },
@@ -125,8 +125,8 @@ export default function CreateObjectPage() {
                 <span
                   className={`rounded-full px-2 py-0.5 font-medium ${
                     step === item.key
-                      ? "bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300"
-                      : "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400"
+                      ? "bg-accent/10 text-accent"
+                      : "bg-muted text-muted-foreground"
                   }`}
                 >
                   {index + 1}. {item.label}
@@ -150,14 +150,14 @@ export default function CreateObjectPage() {
                   key={typeOption}
                   type="button"
                   onClick={() => handleSelectType(typeOption)}
-                  className="flex flex-col items-start rounded-xl border border-slate-200 bg-white p-5 text-left transition-colors hover:border-indigo-300 hover:bg-indigo-50/50 dark:border-slate-700 dark:bg-slate-800 dark:hover:border-indigo-700 dark:hover:bg-indigo-950/30"
+                  className="flex flex-col items-start rounded-xl border border-input bg-background p-5 text-left transition-colors hover:border-accent hover:bg-accent/5"
                 >
                   <span
                     className={`mb-2 rounded-full px-2.5 py-0.5 text-xs font-medium ${badge.color} ${badge.darkColor}`}
                   >
                     {badge.label}
                   </span>
-                  <span className="text-sm text-slate-500 dark:text-slate-400">
+                  <span className="text-sm text-muted-foreground">
                     {t(`templateCategory_${typeOption}`)}
                   </span>
                 </button>
@@ -175,7 +175,7 @@ export default function CreateObjectPage() {
             <button
               type="button"
               onClick={() => setStep("type")}
-              className="text-sm font-medium text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200"
+              className="text-sm font-medium text-muted-foreground hover:text-foreground"
             >
               ← {t("cancel")}
             </button>
@@ -193,7 +193,7 @@ export default function CreateObjectPage() {
             <button
               type="button"
               onClick={() => setStep("template")}
-              className="text-sm font-medium text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200"
+              className="text-sm font-medium text-muted-foreground hover:text-foreground"
             >
               ← {t("chooseTemplate")}
             </button>

@@ -7,11 +7,11 @@ interface NoteCardProps {
 
 export function NoteCard({ note }: NoteCardProps) {
   return (
-    <div className="rounded-xl border border-slate-100 bg-white p-4 shadow-sm">
-      <div className="mb-2 text-xs font-medium text-slate-400">
+    <div className="rounded-xl border border-border bg-background p-4 shadow-sm">
+      <div className="mb-2 text-xs font-medium text-muted-foreground">
         {formatDateTime(note.created_at)}
       </div>
-      <div className="note-content whitespace-pre-wrap text-sm text-slate-700">
+      <div className="note-content whitespace-pre-wrap text-sm text-foreground">
         {note.content}
       </div>
     </div>

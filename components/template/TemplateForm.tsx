@@ -49,13 +49,13 @@ export function TemplateForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       {error && (
-        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-300">
+        <div className="rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
           {error}
         </div>
       )}
 
       <div className="space-y-2">
-        <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+        <label className="text-sm font-medium text-foreground">
           {t("templateName")}
         </label>
         <input
@@ -63,18 +63,18 @@ export function TemplateForm({
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder={t("namePlaceholder")}
-          className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+          className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-accent focus:ring-2 focus:ring-accent"
         />
       </div>
 
       <div className="space-y-2">
-        <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+        <label className="text-sm font-medium text-foreground">
           {t("templateCategory")}
         </label>
         <select
           value={category}
           onChange={(e) => setCategory(e.target.value as TemplateCategory)}
-          className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+          className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-accent focus:ring-2 focus:ring-accent"
         >
           {TEMPLATE_CATEGORIES.map((cat) => (
             <option key={cat} value={cat}>
@@ -85,7 +85,7 @@ export function TemplateForm({
       </div>
 
       <div className="space-y-2">
-        <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+        <label className="text-sm font-medium text-foreground">
           {t("templateContent")}
         </label>
         <textarea
@@ -93,7 +93,7 @@ export function TemplateForm({
           onChange={(e) => setContent(e.target.value)}
           placeholder={t("contentPlaceholder")}
           rows={10}
-          className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+          className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-accent focus:ring-2 focus:ring-accent"
         />
       </div>
 
@@ -101,14 +101,14 @@ export function TemplateForm({
         <button
           type="button"
           onClick={onCancel}
-          className="rounded-lg px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800"
+          className="rounded-lg px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-muted"
         >
           {t("cancel")}
         </button>
         <button
           type="submit"
           disabled={saving}
-          className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-indigo-600 dark:hover:bg-indigo-700"
+          className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:bg-accent/90 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {saving ? t("saving") : t("saveTemplate")}
         </button>

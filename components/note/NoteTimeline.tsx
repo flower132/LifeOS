@@ -8,8 +8,8 @@ interface NoteTimelineProps {
 export function NoteTimeline({ notes }: NoteTimelineProps) {
   if (notes.length === 0) {
     return (
-      <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-8 text-center">
-        <p className="text-sm text-slate-500">No notes yet. Add one to build this object&apos;s timeline.</p>
+      <div className="rounded-xl border border-dashed border-border bg-muted p-8 text-center">
+        <p className="text-sm text-muted-foreground">No notes yet. Add one to build this object&apos;s timeline.</p>
       </div>
     );
   }

@@ -64,20 +64,20 @@ export function RelationForm({ sourceObjectId, onCreated }: RelationFormProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 rounded-xl border border-slate-100 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-800">
+    <form onSubmit={handleSubmit} className="space-y-4 rounded-xl border border-border bg-muted p-4">
       {error && (
-        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-300">
+        <div className="rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
           {error}
         </div>
       )}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="space-y-1">
-          <label className="text-xs font-medium text-slate-600 dark:text-slate-300">{t("toObject")}</label>
+          <label className="text-xs font-medium text-foreground">{t("toObject")}</label>
           <select
             value={targetObjectId}
             onChange={(e) => setTargetObjectId(e.target.value)}
             disabled={candidates.length === 0}
-            className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+            className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-accent focus:ring-2 focus:ring-accent disabled:bg-muted"
           >
             <option value="" disabled>{t("selectObject")}</option>
             {candidates.map((obj) => (
@@ -89,11 +89,11 @@ export function RelationForm({ sourceObjectId, onCreated }: RelationFormProps) {
         </div>
 
         <div className="space-y-1">
-          <label className="text-xs font-medium text-slate-600 dark:text-slate-300">{t("relationType")}</label>
+          <label className="text-xs font-medium text-foreground">{t("relationType")}</label>
           <select
             value={type}
             onChange={(e) => setType(e.target.value as typeof type)}
-            className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+            className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-accent focus:ring-2 focus:ring-accent"
           >
             {RELATION_TYPES.map((relationType) => (
               <option key={relationType} value={relationType}>
@@ -105,7 +105,7 @@ export function RelationForm({ sourceObjectId, onCreated }: RelationFormProps) {
       </div>
 
       <div className="space-y-1">
-        <label className="text-xs font-medium text-slate-600 dark:text-slate-300">{t("strength")}: {Math.round(strength * 100)}%</label>
+        <label className="text-xs font-medium text-foreground">{t("strength")}: {Math.round(strength * 100)}%</label>
         <input
           type="range"
           min={0}
@@ -113,25 +113,25 @@ export function RelationForm({ sourceObjectId, onCreated }: RelationFormProps) {
           step={0.05}
           value={strength}
           onChange={(e) => setStrength(parseFloat(e.target.value))}
-          className="w-full accent-indigo-600"
+          className="w-full accent-accent"
         />
       </div>
 
       <div className="space-y-1">
-        <label className="text-xs font-medium text-slate-600 dark:text-slate-300">{t("content")}</label>
+        <label className="text-xs font-medium text-foreground">{t("content")}</label>
         <input
           type="text"
           value={note}
           onChange={(e) => setNote(e.target.value)}
           placeholder={t("relationNotePlaceholder")}
-          className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+          className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-accent focus:ring-2 focus:ring-accent"
         />
       </div>
 
       <button
         type="submit"
         disabled={!canSubmit}
-        className="w-full rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
+        className="w-full rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:bg-accent/90 disabled:cursor-not-allowed disabled:opacity-50"
       >
         {submitting ? t("adding") : t("addRelation")}
       </button>

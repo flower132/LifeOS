@@ -78,18 +78,18 @@ export function NoteForm({ initialObjectId }: NoteFormProps) {
   return (
     <form onSubmit={handleSubmit} className="mx-auto max-w-2xl space-y-6">
       {error && (
-        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-300">
+        <div className="rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
           {error}
         </div>
       )}
       <div className="space-y-2">
-        <label className="text-sm font-medium text-slate-700 dark:text-slate-300">{t("linkToObject")}</label>
+        <label className="text-sm font-medium text-foreground">{t("linkToObject")}</label>
         <select
           value={objectId}
           name="object_id"
           onChange={(e) => setObjectId(e.target.value)}
           disabled={!objectsLoaded || sortedObjects.length === 0}
-          className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+          className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-accent focus:ring-2 focus:ring-accent disabled:bg-muted"
         >
           <option value="" disabled>
             {!objectsLoaded ? t("loading") : t("selectObject")}
@@ -103,14 +103,14 @@ export function NoteForm({ initialObjectId }: NoteFormProps) {
       </div>
 
       <div className="space-y-2">
-        <label className="text-sm font-medium text-slate-700 dark:text-slate-300">{t("content")}</label>
+        <label className="text-sm font-medium text-foreground">{t("content")}</label>
         <textarea
           value={content}
           name="content"
           onChange={(e) => setContent(e.target.value)}
           placeholder={t("contentPlaceholder")}
           rows={8}
-          className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+          className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-accent focus:ring-2 focus:ring-accent"
         />
       </div>
 
@@ -118,14 +118,14 @@ export function NoteForm({ initialObjectId }: NoteFormProps) {
         <button
           type="button"
           onClick={() => router.back()}
-          className="rounded-lg px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800"
+          className="rounded-lg px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-muted"
         >
           {t("cancel")}
         </button>
         <button
           type="submit"
           disabled={!canSubmit}
-          className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:bg-accent/90 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {submitting ? t("saving") : t("saveNote")}
         </button>
