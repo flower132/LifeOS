@@ -56,6 +56,9 @@ export function isValidLifeObject(obj: unknown): obj is LifeObject {
   if (o.description !== undefined && typeof o.description !== "string") {
     return false;
   }
+  if (o.properties !== undefined && (typeof o.properties !== "object" || o.properties === null)) {
+    return false;
+  }
 
   return true;
 }

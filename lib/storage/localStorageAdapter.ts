@@ -22,9 +22,10 @@ import {
   validateInputTemplate,
 } from "@/lib/validation";
 import { AppSettings, StorageAdapter } from "./types";
+import { getDefaultProperties } from "@/lib/objectProperties";
 import { DEFAULT_TEMPLATES } from "@/lib/templates/defaultTemplates";
 
-const STORAGE_VERSION = 2;
+const STORAGE_VERSION = 3;
 const VERSION_KEY = "lifeos_version";
 
 const KEYS = {
@@ -202,6 +203,9 @@ export class LocalStorageAdapter implements StorageAdapter {
     if (version < 2) {
       await this.migrateV1ToV2();
     }
+    if (version < 3) {
+      await this.migrateV2ToV3();
+    }
 
     await this.setStorageVersion(STORAGE_VERSION);
   }
@@ -244,6 +248,42 @@ export class LocalStorageAdapter implements StorageAdapter {
       }
     }
     await this.setSettings(settings);
+  }
+
+  private async migrateV2ToV3(): Promise<void> {
+    // Ensure every existing object has a structured properties object.
+    // Existing description is preserved; properties are initialized with
+    // type-specific default empty values so the detail page can render them.
+    const objects = await this.getObjects();
+    const existingTagIds = new Set(
+      (await localStorageAdapter.getTags()).map((tag) => tag.id)
+    );
+    let mutated = false;
+    const migrated = objects.map((object) => {
+      if (object.properties && typeof object.properties === "object") {
+        return object;
+      }
+      mutated = true;
+      return {
+        ...object,
+        properties: getDefaultProperties(),
+        updated_at: now(),
+      };
+    });
+
+    if (mutated) {
+      // Re-sanitize tag references since we are rewriting objects.
+      const sanitized = migrated.map((object) => ({
+        ...object,
+        tag_ids: sanitizeTagIds(object.tag_ids, existingTagIds),
+      }));
+      maybeBackup(KEYS.objects);
+      safeSetItem(KEYS.objects, sanitized);
+      await recalcTagUsage();
+      console.log(
+        `[LifeOS] Migrated ${sanitized.length} objects to include structured properties`
+      );
+    }
   }
 
   // Objects

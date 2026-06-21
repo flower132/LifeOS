@@ -2,13 +2,18 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { LifeObjectType, LIFE_OBJECT_TYPES } from "@/lib/types";
+import {
+  LifeObjectType,
+  LIFE_OBJECT_TYPES,
+  ObjectProperties,
+} from "@/lib/types";
 import { useObjectStore } from "@/stores/objectStore";
 import { TagSelect } from "../tag/TagSelect";
 import { useTranslation } from "@/lib/useTranslation";
 
 interface ObjectFormProps {
   initialDescription?: string;
+  initialProperties?: ObjectProperties;
   templateName?: string;
   type?: LifeObjectType;
   lockType?: boolean;
@@ -16,6 +21,7 @@ interface ObjectFormProps {
 
 export function ObjectForm({
   initialDescription,
+  initialProperties,
   templateName,
   type: initialType = "person",
   lockType = false,
@@ -26,6 +32,9 @@ export function ObjectForm({
   const [type, setType] = useState<LifeObjectType>(initialType);
   const [name, setName] = useState("");
   const [description, setDescription] = useState(initialDescription ?? "");
+  const [properties] = useState<ObjectProperties | undefined>(
+    initialProperties
+  );
   const [tagIds, setTagIds] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -50,6 +59,7 @@ export function ObjectForm({
         type,
         name: trimmedName,
         description: trimmedDescription || undefined,
+        properties,
         tag_ids: tagIds,
       });
       router.push(`/objects/${created.id}`);

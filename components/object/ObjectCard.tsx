@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useMemo } from "react";
 import { LifeObject } from "@/lib/types";
 import { useTagStore } from "@/stores/tagStore";
+import { propertiesToPreview } from "@/lib/objectProperties";
 import { ObjectTypeBadge } from "./ObjectTypeBadge";
 import { TagBadge } from "../tag/TagBadge";
 
@@ -21,6 +22,8 @@ export function ObjectCard({ object }: ObjectCardProps) {
     [tags, object.tag_ids]
   );
 
+  const preview = propertiesToPreview(object.type, object.properties) || object.description;
+
   return (
     <Link
       href={`/objects/${object.id}`}
@@ -32,9 +35,9 @@ export function ObjectCard({ object }: ObjectCardProps) {
       <h3 className="mb-1 text-base font-semibold text-foreground group-hover:text-accent">
         {object.name}
       </h3>
-      {object.description ? (
+      {preview ? (
         <p className="mb-3 line-clamp-2 text-sm text-muted-foreground">
-          {object.description}
+          {preview}
         </p>
       ) : (
         <div className="mb-3" />

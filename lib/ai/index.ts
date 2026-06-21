@@ -1,5 +1,6 @@
 import { LifeObject, Note, Relation } from "@/lib/types";
 import { useSettingsStore } from "@/stores/settingsStore";
+import { propertiesToPromptContext } from "@/lib/objectProperties";
 import { registry } from "./registry";
 import {
   AIProvider,
@@ -93,6 +94,7 @@ function safeJsonParse(text: string): unknown {
 function buildPrompt(
   objectName: string,
   objectDescription: string | undefined,
+  propertiesContext: string | undefined,
   notesText: string,
   relationsText: string | undefined,
   shape: string,
@@ -109,10 +111,11 @@ Rules:
 - Do not invent facts not present in the data.
 - If data is insufficient, say so explicitly in fields.
 - Keep each string concise (1-2 sentences).
+- Prefer the structured Object Properties below over the free-form Description when they conflict.
 - ${langHint}
 
 Object name: ${objectName}
-Description: ${objectDescription || "None"}
+${propertiesContext ? `Object Properties:\n${propertiesContext}\n` : ""}Description: ${objectDescription || "None"}
 
 Notes:
 ${notesText || "None"}
@@ -152,6 +155,7 @@ class AIService {
     const prompt = buildPrompt(
       object.name,
       object.description,
+      propertiesToPromptContext(object.type, object.properties),
       notesToText(notes),
       relationsToText(object.id, relations, getObjectName),
       shape,
@@ -182,6 +186,7 @@ class AIService {
     const prompt = buildPrompt(
       object.name,
       object.description,
+      propertiesToPromptContext(object.type, object.properties),
       notesToText(notes),
       relationsToText(object.id, relations, getObjectName),
       shape,
@@ -209,6 +214,7 @@ class AIService {
     const prompt = buildPrompt(
       object.name,
       object.description,
+      propertiesToPromptContext(object.type, object.properties),
       notesToText(notes),
       undefined,
       shape,

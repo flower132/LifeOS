@@ -8,6 +8,10 @@ import { ObjectForm } from "@/components/object/ObjectForm";
 import { TemplateSelector } from "@/components/template/TemplateSelector";
 import { useTranslation } from "@/lib/useTranslation";
 import { LifeObjectType, LIFE_OBJECT_TYPES, Template } from "@/lib/types";
+import {
+  getDefaultProperties,
+  templateToProperties,
+} from "@/lib/objectProperties";
 import { useTemplateStore } from "@/stores/templateStore";
 
 type CreateStep = "type" | "template" | "form";
@@ -22,6 +26,11 @@ export default function CreateObjectPage() {
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(
     null
   );
+
+  const initialProperties =
+    selectedTemplate
+      ? templateToProperties(type, selectedTemplate.content)
+      : getDefaultProperties();
 
   // Sync step/type/template from URL query params after hydration.
   useEffect(() => {
@@ -188,6 +197,7 @@ export default function CreateObjectPage() {
               type={type}
               lockType
               initialDescription={selectedTemplate?.content}
+              initialProperties={initialProperties}
               templateName={selectedTemplate?.name}
             />
             <button

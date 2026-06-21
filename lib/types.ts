@@ -13,10 +13,13 @@ export interface LifeObject {
   type: LifeObjectType;
   name: string;
   description?: string;
+  properties?: Record<string, unknown>;
   tag_ids: string[];
   created_at: string;
   updated_at: string;
 }
+
+export type ObjectProperties = Record<string, unknown>;
 
 export interface Note {
   id: string;

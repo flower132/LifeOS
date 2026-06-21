@@ -2,7 +2,7 @@
 
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Trash2, StickyNote, Link as LinkIcon, Sparkles } from "lucide-react";
+import { ArrowLeft, Trash2, StickyNote, Link as LinkIcon, Sparkles, Info } from "lucide-react";
 import { useObjectStore } from "@/stores/objectStore";
 import { useNoteStore } from "@/stores/noteStore";
 import { useRelationStore } from "@/stores/relationStore";
@@ -16,7 +16,9 @@ import { RelationForm } from "@/components/relation/RelationForm";
 import { PersonInsightCard } from "@/components/ai/PersonInsightCard";
 import { SelfInsightCard } from "@/components/ai/SelfInsightCard";
 import { GoalEventInsightCard } from "@/components/ai/GoalEventInsightCard";
+import { ObjectPropertiesForm } from "@/components/object/ObjectPropertiesForm";
 import { useTranslation } from "@/lib/useTranslation";
+import { ObjectProperties } from "@/lib/types";
 
 export default function ObjectDetailPage() {
   const params = useParams();
@@ -53,6 +55,11 @@ export default function ObjectDetailPage() {
   const handleTagChange = async (tagIds: string[]) => {
     if (!object) return;
     await updateObject(object.id, { tag_ids: tagIds });
+  };
+
+  const handlePropertiesChange = async (properties: ObjectProperties) => {
+    if (!object) return;
+    await updateObject(object.id, { properties });
   };
 
   if (!objectsLoaded) {
@@ -116,6 +123,23 @@ export default function ObjectDetailPage() {
       </header>
 
       <div className="mx-auto max-w-4xl space-y-10 px-6 py-6">
+        {/* Properties / Basic Info */}
+        <section className="space-y-3">
+          <div className="flex items-center gap-2">
+            <Info className="h-4 w-4 text-muted-foreground" />
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+              {t("basicInfo")}
+            </h2>
+          </div>
+          <div className="rounded-xl border border-border bg-card p-4">
+            <ObjectPropertiesForm
+              key={object.id}
+              object={object}
+              onChange={handlePropertiesChange}
+            />
+          </div>
+        </section>
+
         {/* Tags */}
         <section className="space-y-3">
           <div className="flex items-center gap-2">
