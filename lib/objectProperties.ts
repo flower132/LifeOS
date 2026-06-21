@@ -1,3 +1,4 @@
+import { Language } from "./i18n";
 import { LifeObjectType, ObjectProperties } from "./types";
 
 export type PropertyFieldType =
@@ -10,141 +11,267 @@ export type PropertyFieldType =
 
 export interface PropertyFieldSchema {
   key: string;
-  label: string;
-  labelZh: string;
+  label: { zh: string; en: string };
   type: PropertyFieldType;
-  options?: { value: string; label: string; labelZh: string }[];
-  placeholder?: string;
-  placeholderZh?: string;
+  options?: { value: string; label: { zh: string; en: string } }[];
+  placeholder?: { zh: string; en: string };
 }
 
 const PERSON_SCHEMA: PropertyFieldSchema[] = [
-  { key: "生日", label: "Birthday", labelZh: "生日", type: "date" },
-  { key: "手机号", label: "Phone", labelZh: "手机号", type: "text" },
   {
-    key: "性格",
-    label: "Personality",
-    labelZh: "性格",
+    key: "birthday",
+    label: { zh: "生日", en: "Birthday" },
+    placeholder: { zh: "请选择生日", en: "Select birthday" },
+    type: "date",
+  },
+  {
+    key: "phone",
+    label: { zh: "手机号", en: "Phone" },
+    placeholder: { zh: "请输入手机号", en: "Enter phone number" },
+    type: "text",
+  },
+  {
+    key: "personality",
+    label: { zh: "性格", en: "Personality" },
+    placeholder: { zh: "请输入性格描述", en: "Enter personality description" },
     type: "textarea",
   },
-  { key: "爱好", label: "Hobbies", labelZh: "爱好", type: "tags" },
-  { key: "喜欢", label: "Likes", labelZh: "喜欢", type: "tags" },
-  { key: "不喜欢", label: "Dislikes", labelZh: "不喜欢", type: "tags" },
-  { key: "优点", label: "Strengths", labelZh: "优点", type: "tags" },
-  { key: "缺点", label: "Weaknesses", labelZh: "缺点", type: "tags" },
   {
-    key: "人生格言",
-    label: "Motto",
-    labelZh: "人生格言",
+    key: "hobbies",
+    label: { zh: "爱好", en: "Hobbies" },
+    placeholder: { zh: "请输入爱好，用逗号分隔", en: "Enter hobbies, separated by commas" },
+    type: "tags",
+  },
+  {
+    key: "likes",
+    label: { zh: "喜欢", en: "Likes" },
+    placeholder: { zh: "请输入喜欢的事物", en: "Enter things you like" },
+    type: "tags",
+  },
+  {
+    key: "dislikes",
+    label: { zh: "不喜欢", en: "Dislikes" },
+    placeholder: { zh: "请输入不喜欢的事物", en: "Enter things you dislike" },
+    type: "tags",
+  },
+  {
+    key: "strengths",
+    label: { zh: "优点", en: "Strengths" },
+    placeholder: { zh: "请输入优点", en: "Enter strengths" },
+    type: "tags",
+  },
+  {
+    key: "weaknesses",
+    label: { zh: "缺点", en: "Weaknesses" },
+    placeholder: { zh: "请输入缺点", en: "Enter weaknesses" },
+    type: "tags",
+  },
+  {
+    key: "motto",
+    label: { zh: "人生格言", en: "Motto" },
+    placeholder: { zh: "请输入人生格言", en: "Enter motto" },
     type: "textarea",
   },
-  { key: "姓名", label: "Name", labelZh: "姓名", type: "text" },
-  { key: "昵称", label: "Nickname", labelZh: "昵称", type: "text" },
-  { key: "微信", label: "WeChat", labelZh: "微信", type: "text" },
-  { key: "邮箱", label: "Email", labelZh: "邮箱", type: "text" },
-  { key: "MBTI", label: "MBTI", labelZh: "MBTI", type: "text" },
+  {
+    key: "name",
+    label: { zh: "姓名", en: "Name" },
+    placeholder: { zh: "请输入姓名", en: "Enter name" },
+    type: "text",
+  },
+  {
+    key: "nickname",
+    label: { zh: "昵称", en: "Nickname" },
+    placeholder: { zh: "请输入昵称", en: "Enter nickname" },
+    type: "text",
+  },
+  {
+    key: "wechat",
+    label: { zh: "微信", en: "WeChat" },
+    placeholder: { zh: "请输入微信号", en: "Enter WeChat ID" },
+    type: "text",
+  },
+  {
+    key: "email",
+    label: { zh: "邮箱", en: "Email" },
+    placeholder: { zh: "请输入邮箱", en: "Enter email" },
+    type: "text",
+  },
+  {
+    key: "mbti",
+    label: { zh: "MBTI", en: "MBTI" },
+    placeholder: { zh: "请输入 MBTI", en: "Enter MBTI" },
+    type: "text",
+  },
+  {
+    key: "favorite_food",
+    label: { zh: "爱吃", en: "Favorite Food" },
+    placeholder: { zh: "请输入最爱吃的食物", en: "Enter favorite food" },
+    type: "tags",
+  },
 ];
 
 const SELF_SCHEMA: PropertyFieldSchema[] = [
   {
-    key: "当前目标",
-    label: "Current Goal",
-    labelZh: "当前目标",
+    key: "current_goal",
+    label: { zh: "当前目标", en: "Current Goal" },
+    placeholder: { zh: "请输入当前目标", en: "Enter current goal" },
     type: "textarea",
   },
   {
-    key: "当前状态",
-    label: "Current State",
-    labelZh: "当前状态",
+    key: "current_state",
+    label: { zh: "当前状态", en: "Current State" },
+    placeholder: { zh: "请输入当前状态", en: "Enter current state" },
     type: "textarea",
   },
-  { key: "优势", label: "Strengths", labelZh: "优势", type: "tags" },
-  { key: "短板", label: "Weaknesses", labelZh: "短板", type: "tags" },
   {
-    key: "成长方向",
-    label: "Growth Direction",
-    labelZh: "成长方向",
+    key: "strengths",
+    label: { zh: "优势", en: "Strengths" },
+    placeholder: { zh: "请输入优势", en: "Enter strengths" },
+    type: "tags",
+  },
+  {
+    key: "weaknesses",
+    label: { zh: "短板", en: "Weaknesses" },
+    placeholder: { zh: "请输入短板", en: "Enter weaknesses" },
+    type: "tags",
+  },
+  {
+    key: "growth_direction",
+    label: { zh: "成长方向", en: "Growth Direction" },
+    placeholder: { zh: "请输入成长方向", en: "Enter growth direction" },
     type: "textarea",
   },
-  { key: "年龄", label: "Age", labelZh: "年龄", type: "text" },
-  { key: "职业", label: "Occupation", labelZh: "职业", type: "text" },
-  { key: "城市", label: "City", labelZh: "城市", type: "text" },
+  {
+    key: "age",
+    label: { zh: "年龄", en: "Age" },
+    placeholder: { zh: "请输入年龄", en: "Enter age" },
+    type: "text",
+  },
+  {
+    key: "career",
+    label: { zh: "职业", en: "Career" },
+    placeholder: { zh: "请输入职业", en: "Enter career" },
+    type: "text",
+  },
+  {
+    key: "city",
+    label: { zh: "城市", en: "City" },
+    placeholder: { zh: "请输入城市", en: "Enter city" },
+    type: "text",
+  },
 ];
 
 const GOAL_SCHEMA: PropertyFieldSchema[] = [
   {
-    key: "目标日期",
-    label: "Target Date",
-    labelZh: "目标日期",
+    key: "target_date",
+    label: { zh: "目标日期", en: "Target Date" },
+    placeholder: { zh: "请选择目标日期", en: "Select target date" },
     type: "date",
   },
   {
-    key: "截止时间",
-    label: "Deadline",
-    labelZh: "截止时间",
+    key: "deadline",
+    label: { zh: "截止时间", en: "Deadline" },
+    placeholder: { zh: "请选择截止时间", en: "Select deadline" },
     type: "date",
   },
   {
-    key: "优先级",
-    label: "Priority",
-    labelZh: "优先级",
+    key: "priority",
+    label: { zh: "优先级", en: "Priority" },
+    placeholder: { zh: "请选择优先级", en: "Select priority" },
     type: "select",
     options: [
-      { value: "low", label: "Low", labelZh: "低" },
-      { value: "medium", label: "Medium", labelZh: "中" },
-      { value: "high", label: "High", labelZh: "高" },
+      { value: "low", label: { zh: "低", en: "Low" } },
+      { value: "medium", label: { zh: "中", en: "Medium" } },
+      { value: "high", label: { zh: "高", en: "High" } },
     ],
   },
   {
-    key: "进度",
-    label: "Progress",
-    labelZh: "进度",
+    key: "progress",
+    label: { zh: "进度", en: "Progress" },
+    placeholder: { zh: "请输入进度", en: "Enter progress" },
     type: "number",
   },
   {
-    key: "状态",
-    label: "Status",
-    labelZh: "状态",
+    key: "status",
+    label: { zh: "状态", en: "Status" },
+    placeholder: { zh: "请选择状态", en: "Select status" },
     type: "select",
     options: [
-      { value: "not_started", label: "Not Started", labelZh: "未开始" },
-      { value: "in_progress", label: "In Progress", labelZh: "进行中" },
-      { value: "completed", label: "Completed", labelZh: "已完成" },
-      { value: "paused", label: "Paused", labelZh: "已暂停" },
+      {
+        value: "not_started",
+        label: { zh: "未开始", en: "Not Started" },
+      },
+      {
+        value: "in_progress",
+        label: { zh: "进行中", en: "In Progress" },
+      },
+      {
+        value: "completed",
+        label: { zh: "已完成", en: "Completed" },
+      },
+      {
+        value: "paused",
+        label: { zh: "已暂停", en: "Paused" },
+      },
     ],
   },
 ];
 
 const EVENT_SCHEMA: PropertyFieldSchema[] = [
-  { key: "时间", label: "Date", labelZh: "时间", type: "date" },
-  { key: "日期", label: "Date", labelZh: "日期", type: "date" },
-  { key: "地点", label: "Location", labelZh: "地点", type: "text" },
   {
-    key: "参与人",
-    label: "Participants",
-    labelZh: "参与人",
+    key: "date",
+    label: { zh: "时间", en: "Date" },
+    placeholder: { zh: "请选择时间", en: "Select date" },
+    type: "date",
+  },
+  {
+    key: "date_alt",
+    label: { zh: "日期", en: "Date" },
+    placeholder: { zh: "请选择日期", en: "Select date" },
+    type: "date",
+  },
+  {
+    key: "location",
+    label: { zh: "地点", en: "Location" },
+    placeholder: { zh: "请输入地点", en: "Enter location" },
+    type: "text",
+  },
+  {
+    key: "participants",
+    label: { zh: "参与人", en: "Participants" },
+    placeholder: { zh: "请输入参与人", en: "Enter participants" },
     type: "tags",
   },
-  { key: "结果", label: "Outcome", labelZh: "结果", type: "textarea" },
+  {
+    key: "outcome",
+    label: { zh: "结果", en: "Outcome" },
+    placeholder: { zh: "请输入结果", en: "Enter outcome" },
+    type: "textarea",
+  },
 ];
 
 const IDEA_SCHEMA: PropertyFieldSchema[] = [
-  { key: "分类", label: "Category", labelZh: "分类", type: "text" },
   {
-    key: "可执行性",
-    label: "Feasibility",
-    labelZh: "可执行性",
+    key: "category",
+    label: { zh: "分类", en: "Category" },
+    placeholder: { zh: "请输入分类", en: "Enter category" },
+    type: "text",
+  },
+  {
+    key: "feasibility",
+    label: { zh: "可执行性", en: "Feasibility" },
+    placeholder: { zh: "请选择可执行性", en: "Select feasibility" },
     type: "select",
     options: [
-      { value: "low", label: "Low", labelZh: "低" },
-      { value: "medium", label: "Medium", labelZh: "中" },
-      { value: "high", label: "High", labelZh: "高" },
+      { value: "low", label: { zh: "低", en: "Low" } },
+      { value: "medium", label: { zh: "中", en: "Medium" } },
+      { value: "high", label: { zh: "高", en: "High" } },
     ],
   },
   {
-    key: "下一步行动",
-    label: "Next Action",
-    labelZh: "下一步行动",
+    key: "next_action",
+    label: { zh: "下一步行动", en: "Next Action" },
+    placeholder: { zh: "请输入下一步行动", en: "Enter next action" },
     type: "textarea",
   },
 ];
@@ -176,11 +303,12 @@ function findSchemaByLabel(
 ): PropertyFieldSchema | undefined {
   const schema = PROPERTY_SCHEMAS[type];
   if (!schema) return undefined;
+  const normalized = label.trim().toLowerCase();
   return schema.find(
     (field) =>
-      field.key === label ||
-      field.label.toLowerCase() === label.toLowerCase() ||
-      field.labelZh === label
+      field.label.zh === label ||
+      field.label.en.toLowerCase() === normalized ||
+      field.key.toLowerCase() === normalized
   );
 }
 
@@ -271,8 +399,60 @@ export function templateToProperties(
         properties[key] = parseTags(value);
         break;
       case "select":
-        properties[key] =
-          parseSelectValue(value, schema?.options) ?? value;
+        properties[key] = parseSelectValue(value, schema?.options) ?? value;
+        break;
+      case "text":
+      case "textarea":
+      case "date":
+      default:
+        properties[key] = value;
+        break;
+    }
+  }
+
+  return properties;
+}
+
+/**
+ * Parse a template into an editable property map.
+ * Unlike `templateToProperties`, empty fields are preserved so the editor can
+ * render inputs for every field present in the template.
+ */
+export function templateToEditableProperties(
+  type: LifeObjectType,
+  content: string
+): ObjectProperties {
+  const lines = normalizeLines(content);
+  const properties: Record<string, unknown> = {};
+
+  for (const line of lines) {
+    if (line.startsWith("#")) continue;
+    if (/^[-*\d.]+$/.test(line)) continue;
+
+    const parsed = parseLineValue(line);
+    if (!parsed) continue;
+
+    const { label, value } = parsed;
+    const schema = findSchemaByLabel(type, label);
+    const key = schema?.key ?? label;
+
+    if (!value || value === "-") {
+      properties[key] = "";
+      continue;
+    }
+
+    const fieldType = schema?.type ?? "text";
+    switch (fieldType) {
+      case "number": {
+        const num = parseNumber(value);
+        properties[key] = num !== undefined ? num : "";
+        break;
+      }
+      case "tags":
+        properties[key] = parseTags(value);
+        break;
+      case "select":
+        properties[key] = parseSelectValue(value, schema?.options) ?? value;
         break;
       case "text":
       case "textarea":
@@ -305,11 +485,11 @@ export function guessFieldType(
 export function getPropertyLabel(
   type: LifeObjectType,
   key: string,
-  language: "zh" | "en"
+  language: Language
 ): string {
   const schema = getFieldSchema(type, key);
   if (schema) {
-    return language === "zh" ? schema.labelZh : schema.label;
+    return schema.label[language];
   }
   return key;
 }
@@ -317,11 +497,10 @@ export function getPropertyLabel(
 export function getPropertyPlaceholder(
   type: LifeObjectType,
   key: string,
-  language: "zh" | "en"
+  language: Language
 ): string {
   const schema = getFieldSchema(type, key);
-  if (language === "zh" && schema?.placeholderZh) return schema.placeholderZh;
-  return schema?.placeholder ?? "";
+  return schema?.placeholder?.[language] ?? "";
 }
 
 export function formatPropertyValue(value: unknown): string {
@@ -349,7 +528,8 @@ export function propertiesToPromptContext(
 
 export function propertiesToPreview(
   type: LifeObjectType,
-  properties: ObjectProperties | undefined
+  properties: ObjectProperties | undefined,
+  language: Language
 ): string | undefined {
   if (!properties || Object.keys(properties).length === 0) return undefined;
 
@@ -362,16 +542,67 @@ export function propertiesToPreview(
     const value = properties[key];
     if (value === undefined || value === "" || value === null) continue;
     if (Array.isArray(value) && value.length === 0) continue;
-    parts.push(`${key}：${formatPropertyValue(value)}`);
+    const label = getPropertyLabel(type, key, language);
+    parts.push(`${label}: ${formatPropertyValue(value)}`);
   }
 
   // If no priority keys have values, fall back to first few entries.
   if (parts.length === 0) {
     for (const [key, value] of Object.entries(properties).slice(0, 3)) {
       if (value === undefined || value === "" || value === null) continue;
-      parts.push(`${key}：${formatPropertyValue(value)}`);
+      const label = getPropertyLabel(type, key, language);
+      parts.push(`${label}: ${formatPropertyValue(value)}`);
     }
   }
 
   return parts.length > 0 ? parts.join(" · ") : undefined;
+}
+
+// ---- Migration helpers ------------------------------------------------------
+
+function buildLabelToKeyMap(type: LifeObjectType): Map<string, string> {
+  const map = new Map<string, string>();
+  const schema = PROPERTY_SCHEMAS[type];
+  if (!schema) return map;
+
+  for (const field of schema) {
+    // Map both Chinese and English labels to the stable key.
+    map.set(field.label.zh, field.key);
+    map.set(field.label.en.toLowerCase(), field.key);
+    // Stable key maps to itself.
+    map.set(field.key, field.key);
+    map.set(field.key.toLowerCase(), field.key);
+  }
+
+  return map;
+}
+
+const LABEL_TO_KEY_MAPS: Record<LifeObjectType, Map<string, string>> = {
+  person: buildLabelToKeyMap("person"),
+  self: buildLabelToKeyMap("self"),
+  goal: buildLabelToKeyMap("goal"),
+  event: buildLabelToKeyMap("event"),
+  idea: buildLabelToKeyMap("idea"),
+};
+
+/**
+ * Migrate legacy property keys (e.g. Chinese labels) to stable keys.
+ * Unknown keys are preserved as-is to support user-defined fields.
+ */
+export function migratePropertyKeys(
+  type: LifeObjectType,
+  properties: ObjectProperties | undefined
+): ObjectProperties | undefined {
+  if (!properties || typeof properties !== "object") return properties;
+
+  const map = LABEL_TO_KEY_MAPS[type];
+  if (!map) return properties;
+
+  const migrated: ObjectProperties = {};
+  for (const [key, value] of Object.entries(properties)) {
+    const stableKey = map.get(key) ?? map.get(key.toLowerCase()) ?? key;
+    migrated[stableKey] = value;
+  }
+
+  return migrated;
 }

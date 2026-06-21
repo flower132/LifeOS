@@ -49,6 +49,7 @@ const translations: Record<Language, Record<string, string>> = {
     descriptionPlaceholder: "Optional context...",
     tags: "Tags",
     addTags: "Add tags...",
+    removeTagAria: "Remove {name} tag",
     cancel: "Cancel",
     creating: "Creating...",
 
@@ -289,6 +290,7 @@ const translations: Record<Language, Record<string, string>> = {
 
     // Object properties editor
     editProperties: "Edit Properties",
+    properties: "Properties",
     addProperty: "Add Property",
     deleteProperty: "Delete Property",
     propertyName: "Property Name",
@@ -347,6 +349,7 @@ const translations: Record<Language, Record<string, string>> = {
     descriptionPlaceholder: "可选的上下文...",
     tags: "标签",
     addTags: "添加标签...",
+    removeTagAria: "移除 {name} 标签",
     cancel: "取消",
     creating: "创建中...",
 
@@ -587,6 +590,7 @@ const translations: Record<Language, Record<string, string>> = {
 
     // Object properties editor
     editProperties: "编辑属性",
+    properties: "属性",
     addProperty: "添加属性",
     deleteProperty: "删除属性",
     propertyName: "属性名",

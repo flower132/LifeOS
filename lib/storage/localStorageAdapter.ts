@@ -22,10 +22,10 @@ import {
   validateInputTemplate,
 } from "@/lib/validation";
 import { AppSettings, StorageAdapter } from "./types";
-import { getDefaultProperties } from "@/lib/objectProperties";
-import { DEFAULT_TEMPLATES } from "@/lib/templates/defaultTemplates";
+import { getDefaultProperties, migratePropertyKeys } from "@/lib/objectProperties";
+import { getDefaultTemplates } from "@/lib/templates/defaultTemplates";
 
-const STORAGE_VERSION = 3;
+const STORAGE_VERSION = 4;
 const VERSION_KEY = "lifeos_version";
 
 const KEYS = {
@@ -206,15 +206,20 @@ export class LocalStorageAdapter implements StorageAdapter {
     if (version < 3) {
       await this.migrateV2ToV3();
     }
+    if (version < 4) {
+      await this.migrateV3ToV4();
+    }
 
     await this.setStorageVersion(STORAGE_VERSION);
   }
 
   private async migrateV1ToV2(): Promise<void> {
-    // Inject default templates on first run.
+    // Inject default templates on first run, using the current language.
     const templates = await this.getTemplates();
     if (templates.length === 0) {
-      const initial = DEFAULT_TEMPLATES.map((template) => ({
+      const settings = await this.getSettings();
+      const language = settings.language ?? "en";
+      const initial = getDefaultTemplates(language).map((template) => ({
         ...template,
         id: uuidv4(),
         createdAt: now(),
@@ -282,6 +287,35 @@ export class LocalStorageAdapter implements StorageAdapter {
       await recalcTagUsage();
       console.log(
         `[LifeOS] Migrated ${sanitized.length} objects to include structured properties`
+      );
+    }
+  }
+
+  private async migrateV3ToV4(): Promise<void> {
+    // Migrate legacy Chinese property keys to stable keys for i18n.
+    const objects = await this.getObjects();
+    let mutated = false;
+    const migrated = objects.map((object) => {
+      const migratedProperties = migratePropertyKeys(
+        object.type,
+        object.properties
+      );
+      if (migratedProperties === object.properties) {
+        return object;
+      }
+      mutated = true;
+      return {
+        ...object,
+        properties: migratedProperties,
+        updated_at: now(),
+      };
+    });
+
+    if (mutated) {
+      maybeBackup(KEYS.objects);
+      safeSetItem(KEYS.objects, migrated);
+      console.log(
+        `[LifeOS] Migrated ${migrated.length} objects to stable property keys`
       );
     }
   }

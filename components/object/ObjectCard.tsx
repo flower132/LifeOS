@@ -7,6 +7,7 @@ import { useTagStore } from "@/stores/tagStore";
 import { propertiesToPreview } from "@/lib/objectProperties";
 import { ObjectTypeBadge } from "./ObjectTypeBadge";
 import { TagBadge } from "../tag/TagBadge";
+import { useTranslation } from "@/lib/useTranslation";
 
 interface ObjectCardProps {
   object: LifeObject;
@@ -14,6 +15,7 @@ interface ObjectCardProps {
 
 export function ObjectCard({ object }: ObjectCardProps) {
   const tags = useTagStore((state) => state.tags);
+  const { language } = useTranslation();
   const objectTags = useMemo(
     () =>
       object.tag_ids
@@ -22,7 +24,7 @@ export function ObjectCard({ object }: ObjectCardProps) {
     [tags, object.tag_ids]
   );
 
-  const preview = propertiesToPreview(object.type, object.properties) || object.description;
+  const preview = propertiesToPreview(object.type, object.properties, language) || object.description;
 
   return (
     <Link

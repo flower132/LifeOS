@@ -10,7 +10,7 @@ import { useTranslation } from "@/lib/useTranslation";
 import { LifeObjectType, LIFE_OBJECT_TYPES, Template } from "@/lib/types";
 import {
   getDefaultProperties,
-  templateToProperties,
+  templateToEditableProperties,
 } from "@/lib/objectProperties";
 import { useTemplateStore } from "@/stores/templateStore";
 
@@ -29,7 +29,7 @@ export default function CreateObjectPage() {
 
   const initialProperties =
     selectedTemplate
-      ? templateToProperties(type, selectedTemplate.content)
+      ? templateToEditableProperties(type, selectedTemplate.content)
       : getDefaultProperties();
 
   // Sync step/type/template from URL query params after hydration.
@@ -194,6 +194,7 @@ export default function CreateObjectPage() {
         {step === "form" && (
           <div className="space-y-6">
             <ObjectForm
+              key={selectedTemplate?.id ?? "blank"}
               type={type}
               lockType
               initialDescription={selectedTemplate?.content}

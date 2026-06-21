@@ -1,8 +1,8 @@
 import { storage } from "./storage";
 import { LifeObject, Note, Relation, Tag, Template } from "./types";
-import { getDefaultProperties } from "./objectProperties";
+import { getDefaultProperties, migratePropertyKeys } from "./objectProperties";
 
-const STORAGE_VERSION = 3;
+const STORAGE_VERSION = 4;
 
 export interface ExportedData {
   version: number;
@@ -26,7 +26,7 @@ export async function exportAllData(): Promise<ExportedData> {
   ]);
 
   return {
-    version: 2,
+    version: 4,
     exportedAt: new Date().toISOString(),
     objects,
     notes,
@@ -155,17 +155,26 @@ export async function importAllData(data: unknown): Promise<void> {
 
   const payload = data as Record<string, unknown>;
   const version = typeof payload.version === "number" ? payload.version : 0;
-  if (version < 1 || version > 3) {
+  if (version < 1 || version > 4) {
     throw new Error(`Unsupported export version: ${version}`);
   }
 
   const objects = Array.isArray(payload.objects) ? (payload.objects as LifeObject[]) : [];
-  // Backfill missing properties for objects imported from older exports.
-  const objectsWithProperties = objects.map((object) =>
-    object.properties && typeof object.properties === "object"
-      ? object
-      : { ...object, properties: getDefaultProperties() }
-  );
+  // Backfill missing properties and migrate legacy property keys for older exports.
+  const objectsWithProperties = objects.map((object) => {
+    const withProperties =
+      object.properties && typeof object.properties === "object"
+        ? object
+        : { ...object, properties: getDefaultProperties() };
+    const migratedProperties = migratePropertyKeys(
+      withProperties.type,
+      withProperties.properties
+    );
+    if (migratedProperties === withProperties.properties) {
+      return withProperties;
+    }
+    return { ...withProperties, properties: migratedProperties };
+  });
   const notes = Array.isArray(payload.notes) ? (payload.notes as Note[]) : [];
   const relations = Array.isArray(payload.relations) ? (payload.relations as Relation[]) : [];
   const tags = Array.isArray(payload.tags) ? (payload.tags as Tag[]) : [];

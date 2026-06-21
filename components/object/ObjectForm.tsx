@@ -10,6 +10,7 @@ import {
 import { useObjectStore } from "@/stores/objectStore";
 import { TagSelect } from "../tag/TagSelect";
 import { useTranslation } from "@/lib/useTranslation";
+import { ObjectPropertyEditor } from "./ObjectPropertyEditor";
 
 interface ObjectFormProps {
   initialDescription?: string;
@@ -32,7 +33,7 @@ export function ObjectForm({
   const [type, setType] = useState<LifeObjectType>(initialType);
   const [name, setName] = useState("");
   const [description, setDescription] = useState(initialDescription ?? "");
-  const [properties] = useState<ObjectProperties | undefined>(
+  const [properties, setProperties] = useState<ObjectProperties | undefined>(
     initialProperties
   );
   const [tagIds, setTagIds] = useState<string[]>([]);
@@ -109,6 +110,26 @@ export function ObjectForm({
           className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-accent focus:ring-2 focus:ring-accent"
         />
       </div>
+
+      {properties && Object.keys(properties).length > 0 && (
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <label className="text-sm font-medium text-foreground">
+              {t("properties")}
+            </label>
+            {templateName && (
+              <span className="inline-flex items-center gap-1 text-xs text-accent">
+                {t("preFilledFromTemplate", { name: templateName })}
+              </span>
+            )}
+          </div>
+          <ObjectPropertyEditor
+            type={type}
+            properties={properties}
+            onChange={setProperties}
+          />
+        </div>
+      )}
 
       <div className="space-y-2">
         <div className="flex items-center justify-between">

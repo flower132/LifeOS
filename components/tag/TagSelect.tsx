@@ -10,6 +10,7 @@ import {
 import { TAG_COLORS, Tag } from "@/lib/types";
 import { useTagStore } from "@/stores/tagStore";
 import { useTranslation } from "@/lib/useTranslation";
+import { Language } from "@/lib/i18n";
 import { X, Plus } from "lucide-react";
 
 interface TagSelectProps {
@@ -18,7 +19,13 @@ interface TagSelectProps {
 }
 
 const RECENT_TAGS_KEY = "lifeos_recent_tags";
-const DEFAULT_RECENT_TAG_NAMES = ["家人", "工作", "领导", "重要"];
+
+function getDefaultRecentTagNames(language: Language): string[] {
+  if (language === "zh") {
+    return ["家人", "工作", "领导", "重要"];
+  }
+  return ["Family", "Work", "Leader", "Important"];
+}
 
 function fuzzyMatch(name: string, query: string): boolean {
   if (!query) return true;
@@ -61,7 +68,7 @@ export function TagSelect({ selectedTagIds, onChange }: TagSelectProps) {
   const _loading = useTagStore((s) => s._loading);
   const load = useTagStore((s) => s.load);
   const addTag = useTagStore((s) => s.addTag);
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
 
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
@@ -86,14 +93,15 @@ export function TagSelect({ selectedTagIds, onChange }: TagSelectProps) {
     const savedRecent = readRecentTagIds();
     if (tags.length === 0 && savedRecent.length === 0) {
       seededRef.current = true;
+      const defaultNames = getDefaultRecentTagNames(language);
       const createdIds: string[] = [];
-      for (let i = 0; i < DEFAULT_RECENT_TAG_NAMES.length; i++) {
-        const name = DEFAULT_RECENT_TAG_NAMES[i];
+      for (let i = 0; i < defaultNames.length; i++) {
+        const name = defaultNames[i];
         const color = TAG_COLORS[i % TAG_COLORS.length];
         addTag({ name, color })
           .then((tag) => {
             createdIds.push(tag.id);
-            if (createdIds.length === DEFAULT_RECENT_TAG_NAMES.length) {
+            if (createdIds.length === defaultNames.length) {
               writeRecentTagIds(createdIds);
               setRecentTagIds(createdIds);
             }
@@ -103,7 +111,7 @@ export function TagSelect({ selectedTagIds, onChange }: TagSelectProps) {
           });
       }
     }
-  }, [loaded, tags.length, addTag]);
+  }, [loaded, tags.length, addTag, language]);
 
   // Close dropdown when clicking outside.
   useEffect(() => {
@@ -326,7 +334,7 @@ export function TagSelect({ selectedTagIds, onChange }: TagSelectProps) {
                 removeTag(tag.id);
               }}
               className="ml-0.5 rounded-sm opacity-70 hover:opacity-100 focus:outline-none"
-              aria-label={`Remove ${tag.name} tag`}
+              aria-label={t("removeTagAria", { name: tag.name })}
             >
               <X className="h-3 w-3" />
             </button>
