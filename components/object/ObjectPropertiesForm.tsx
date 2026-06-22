@@ -21,26 +21,24 @@ export function ObjectPropertiesForm({
 }: ObjectPropertiesFormProps) {
   const { t, language } = useTranslation();
   const [isEditing, setIsEditing] = useState(false);
-  const [draft, setDraft] = useState<ObjectProperties | undefined>(
-    object.properties
+  const [draft, setDraft] = useState<ObjectProperties>(
+    object.properties ?? {}
   );
 
   const entries = Object.entries(object.properties ?? {});
 
   const startEditing = () => {
-    setDraft(object.properties);
+    setDraft(object.properties ?? {});
     setIsEditing(true);
   };
 
   const cancelEditing = () => {
-    setDraft(object.properties);
+    setDraft(object.properties ?? {});
     setIsEditing(false);
   };
 
   const saveEditing = async () => {
-    if (draft) {
-      await onChange(draft);
-    }
+    await onChange(draft);
     setIsEditing(false);
   };
 
@@ -82,7 +80,7 @@ export function ObjectPropertiesForm({
     <div className="space-y-4">
       <ObjectPropertyEditor
         type={object.type}
-        properties={draft ?? {}}
+        properties={draft}
         onChange={setDraft}
       />
 

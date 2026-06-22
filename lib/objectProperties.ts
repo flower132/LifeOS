@@ -15,9 +15,22 @@ export interface PropertyFieldSchema {
   type: PropertyFieldType;
   options?: { value: string; label: { zh: string; en: string } }[];
   placeholder?: { zh: string; en: string };
+  legacyLabels?: { zh?: string[]; en?: string[] };
 }
 
 const PERSON_SCHEMA: PropertyFieldSchema[] = [
+  {
+    key: "name",
+    label: { zh: "姓名", en: "Name" },
+    placeholder: { zh: "请输入姓名", en: "Enter name" },
+    type: "text",
+  },
+  {
+    key: "nickname",
+    label: { zh: "昵称", en: "Nickname" },
+    placeholder: { zh: "请输入昵称", en: "Enter nickname" },
+    type: "text",
+  },
   {
     key: "birthday",
     label: { zh: "生日", en: "Birthday" },
@@ -31,9 +44,51 @@ const PERSON_SCHEMA: PropertyFieldSchema[] = [
     type: "text",
   },
   {
+    key: "wechat",
+    label: { zh: "微信", en: "WeChat" },
+    placeholder: { zh: "请输入微信号", en: "Enter WeChat ID" },
+    type: "text",
+  },
+  {
+    key: "email",
+    label: { zh: "邮箱", en: "Email" },
+    placeholder: { zh: "请输入邮箱", en: "Enter email" },
+    type: "text",
+  },
+  {
+    key: "mbti",
+    label: { zh: "MBTI", en: "MBTI" },
+    placeholder: { zh: "请输入 MBTI", en: "Enter MBTI" },
+    type: "text",
+  },
+  {
+    key: "height",
+    label: { zh: "身高", en: "Height" },
+    placeholder: { zh: "请输入身高", en: "Enter height" },
+    type: "text",
+  },
+  {
+    key: "weight",
+    label: { zh: "体重", en: "Weight" },
+    placeholder: { zh: "请输入体重", en: "Enter weight" },
+    type: "text",
+  },
+  {
+    key: "clothing_style",
+    label: { zh: "穿衣风格", en: "Clothing Style" },
+    placeholder: { zh: "请输入穿衣风格", en: "Enter clothing style" },
+    type: "text",
+  },
+  {
     key: "personality",
     label: { zh: "性格", en: "Personality" },
     placeholder: { zh: "请输入性格描述", en: "Enter personality description" },
+    type: "textarea",
+  },
+  {
+    key: "emotional_traits",
+    label: { zh: "情绪特点", en: "Emotional Traits" },
+    placeholder: { zh: "请输入情绪特点", en: "Enter emotional traits" },
     type: "textarea",
   },
   {
@@ -67,33 +122,72 @@ const PERSON_SCHEMA: PropertyFieldSchema[] = [
     type: "tags",
   },
   {
+    key: "favorite_food",
+    label: { zh: "爱吃", en: "Favorite Food" },
+    placeholder: { zh: "请输入最爱吃的食物", en: "Enter favorite food" },
+    type: "tags",
+  },
+  {
+    key: "foods_to_avoid",
+    label: { zh: "忌口", en: "Foods to Avoid" },
+    placeholder: { zh: "请输入忌口食物", en: "Enter foods to avoid" },
+    type: "tags",
+  },
+  {
+    key: "date_met",
+    label: { zh: "认识时间", en: "Date Met" },
+    placeholder: { zh: "请选择认识时间", en: "Select date met" },
+    type: "date",
+  },
+  {
+    key: "relationship_level",
+    label: { zh: "关系等级", en: "Relationship Level" },
+    placeholder: { zh: "请输入关系等级", en: "Enter relationship level" },
+    type: "text",
+  },
+  {
+    key: "mutual_friends",
+    label: { zh: "共同朋友", en: "Mutual Friends" },
+    placeholder: { zh: "请输入共同朋友，用逗号分隔", en: "Enter mutual friends, separated by commas" },
+    type: "tags",
+  },
+  {
+    key: "important_events",
+    label: { zh: "重要事件", en: "Important Events" },
+    placeholder: { zh: "请输入重要事件", en: "Enter important events" },
+    type: "textarea",
+  },
+  {
+    key: "pet_peeves",
+    label: { zh: "雷点", en: "Pet Peeves" },
+    placeholder: { zh: "请输入雷点", en: "Enter pet peeves" },
+    type: "textarea",
+  },
+  {
     key: "motto",
     label: { zh: "人生格言", en: "Motto" },
     placeholder: { zh: "请输入人生格言", en: "Enter motto" },
     type: "textarea",
   },
+];
+
+const SELF_SCHEMA: PropertyFieldSchema[] = [
   {
-    key: "name",
-    label: { zh: "姓名", en: "Name" },
-    placeholder: { zh: "请输入姓名", en: "Enter name" },
+    key: "career",
+    label: { zh: "职业", en: "Career" },
+    placeholder: { zh: "请输入职业", en: "Enter career" },
     type: "text",
   },
   {
-    key: "nickname",
-    label: { zh: "昵称", en: "Nickname" },
-    placeholder: { zh: "请输入昵称", en: "Enter nickname" },
+    key: "income",
+    label: { zh: "收入", en: "Income" },
+    placeholder: { zh: "请输入收入", en: "Enter income" },
     type: "text",
   },
   {
-    key: "wechat",
-    label: { zh: "微信", en: "WeChat" },
-    placeholder: { zh: "请输入微信号", en: "Enter WeChat ID" },
-    type: "text",
-  },
-  {
-    key: "email",
-    label: { zh: "邮箱", en: "Email" },
-    placeholder: { zh: "请输入邮箱", en: "Enter email" },
+    key: "city",
+    label: { zh: "城市", en: "City" },
+    placeholder: { zh: "请输入城市", en: "Enter city" },
     type: "text",
   },
   {
@@ -103,24 +197,15 @@ const PERSON_SCHEMA: PropertyFieldSchema[] = [
     type: "text",
   },
   {
-    key: "favorite_food",
-    label: { zh: "爱吃", en: "Favorite Food" },
-    placeholder: { zh: "请输入最爱吃的食物", en: "Enter favorite food" },
-    type: "tags",
-  },
-];
-
-const SELF_SCHEMA: PropertyFieldSchema[] = [
-  {
-    key: "current_goal",
-    label: { zh: "当前目标", en: "Current Goal" },
-    placeholder: { zh: "请输入当前目标", en: "Enter current goal" },
+    key: "long_term_goals",
+    label: { zh: "长期目标", en: "Long-term Goals" },
+    placeholder: { zh: "请输入长期目标", en: "Enter long-term goals" },
     type: "textarea",
   },
   {
-    key: "current_state",
-    label: { zh: "当前状态", en: "Current State" },
-    placeholder: { zh: "请输入当前状态", en: "Enter current state" },
+    key: "short_term_goals",
+    label: { zh: "短期目标", en: "Short-term Goals" },
+    placeholder: { zh: "请输入短期目标", en: "Enter short-term goals" },
     type: "textarea",
   },
   {
@@ -131,9 +216,28 @@ const SELF_SCHEMA: PropertyFieldSchema[] = [
   },
   {
     key: "weaknesses",
-    label: { zh: "短板", en: "Weaknesses" },
-    placeholder: { zh: "请输入短板", en: "Enter weaknesses" },
+    label: { zh: "弱项", en: "Weaknesses" },
+    placeholder: { zh: "请输入弱项", en: "Enter weaknesses" },
     type: "tags",
+    legacyLabels: { zh: ["短板"] },
+  },
+  {
+    key: "values",
+    label: { zh: "价值观", en: "Values" },
+    placeholder: { zh: "请输入价值观", en: "Enter values" },
+    type: "textarea",
+  },
+  {
+    key: "current_state",
+    label: { zh: "当前状态", en: "Current State" },
+    placeholder: { zh: "请输入当前状态", en: "Enter current state" },
+    type: "textarea",
+  },
+  {
+    key: "current_goal",
+    label: { zh: "当前目标", en: "Current Goal" },
+    placeholder: { zh: "请输入当前目标", en: "Enter current goal" },
+    type: "textarea",
   },
   {
     key: "growth_direction",
@@ -147,31 +251,37 @@ const SELF_SCHEMA: PropertyFieldSchema[] = [
     placeholder: { zh: "请输入年龄", en: "Enter age" },
     type: "text",
   },
-  {
-    key: "career",
-    label: { zh: "职业", en: "Career" },
-    placeholder: { zh: "请输入职业", en: "Enter career" },
-    type: "text",
-  },
-  {
-    key: "city",
-    label: { zh: "城市", en: "City" },
-    placeholder: { zh: "请输入城市", en: "Enter city" },
-    type: "text",
-  },
 ];
 
 const GOAL_SCHEMA: PropertyFieldSchema[] = [
   {
-    key: "target_date",
-    label: { zh: "目标日期", en: "Target Date" },
-    placeholder: { zh: "请选择目标日期", en: "Select target date" },
+    key: "goal_name",
+    label: { zh: "目标名称", en: "Goal Name" },
+    placeholder: { zh: "请输入目标名称", en: "Enter goal name" },
+    type: "text",
+  },
+  {
+    key: "goal_type",
+    label: { zh: "目标类型", en: "Goal Type" },
+    placeholder: { zh: "请输入目标类型", en: "Enter goal type" },
+    type: "text",
+  },
+  {
+    key: "start_time",
+    label: { zh: "开始时间", en: "Start Time" },
+    placeholder: { zh: "请选择开始时间", en: "Select start time" },
     type: "date",
   },
   {
     key: "deadline",
     label: { zh: "截止时间", en: "Deadline" },
     placeholder: { zh: "请选择截止时间", en: "Select deadline" },
+    type: "date",
+  },
+  {
+    key: "target_date",
+    label: { zh: "目标日期", en: "Target Date" },
+    placeholder: { zh: "请选择目标日期", en: "Select target date" },
     type: "date",
   },
   {
@@ -186,16 +296,11 @@ const GOAL_SCHEMA: PropertyFieldSchema[] = [
     ],
   },
   {
-    key: "progress",
-    label: { zh: "进度", en: "Progress" },
-    placeholder: { zh: "请输入进度", en: "Enter progress" },
-    type: "number",
-  },
-  {
     key: "status",
-    label: { zh: "状态", en: "Status" },
-    placeholder: { zh: "请选择状态", en: "Select status" },
+    label: { zh: "当前状态", en: "Current Status" },
+    placeholder: { zh: "请选择当前状态", en: "Select current status" },
     type: "select",
+    legacyLabels: { zh: ["状态"] },
     options: [
       {
         value: "not_started",
@@ -215,20 +320,52 @@ const GOAL_SCHEMA: PropertyFieldSchema[] = [
       },
     ],
   },
+  {
+    key: "success_criteria",
+    label: { zh: "成功标准", en: "Success Criteria" },
+    placeholder: { zh: "请输入成功标准", en: "Enter success criteria" },
+    type: "textarea",
+  },
+  {
+    key: "motivation",
+    label: { zh: "动机", en: "Motivation" },
+    placeholder: { zh: "请输入动机", en: "Enter motivation" },
+    type: "textarea",
+  },
+  {
+    key: "obstacles",
+    label: { zh: "障碍", en: "Obstacles" },
+    placeholder: { zh: "请输入障碍", en: "Enter obstacles" },
+    type: "textarea",
+  },
+  {
+    key: "next_action",
+    label: { zh: "下一步行动", en: "Next Action" },
+    placeholder: { zh: "请输入下一步行动", en: "Enter next action" },
+    type: "textarea",
+  },
+  {
+    key: "progress",
+    label: { zh: "完成进度", en: "Completion Progress" },
+    placeholder: { zh: "请输入完成进度", en: "Enter completion progress" },
+    type: "number",
+    legacyLabels: { zh: ["进度"] },
+  },
 ];
 
 const EVENT_SCHEMA: PropertyFieldSchema[] = [
   {
-    key: "date",
-    label: { zh: "时间", en: "Date" },
-    placeholder: { zh: "请选择时间", en: "Select date" },
-    type: "date",
+    key: "event_name",
+    label: { zh: "事件名称", en: "Event Name" },
+    placeholder: { zh: "请输入事件名称", en: "Enter event name" },
+    type: "text",
   },
   {
-    key: "date_alt",
-    label: { zh: "日期", en: "Date" },
-    placeholder: { zh: "请选择日期", en: "Select date" },
+    key: "date",
+    label: { zh: "发生时间", en: "Time" },
+    placeholder: { zh: "请选择发生时间", en: "Select time" },
     type: "date",
+    legacyLabels: { zh: ["时间"] },
   },
   {
     key: "location",
@@ -243,19 +380,73 @@ const EVENT_SCHEMA: PropertyFieldSchema[] = [
     type: "tags",
   },
   {
+    key: "process",
+    label: { zh: "经过", en: "Process" },
+    placeholder: { zh: "请输入经过", en: "Enter process" },
+    type: "textarea",
+  },
+  {
     key: "outcome",
     label: { zh: "结果", en: "Outcome" },
     placeholder: { zh: "请输入结果", en: "Enter outcome" },
     type: "textarea",
   },
+  {
+    key: "reflection",
+    label: { zh: "反思", en: "Reflection" },
+    placeholder: { zh: "请输入反思", en: "Enter reflection" },
+    type: "textarea",
+  },
+  {
+    key: "impact",
+    label: { zh: "影响", en: "Impact" },
+    placeholder: { zh: "请输入影响", en: "Enter impact" },
+    type: "textarea",
+  },
+  {
+    key: "date_alt",
+    label: { zh: "日期", en: "Date" },
+    placeholder: { zh: "请选择日期", en: "Select date" },
+    type: "date",
+  },
 ];
 
 const IDEA_SCHEMA: PropertyFieldSchema[] = [
+  {
+    key: "idea_title",
+    label: { zh: "想法标题", en: "Idea Title" },
+    placeholder: { zh: "请输入想法标题", en: "Enter idea title" },
+    type: "text",
+  },
+  {
+    key: "source",
+    label: { zh: "来源", en: "Source" },
+    placeholder: { zh: "请输入来源", en: "Enter source" },
+    type: "text",
+  },
+  {
+    key: "inspiration_time",
+    label: { zh: "灵感时间", en: "Inspiration Time" },
+    placeholder: { zh: "请选择灵感时间", en: "Select inspiration time" },
+    type: "date",
+  },
   {
     key: "category",
     label: { zh: "分类", en: "Category" },
     placeholder: { zh: "请输入分类", en: "Enter category" },
     type: "text",
+  },
+  {
+    key: "core_content",
+    label: { zh: "核心内容", en: "Core Content" },
+    placeholder: { zh: "请输入核心内容", en: "Enter core content" },
+    type: "textarea",
+  },
+  {
+    key: "value",
+    label: { zh: "价值", en: "Value" },
+    placeholder: { zh: "请输入价值", en: "Enter value" },
+    type: "textarea",
   },
   {
     key: "feasibility",
@@ -269,9 +460,21 @@ const IDEA_SCHEMA: PropertyFieldSchema[] = [
     ],
   },
   {
+    key: "risks",
+    label: { zh: "风险", en: "Risks" },
+    placeholder: { zh: "请输入风险", en: "Enter risks" },
+    type: "textarea",
+  },
+  {
     key: "next_action",
     label: { zh: "下一步行动", en: "Next Action" },
     placeholder: { zh: "请输入下一步行动", en: "Enter next action" },
+    type: "textarea",
+  },
+  {
+    key: "next_validation",
+    label: { zh: "下一步验证", en: "Next Validation" },
+    placeholder: { zh: "请输入下一步验证", en: "Enter next validation" },
     type: "textarea",
   },
 ];
@@ -286,6 +489,19 @@ export const PROPERTY_SCHEMAS: Record<LifeObjectType, PropertyFieldSchema[]> = {
 
 export function getDefaultProperties(): ObjectProperties {
   return {};
+}
+
+/**
+ * Return a full set of empty properties for a given object type.
+ * Used as a fallback when template parsing yields an empty object.
+ */
+export function getDefaultPropertiesForType(
+  type: LifeObjectType
+): ObjectProperties {
+  const schema = PROPERTY_SCHEMAS[type];
+  if (!schema) return {};
+
+  return Object.fromEntries(schema.map((field) => [field.key, ""]));
 }
 
 // ---- Template parsing -------------------------------------------------------
@@ -572,6 +788,17 @@ function buildLabelToKeyMap(type: LifeObjectType): Map<string, string> {
     // Stable key maps to itself.
     map.set(field.key, field.key);
     map.set(field.key.toLowerCase(), field.key);
+    // Legacy labels for backward-compatible migration.
+    if (field.legacyLabels?.zh) {
+      for (const label of field.legacyLabels.zh) {
+        map.set(label, field.key);
+      }
+    }
+    if (field.legacyLabels?.en) {
+      for (const label of field.legacyLabels.en) {
+        map.set(label.toLowerCase(), field.key);
+      }
+    }
   }
 
   return map;

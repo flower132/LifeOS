@@ -43,6 +43,7 @@ export function TemplateForm({
       category,
       isDefault: false,
       content: content.trim(),
+      templateVersion: 1,
     });
   };
 

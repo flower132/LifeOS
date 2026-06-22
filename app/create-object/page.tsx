@@ -10,6 +10,7 @@ import { useTranslation } from "@/lib/useTranslation";
 import { LifeObjectType, LIFE_OBJECT_TYPES, Template } from "@/lib/types";
 import {
   getDefaultProperties,
+  getDefaultPropertiesForType,
   templateToEditableProperties,
 } from "@/lib/objectProperties";
 import { useTemplateStore } from "@/stores/templateStore";
@@ -27,10 +28,17 @@ export default function CreateObjectPage() {
     null
   );
 
-  const initialProperties =
-    selectedTemplate
-      ? templateToEditableProperties(type, selectedTemplate.content)
-      : getDefaultProperties();
+  const initialProperties = (() => {
+    if (!selectedTemplate) return getDefaultProperties();
+    const parsed = templateToEditableProperties(
+      type,
+      selectedTemplate.content
+    );
+    if (Object.keys(parsed).length === 0) {
+      return getDefaultPropertiesForType(type);
+    }
+    return parsed;
+  })();
 
   // Sync step/type/template from URL query params after hydration.
   useEffect(() => {
@@ -197,7 +205,6 @@ export default function CreateObjectPage() {
               key={selectedTemplate?.id ?? "blank"}
               type={type}
               lockType
-              initialDescription={selectedTemplate?.content}
               initialProperties={initialProperties}
               templateName={selectedTemplate?.name}
             />

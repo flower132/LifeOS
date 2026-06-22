@@ -103,6 +103,7 @@ export interface Template {
   category: TemplateCategory;
   isDefault: boolean;
   content: string;
+  templateVersion: number;
   createdAt: string;
   updatedAt: string;
   usageCount: number;

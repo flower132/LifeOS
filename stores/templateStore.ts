@@ -127,6 +127,7 @@ export const useTemplateStore = create<TemplateState>((set, get) => {
         category: original.category,
         isDefault: false,
         content: original.content,
+        templateVersion: 1,
       };
 
       return get().addTemplate(copy);

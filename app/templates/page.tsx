@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -12,6 +12,7 @@ import {
 import { useTemplateStore } from "@/stores/templateStore";
 import { useTranslation } from "@/lib/useTranslation";
 import { Template, TemplateCategory, TEMPLATE_CATEGORIES } from "@/lib/types";
+import { storage } from "@/lib/storage";
 import { TemplateList } from "@/components/template/TemplateList";
 import { TemplateForm } from "@/components/template/TemplateForm";
 
@@ -31,6 +32,14 @@ export default function TemplatesPage() {
   );
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    // Replenish missing or outdated default templates when entering the library.
+    void (async () => {
+      await storage.ensureDefaultTemplates();
+      await useTemplateStore.getState().load();
+    })();
+  }, []);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();

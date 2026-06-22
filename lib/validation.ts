@@ -165,6 +165,12 @@ export function isValidTemplate(obj: unknown): obj is Template {
   if (!VALID_TEMPLATE_CATEGORIES.has(t.category as string)) return false;
   if (typeof t.isDefault !== "boolean") return false;
   if (typeof t.content !== "string") return false;
+  if (
+    t.templateVersion !== undefined &&
+    typeof t.templateVersion !== "number"
+  ) {
+    return false;
+  }
   if (!isValidIsoDate(t.createdAt)) return false;
   if (!isValidIsoDate(t.updatedAt)) return false;
   if (typeof t.usageCount !== "number" || t.usageCount < 0) return false;
@@ -185,5 +191,8 @@ export function validateInputTemplate(template: TemplateCreateInput): void {
   }
   if (typeof template.content !== "string") {
     throw new Error("Template content must be a string");
+  }
+  if (typeof template.templateVersion !== "number") {
+    throw new Error("Template templateVersion must be a number");
   }
 }

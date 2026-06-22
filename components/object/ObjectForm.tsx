@@ -33,8 +33,8 @@ export function ObjectForm({
   const [type, setType] = useState<LifeObjectType>(initialType);
   const [name, setName] = useState("");
   const [description, setDescription] = useState(initialDescription ?? "");
-  const [properties, setProperties] = useState<ObjectProperties | undefined>(
-    initialProperties
+  const [properties, setProperties] = useState<ObjectProperties>(
+    initialProperties ?? {}
   );
   const [tagIds, setTagIds] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
@@ -111,44 +111,28 @@ export function ObjectForm({
         />
       </div>
 
-      {properties && Object.keys(properties).length > 0 && (
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <label className="text-sm font-medium text-foreground">
-              {t("properties")}
-            </label>
-            {templateName && (
-              <span className="inline-flex items-center gap-1 text-xs text-accent">
-                {t("preFilledFromTemplate", { name: templateName })}
-              </span>
-            )}
-          </div>
-          <ObjectPropertyEditor
-            type={type}
-            properties={properties}
-            onChange={setProperties}
-          />
-        </div>
-      )}
-
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <label className="text-sm font-medium text-foreground">
-            {t("description")}
+            {t("properties")}
           </label>
           {templateName && (
             <span className="inline-flex items-center gap-1 text-xs text-accent">
               {t("preFilledFromTemplate", { name: templateName })}
-              <button
-                type="button"
-                onClick={() => setDescription("")}
-                className="ml-1 rounded px-1 text-xs text-muted-foreground hover:bg-muted hover:text-foreground"
-              >
-                {t("clearTemplate")}
-              </button>
             </span>
           )}
         </div>
+        <ObjectPropertyEditor
+          type={type}
+          properties={properties}
+          onChange={setProperties}
+        />
+      </div>
+
+      <div className="space-y-2">
+        <label className="text-sm font-medium text-foreground">
+          {t("description")}
+        </label>
         <textarea
           name="description"
           value={description}

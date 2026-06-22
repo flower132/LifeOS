@@ -46,6 +46,10 @@ export class SupabaseAdapter implements StorageAdapter {
     throw new Error("SupabaseAdapter.migrateIfNeeded not implemented");
   }
 
+  async ensureDefaultTemplates(): Promise<void> {
+    throw new Error("SupabaseAdapter.ensureDefaultTemplates not implemented");
+  }
+
   // Objects
   async getObjects(): Promise<LifeObject[]> {
     throw new Error("SupabaseAdapter.getObjects not implemented");

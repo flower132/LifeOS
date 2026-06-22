@@ -22,10 +22,19 @@ import {
   validateInputTemplate,
 } from "@/lib/validation";
 import { AppSettings, StorageAdapter } from "./types";
-import { getDefaultProperties, migratePropertyKeys } from "@/lib/objectProperties";
-import { getDefaultTemplates } from "@/lib/templates/defaultTemplates";
+import {
+  getDefaultProperties,
+  migratePropertyKeys,
+  PROPERTY_SCHEMAS,
+  templateToProperties,
+} from "@/lib/objectProperties";
+import {
+  getDefaultTemplates,
+  CURRENT_TEMPLATE_VERSION,
+  migrateLegacyTemplateContent,
+} from "@/lib/templates/defaultTemplates";
 
-const STORAGE_VERSION = 4;
+const STORAGE_VERSION = 5;
 const VERSION_KEY = "lifeos_version";
 
 const KEYS = {
@@ -153,6 +162,42 @@ async function assertObjectExists(objectId: string, label: string): Promise<void
   }
 }
 
+function looksLikeTemplateContent(
+  content: string,
+  type: string,
+  schemaLabelsByType: Record<string, Set<string>>
+): boolean {
+  const schemaLabels = schemaLabelsByType[type];
+  if (!schemaLabels) return false;
+
+  const lines = content
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0);
+
+  // Short free-text descriptions are unlikely to be templates.
+  if (lines.length < 3) return false;
+
+  let labelMatches = 0;
+  let labelLines = 0;
+
+  for (const line of lines) {
+    const match = line.match(/^(.+?)[：:]\s*(.*)$/);
+    if (!match) continue;
+    const label = match[1].trim().toLowerCase();
+    if (!label) continue;
+    labelLines++;
+    if (schemaLabels.has(label)) {
+      labelMatches++;
+    }
+  }
+
+  // Consider it a template if a majority of labeled lines match known schema
+  // labels, or if it contains markdown headings.
+  const hasHeadings = lines.some((line) => line.startsWith("#"));
+  return hasHeadings || (labelLines > 0 && labelMatches / labelLines >= 0.5);
+}
+
 function sanitizeTagIds(tagIds: string[], existingTagIds: Set<string>): string[] {
   const sanitized: string[] = [];
   for (const id of tagIds) {
@@ -193,6 +238,10 @@ export class LocalStorageAdapter implements StorageAdapter {
   }
 
   async migrateIfNeeded(): Promise<void> {
+    // Always ensure default templates are present and up-to-date, regardless of
+    // storage version. This repairs old default templates stored in localStorage.
+    await this.ensureDefaultTemplates();
+
     const version = await this.getStorageVersion();
     if (version >= STORAGE_VERSION) return;
 
@@ -208,6 +257,9 @@ export class LocalStorageAdapter implements StorageAdapter {
     }
     if (version < 4) {
       await this.migrateV3ToV4();
+    }
+    if (version < 5) {
+      await this.migrateV4ToV5();
     }
 
     await this.setStorageVersion(STORAGE_VERSION);
@@ -316,6 +368,147 @@ export class LocalStorageAdapter implements StorageAdapter {
       safeSetItem(KEYS.objects, migrated);
       console.log(
         `[LifeOS] Migrated ${migrated.length} objects to stable property keys`
+      );
+    }
+  }
+
+  private async migrateV4ToV5(): Promise<void> {
+    // Stop storing raw template markdown in description. For objects whose
+    // description looks like an auto-generated default template, parse any
+    // remaining fields into properties and clear the description. Manual
+    // descriptions are left untouched.
+    const objects = await this.getObjects();
+    const schemaLabelsByType: Record<string, Set<string>> = Object.fromEntries(
+      Object.entries(PROPERTY_SCHEMAS).map(([type, fields]) => [
+        type,
+        new Set(
+          fields.flatMap((f) => [
+            f.label.zh,
+            f.label.en.toLowerCase(),
+            ...(f.legacyLabels?.zh ?? []),
+            ...(f.legacyLabels?.en?.map((l) => l.toLowerCase()) ?? []),
+          ])
+        ),
+      ])
+    );
+
+    let mutated = false;
+    const migrated = objects.map((object) => {
+      let nextProperties = object.properties;
+      let nextDescription = object.description;
+
+      if (
+        object.description &&
+        typeof object.description === "string" &&
+        looksLikeTemplateContent(object.description, object.type, schemaLabelsByType)
+      ) {
+        const parsed = templateToProperties(object.type, object.description);
+        nextProperties = { ...parsed, ...object.properties };
+        nextDescription = undefined;
+      }
+
+      const migratedProperties = migratePropertyKeys(
+        object.type,
+        nextProperties
+      );
+
+      if (
+        migratedProperties === object.properties &&
+        nextDescription === object.description
+      ) {
+        return object;
+      }
+
+      mutated = true;
+      const next: LifeObject = {
+        ...object,
+        properties: migratedProperties,
+        updated_at: now(),
+      };
+      if (nextDescription !== object.description) {
+        next.description = nextDescription;
+      }
+      return next;
+    });
+
+    if (mutated) {
+      maybeBackup(KEYS.objects);
+      safeSetItem(KEYS.objects, migrated);
+      console.log(
+        `[LifeOS] Migrated ${migrated.length} objects to template-in-properties (v5)`
+      );
+    }
+  }
+
+  async ensureDefaultTemplates(): Promise<void> {
+    // Ensure all default templates exist and are up-to-date. Old default
+    // templates stored in localStorage are upgraded to the latest content and
+    // version, while preserving id/createdAt/usageCount/lastUsedAt.
+    const settings = await this.getSettings();
+    const language = settings.language ?? "en";
+    const latestDefaults = getDefaultTemplates(language);
+    const latestByCategory = new Map(
+      latestDefaults.map((template) => [template.category, template])
+    );
+
+    const storedTemplates = await this.getTemplates();
+    const storedByCategory = new Map(
+      storedTemplates
+        .filter((template) => template.isDefault)
+        .map((template) => [template.category, template])
+    );
+
+    let mutated = false;
+    const nextTemplates: Template[] = [];
+
+    for (const template of storedTemplates) {
+      const latest = latestByCategory.get(template.category);
+      if (!latest || !template.isDefault) {
+        nextTemplates.push(template);
+        continue;
+      }
+
+      const currentVersion = template.templateVersion ?? 0;
+      const needsUpgrade = currentVersion < CURRENT_TEMPLATE_VERSION;
+      const migratedContent = migrateLegacyTemplateContent(template.content);
+      const contentChanged =
+        migratedContent !== template.content ||
+        template.name !== latest.name ||
+        needsUpgrade;
+
+      if (contentChanged) {
+        mutated = true;
+        nextTemplates.push({
+          ...template,
+          name: latest.name,
+          content: migratedContent,
+          templateVersion: CURRENT_TEMPLATE_VERSION,
+          updatedAt: now(),
+        });
+      } else {
+        nextTemplates.push(template);
+      }
+    }
+
+    // Add any missing default templates.
+    for (const latest of latestDefaults) {
+      if (!storedByCategory.has(latest.category)) {
+        mutated = true;
+        nextTemplates.push({
+          ...latest,
+          id: uuidv4(),
+          createdAt: now(),
+          updatedAt: now(),
+          usageCount: 0,
+        });
+      }
+    }
+
+    if (mutated) {
+      maybeBackup(KEYS.templates);
+      safeSetItem(KEYS.templates, nextTemplates);
+      console.log(
+        `[LifeOS] Ensured default templates are up-to-date (version ${CURRENT_TEMPLATE_VERSION})`
       );
     }
   }

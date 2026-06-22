@@ -1,8 +1,13 @@
 import { storage } from "./storage";
 import { LifeObject, Note, Relation, Tag, Template } from "./types";
-import { getDefaultProperties, migratePropertyKeys } from "./objectProperties";
+import {
+  getDefaultProperties,
+  migratePropertyKeys,
+  PROPERTY_SCHEMAS,
+  templateToProperties,
+} from "./objectProperties";
 
-const STORAGE_VERSION = 4;
+const STORAGE_VERSION = 5;
 
 export interface ExportedData {
   version: number;
@@ -13,6 +18,39 @@ export interface ExportedData {
   tags: unknown;
   templates: unknown;
   settings: unknown;
+}
+
+function looksLikeTemplateContent(
+  content: string,
+  type: string,
+  schemaLabelsByType: Record<string, Set<string>>
+): boolean {
+  const schemaLabels = schemaLabelsByType[type];
+  if (!schemaLabels) return false;
+
+  const lines = content
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0);
+
+  if (lines.length < 3) return false;
+
+  let labelMatches = 0;
+  let labelLines = 0;
+
+  for (const line of lines) {
+    const match = line.match(/^(.+?)[：:]\s*(.*)$/);
+    if (!match) continue;
+    const label = match[1].trim().toLowerCase();
+    if (!label) continue;
+    labelLines++;
+    if (schemaLabels.has(label)) {
+      labelMatches++;
+    }
+  }
+
+  const hasHeadings = lines.some((line) => line.startsWith("#"));
+  return hasHeadings || (labelLines > 0 && labelMatches / labelLines >= 0.5);
 }
 
 export async function exportAllData(): Promise<ExportedData> {
@@ -26,7 +64,7 @@ export async function exportAllData(): Promise<ExportedData> {
   ]);
 
   return {
-    version: 4,
+    version: 5,
     exportedAt: new Date().toISOString(),
     objects,
     notes,
@@ -155,25 +193,61 @@ export async function importAllData(data: unknown): Promise<void> {
 
   const payload = data as Record<string, unknown>;
   const version = typeof payload.version === "number" ? payload.version : 0;
-  if (version < 1 || version > 4) {
+  if (version < 1 || version > 5) {
     throw new Error(`Unsupported export version: ${version}`);
   }
 
   const objects = Array.isArray(payload.objects) ? (payload.objects as LifeObject[]) : [];
+  const schemaLabelsByType: Record<string, Set<string>> = Object.fromEntries(
+    Object.entries(PROPERTY_SCHEMAS).map(([type, fields]) => [
+      type,
+      new Set(
+        fields.flatMap((f) => [
+          f.label.zh,
+          f.label.en.toLowerCase(),
+          ...(f.legacyLabels?.zh ?? []),
+          ...(f.legacyLabels?.en?.map((l) => l.toLowerCase()) ?? []),
+        ])
+      ),
+    ])
+  );
+
   // Backfill missing properties and migrate legacy property keys for older exports.
+  // Also parse any auto-generated template markdown still living in description.
   const objectsWithProperties = objects.map((object) => {
     const withProperties =
       object.properties && typeof object.properties === "object"
         ? object
         : { ...object, properties: getDefaultProperties() };
+
+    let nextProperties = withProperties.properties;
+    let nextDescription = withProperties.description;
+    if (
+      withProperties.description &&
+      typeof withProperties.description === "string" &&
+      looksLikeTemplateContent(
+        withProperties.description,
+        withProperties.type,
+        schemaLabelsByType
+      )
+    ) {
+      const parsed = templateToProperties(withProperties.type, withProperties.description);
+      nextProperties = { ...parsed, ...withProperties.properties };
+      nextDescription = undefined;
+    }
+
     const migratedProperties = migratePropertyKeys(
       withProperties.type,
-      withProperties.properties
+      nextProperties
     );
-    if (migratedProperties === withProperties.properties) {
+
+    if (
+      migratedProperties === withProperties.properties &&
+      nextDescription === withProperties.description
+    ) {
       return withProperties;
     }
-    return { ...withProperties, properties: migratedProperties };
+    return { ...withProperties, properties: migratedProperties, description: nextDescription };
   });
   const notes = Array.isArray(payload.notes) ? (payload.notes as Note[]) : [];
   const relations = Array.isArray(payload.relations) ? (payload.relations as Relation[]) : [];

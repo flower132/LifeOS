@@ -1,232 +1,180 @@
 import { Language } from "@/lib/i18n";
 import { Template } from "@/lib/types";
 
+export const CURRENT_TEMPLATE_VERSION = 2;
+
 function personTemplate(lang: Language): string {
   if (lang === "zh") {
-    return `# 基础信息
-姓名：
+    return `姓名：
 昵称：
 生日：
 手机号：
 微信：
 邮箱：
-# 外貌特征
+MBTI：
 身高：
 体重：
 穿衣风格：
-# 性格
 性格：
-MBTI：
-优点：
-缺点：
 情绪特点：
-# 兴趣爱好
 爱好：
 喜欢：
 不喜欢：
-# 饮食偏好
+优点：
+缺点：
 爱吃：
 忌口：
-# 人际关系
 认识时间：
 关系等级：
 共同朋友：
-# 人生经历
 重要事件：
-# 雷点
--
-# 人生格言
--
-# AI观察
--`;
+雷点：
+人生格言：`;
   }
-  return `# Basic Info
-Name:
+  return `Name:
 Nickname:
 Birthday:
 Phone:
 WeChat:
 Email:
-# Appearance
+MBTI:
 Height:
 Weight:
 Clothing Style:
-# Personality
 Personality:
-MBTI:
-Strengths:
-Weaknesses:
 Emotional Traits:
-# Interests
 Hobbies:
 Likes:
 Dislikes:
-# Dietary Preferences
+Strengths:
+Weaknesses:
 Favorite Food:
 Foods to Avoid:
-# Relationships
 Date Met:
 Relationship Level:
 Mutual Friends:
-# Life Experiences
 Important Events:
-# Pet Peeves
--
-# Motto
--
-# AI Observations
--`;
+Pet Peeves:
+Motto:`;
 }
 
 function selfTemplate(lang: Language): string {
   if (lang === "zh") {
-    return `# 基础信息
-年龄：
-职业：
-城市：
-# 当前阶段
-我现在最关注什么：
-# 长期目标
-1.
-2.
-3.
-# 当前困扰
--
-# 核心优势
--
-# 核心短板
--
-# 财务
+    return `职业：
 收入：
-储蓄：
-# 身体状态
-运动：
-睡眠：
-# 学习成长
-正在学习：
-# AI观察
--`;
+城市：
+MBTI：
+长期目标：
+短期目标：
+优势：
+弱项：
+价值观：
+当前状态：`;
   }
-  return `# Basic Info
-Age:
-Career:
-City:
-# Current Stage
-What matters most to me right now:
-# Long-term Goals
-1.
-2.
-3.
-# Current Concerns
--
-# Core Strengths
--
-# Core Weaknesses
--
-# Finances
+  return `Career:
 Income:
-Savings:
-# Physical State
-Exercise:
-Sleep:
-# Learning & Growth
-Currently Learning:
-# AI Observations
--`;
+City:
+MBTI:
+Long-term Goals:
+Short-term Goals:
+Strengths:
+Weaknesses:
+Values:
+Current State:`;
 }
 
 function goalTemplate(lang: Language): string {
   if (lang === "zh") {
-    return `# 目标名称
-# 为什么做
-# 完成标准
-# 截止时间
-# 当前进度
-# 阻碍因素
-# 下一步行动
-# AI建议`;
+    return `目标名称：
+目标类型：
+开始时间：
+截止时间：
+优先级：
+当前状态：
+成功标准：
+动机：
+障碍：
+下一步行动：
+完成进度：`;
   }
-  return `# Goal Name
-# Why
-# Completion Criteria
-# Deadline
-# Current Progress
-# Obstacles
-# Next Action
-# AI Suggestions`;
+  return `Goal Name:
+Goal Type:
+Start Time:
+Deadline:
+Priority:
+Current Status:
+Success Criteria:
+Motivation:
+Obstacles:
+Next Action:
+Completion Progress:`;
 }
 
 function eventTemplate(lang: Language): string {
   if (lang === "zh") {
-    return `# 事件名称
-时间：
+    return `事件名称：
+发生时间：
 地点：
 参与人：
-# 发生经过
-# 结果
-# 影响
-# 后续行动
-# AI总结`;
+经过：
+结果：
+反思：
+影响：`;
   }
-  return `# Event Name
-Date:
+  return `Event Name:
+Time:
 Location:
 Participants:
-# What Happened
-# Outcome
-# Impact
-# Follow-up Actions
-# AI Summary`;
+Process:
+Outcome:
+Reflection:
+Impact:`;
 }
 
 function ideaTemplate(lang: Language): string {
   if (lang === "zh") {
-    return `# 想法名称
-# 灵感来源
-# 核心观点
-# 优势
-# 风险
-# 可执行性
-# 下一步验证
-# AI点评`;
+    return `想法标题：
+来源：
+灵感时间：
+分类：
+核心内容：
+价值：
+可执行性：
+风险：
+下一步验证：`;
   }
-  return `# Idea Name
-# Inspiration Source
-# Core Insight
-# Advantages
-# Risks
-# Feasibility
-# Next Validation Step
-# AI Feedback`;
+  return `Idea Title:
+Source:
+Inspiration Time:
+Category:
+Core Content:
+Value:
+Feasibility:
+Risks:
+Next Validation:`;
 }
 
 function taskTemplate(lang: Language): string {
   if (lang === "zh") {
-    return `# 任务名称
+    return `任务名称：
 负责人：
 优先级：
 截止时间：
-# 背景
-# 执行步骤
-1.
-2.
-3.
-# 当前状态
-# 风险
-# 完成标准`;
+背景：
+执行步骤：
+当前状态：
+风险：
+完成标准：`;
   }
-  return `# Task Name
+  return `Task Name:
 Owner:
 Priority:
 Deadline:
-# Background
-# Execution Steps
-1.
-2.
-3.
-# Current Status
-# Risks
-# Completion Criteria`;
+Background:
+Execution Steps:
+Current Status:
+Risks:
+Completion Criteria:`;
 }
 
 export function getDefaultTemplates(
@@ -238,39 +186,84 @@ export function getDefaultTemplates(
       category: "person",
       isDefault: true,
       content: personTemplate(lang),
+      templateVersion: CURRENT_TEMPLATE_VERSION,
     },
     {
       name: lang === "zh" ? "自我" : "Self",
       category: "self",
       isDefault: true,
       content: selfTemplate(lang),
+      templateVersion: CURRENT_TEMPLATE_VERSION,
     },
     {
       name: lang === "zh" ? "目标" : "Goal",
       category: "goal",
       isDefault: true,
       content: goalTemplate(lang),
+      templateVersion: CURRENT_TEMPLATE_VERSION,
     },
     {
       name: lang === "zh" ? "事件" : "Event",
       category: "event",
       isDefault: true,
       content: eventTemplate(lang),
+      templateVersion: CURRENT_TEMPLATE_VERSION,
     },
     {
       name: lang === "zh" ? "想法" : "Idea",
       category: "idea",
       isDefault: true,
       content: ideaTemplate(lang),
+      templateVersion: CURRENT_TEMPLATE_VERSION,
     },
     {
       name: lang === "zh" ? "任务" : "Task",
       category: "task",
       isDefault: true,
       content: taskTemplate(lang),
+      templateVersion: CURRENT_TEMPLATE_VERSION,
     },
   ];
 }
 
 /** @deprecated Use getDefaultTemplates(language) instead. */
 export const DEFAULT_TEMPLATES = getDefaultTemplates("zh");
+
+/**
+ * Convert legacy heading-only template content into parseable Label: Value lines.
+ *
+ * Old templates used Markdown headings like `# Goal Name` or standalone labels
+ * like `Goal Name`. The current parser requires `Label: Value` lines. This
+ * helper rewrites those legacy lines while preserving already-parseable lines.
+ */
+export function migrateLegacyTemplateContent(content: string): string {
+  const lines = content
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0);
+
+  const converted = lines
+    .map((line) => {
+      // Skip placeholder list markers like "-" or "1.".
+      if (/^[-*\d.]+$/.test(line)) {
+        return "";
+      }
+
+      // Heading -> Label:
+      if (line.startsWith("#")) {
+        const label = line.replace(/^#+\s*/, "").trim();
+        return label ? `${label}:` : "";
+      }
+
+      // Already has a colon -> keep as-is.
+      if (/^(.+?)[：:]\s*(.*)$/.test(line)) {
+        return line;
+      }
+
+      // Standalone label -> Label:
+      return `${line}:`;
+    })
+    .filter((line) => line.length > 0);
+
+  return converted.join("\n");
+}

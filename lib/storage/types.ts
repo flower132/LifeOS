@@ -36,6 +36,7 @@ export interface StorageAdapter {
   getStorageVersion(): Promise<number>;
   setStorageVersion(version: number): Promise<void>;
   migrateIfNeeded(): Promise<void>;
+  ensureDefaultTemplates(): Promise<void>;
 
   // Objects
   getObjects(): Promise<LifeObject[]>;
