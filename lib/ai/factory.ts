@@ -69,7 +69,7 @@ function createOpenAICompatibleProvider(
 ): AIProvider {
   return {
     async generate(prompt: string): Promise<string> {
-      return callOpenAICompatible(config, [
+      const content = await callOpenAICompatible(config, [
         {
           role: "system",
           content:
@@ -77,6 +77,7 @@ function createOpenAICompatibleProvider(
         },
         { role: "user", content: prompt },
       ]);
+      return extractJson(content);
     },
   };
 }
@@ -275,8 +276,57 @@ export function createOllamaProvider(config: AIProviderConfig): AIProvider {
   };
 }
 
-function extractJson(text: string): string {
-  const jsonMatch =
-    text.match(/```json\s*([\s\S]*?)```/) || text.match(/({[\s\S]*})/);
-  return jsonMatch ? jsonMatch[1].trim() : text.trim();
+export function extractJson(text: string): string {
+  const cleaned = text.trim();
+
+  // Prefer fenced json blocks.
+  const fenceMatch = cleaned.match(/```(?:json)?\s*([\s\S]*?)```/);
+  if (fenceMatch) {
+    const inner = fenceMatch[1].trim();
+    if (inner.startsWith("{") || inner.startsWith("[")) return inner;
+  }
+
+  // Find the outermost balanced JSON object or array.
+  let firstBrace = -1;
+  for (let i = 0; i < cleaned.length; i++) {
+    if (cleaned[i] === "{" || cleaned[i] === "[") {
+      firstBrace = i;
+      break;
+    }
+  }
+  if (firstBrace === -1) return cleaned;
+
+  const openChar = cleaned[firstBrace];
+  const closeChar = openChar === "{" ? "}" : "]";
+  let depth = 0;
+  let inString = false;
+  let escape = false;
+
+  for (let i = firstBrace; i < cleaned.length; i++) {
+    const ch = cleaned[i];
+    if (inString) {
+      if (escape) {
+        escape = false;
+      } else if (ch === "\\") {
+        escape = true;
+      } else if (ch === '"') {
+        inString = false;
+      }
+      continue;
+    }
+
+    if (ch === '"') {
+      inString = true;
+    } else if (ch === openChar) {
+      depth++;
+    } else if (ch === closeChar) {
+      depth--;
+      if (depth === 0) {
+        return cleaned.slice(firstBrace, i + 1);
+      }
+    }
+  }
+
+  // Fallback: return from first brace to end if unable to balance.
+  return cleaned.slice(firstBrace);
 }

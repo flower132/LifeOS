@@ -3,8 +3,10 @@ import { useSettingsStore } from "@/stores/settingsStore";
 import { propertiesToPromptContext } from "@/lib/objectProperties";
 import { registry } from "./registry";
 import {
+  AIInsightResult,
   AIProvider,
   AIProviderConfig,
+  AITestResult,
   EventGoalInsight,
   Language,
   PersonInsight,
@@ -15,6 +17,14 @@ import {
   normalizePersonInsight,
   normalizeSelfInsight,
 } from "./normalize";
+import {
+  addAILog,
+  detectMixedContent,
+  formatErrorForUser,
+} from "./logs";
+
+export { getAILogs, clearAILogs } from "./logs";
+export type { AIInsightResult, AITestResult } from "./types";
 
 function getLanguage(): Language {
   if (typeof window === "undefined") return "en";
@@ -34,12 +44,11 @@ function getCurrentConfig(): AIProviderConfig {
   };
 }
 
-function selectProvider(): AIProvider {
+function selectProvider(forceMock = false): AIProvider {
   const settings =
     typeof window !== "undefined" ? useSettingsStore.getState() : null;
 
-  // Privacy mode or disabled AI always falls back to mock.
-  if (!settings || settings.aiPrivacyMode || !settings.aiEnabled) {
+  if (!settings || forceMock || settings.aiPrivacyMode || !settings.aiEnabled) {
     return registry.create("mock", {
       provider: "mock",
       apiKey: "",
@@ -84,11 +93,16 @@ function relationsToText(
     .join("\n");
 }
 
-function safeJsonParse(text: string): unknown {
-  const cleaned = text
-    .replace(/^[\s\S]*?(\{)/, "$1")
-    .replace(/(\})[\s\S]*$/, "$1");
-  return JSON.parse(cleaned);
+function parseJsonResponse(text: string): unknown {
+  const trimmed = text.trim();
+  if (!trimmed) throw new Error("Empty response");
+  try {
+    return JSON.parse(trimmed);
+  } catch (err) {
+    throw new Error(
+      `JSON parse error: ${err instanceof Error ? err.message : String(err)}`
+    );
+  }
 }
 
 function buildPrompt(
@@ -122,26 +136,212 @@ ${notesText || "None"}
 ${relationsText !== undefined ? `\nRelations:\n${relationsText || "None"}` : ""}`;
 }
 
-class AIService {
-  private provider = selectProvider();
+async function runWithLogging(
+  prompt: string,
+  forceMock = false
+): Promise<{ text: string; durationMs: number; provider: AIProviderConfig["provider"]; model: string }> {
+  const start = performance.now();
+  const provider = selectProvider(forceMock);
+  const config = forceMock
+    ? { provider: "mock" as const, apiKey: "", baseUrl: "", model: "mock" }
+    : getCurrentConfig();
 
+  try {
+    const text = await provider.generate(prompt);
+    const durationMs = Math.round(performance.now() - start);
+    return { text, durationMs, provider: config.provider, model: config.model };
+  } catch (err) {
+    const durationMs = Math.round(performance.now() - start);
+    const { message, code } = formatErrorForUser(err, config.baseUrl);
+    addAILog({
+      provider: config.provider,
+      model: config.model,
+      durationMs,
+      status: "error",
+      error: message,
+      errorCode: code,
+    });
+    throw new Error(message);
+  }
+}
+
+class AIService {
   private shouldRun(): boolean {
     if (typeof window === "undefined") return false;
     const state = useSettingsStore.getState();
     return state.aiEnabled;
   }
 
-  private async generate(prompt: string): Promise<string> {
-    const provider = selectProvider();
-    return provider.generate(prompt);
+  async testConnection(): Promise<AITestResult> {
+    if (typeof window === "undefined") {
+      return {
+        success: false,
+        error: "Cannot test connection during server rendering",
+        errorCode: "unknown",
+        provider: "mock",
+        model: "",
+        durationMs: 0,
+      };
+    }
+
+    const config = getCurrentConfig();
+
+    if (config.provider === "mock") {
+      return {
+        success: true,
+        message: "Mock provider is active",
+        provider: "mock",
+        model: "mock",
+        durationMs: 0,
+      };
+    }
+
+    if (!config.apiKey) {
+      return {
+        success: false,
+        error: "API Key is not set",
+        errorCode: "invalid_key",
+        provider: config.provider,
+        model: config.model,
+        durationMs: 0,
+      };
+    }
+
+    if (detectMixedContent(config.baseUrl)) {
+      return {
+        success: false,
+        error:
+          "Mixed Content Error: this page is HTTPS but the AI API uses HTTP. Use an HTTPS API endpoint or run locally.",
+        errorCode: "mixed_content",
+        provider: config.provider,
+        model: config.model,
+        durationMs: 0,
+      };
+    }
+
+    const start = performance.now();
+    try {
+      const provider = registry.create(config.provider, config);
+      const text = await provider.generate("Reply OK");
+      const durationMs = Math.round(performance.now() - start);
+      const normalized = text.trim().toLowerCase();
+      const success = normalized.includes("ok");
+
+      addAILog({
+        provider: config.provider,
+        model: config.model,
+        durationMs,
+        status: success ? "success" : "error",
+        error: success ? undefined : "Unexpected response",
+      });
+
+      if (!success) {
+        return {
+          success: false,
+          error: `Unexpected response: ${text.slice(0, 200)}`,
+          errorCode: "unknown",
+          provider: config.provider,
+          model: config.model,
+          durationMs,
+        };
+      }
+
+      return {
+        success: true,
+        message: "Connection successful",
+        provider: config.provider,
+        model: config.model,
+        durationMs,
+      };
+    } catch (err) {
+      const durationMs = Math.round(performance.now() - start);
+      const { message, code } = formatErrorForUser(err, config.baseUrl);
+      addAILog({
+        provider: config.provider,
+        model: config.model,
+        durationMs,
+        status: "error",
+        error: message,
+        errorCode: code,
+      });
+      return {
+        success: false,
+        error: message,
+        errorCode: code,
+        provider: config.provider,
+        model: config.model,
+        durationMs,
+      };
+    }
+  }
+
+  private async generate(
+    prompt: string,
+    forceMock = false
+  ): Promise<{ text: string; durationMs: number; provider: AIProviderConfig["provider"]; model: string }> {
+    return runWithLogging(prompt, forceMock);
+  }
+
+  private makeResult<T>(
+    data: T,
+    provider: AIProviderConfig["provider"],
+    model: string,
+    durationMs: number,
+    fallback = false
+  ): AIInsightResult<T> {
+    addAILog({
+      provider,
+      model,
+      durationMs,
+      status: "success",
+    });
+    return { success: true, data, provider, model, durationMs, fallback };
+  }
+
+  private makeErrorResult<T>(
+    error: unknown,
+    provider: AIProviderConfig["provider"],
+    model: string,
+    baseUrl: string,
+    durationMs: number
+  ): AIInsightResult<T> {
+    const { message, code } = formatErrorForUser(error, baseUrl);
+    addAILog({
+      provider,
+      model,
+      durationMs,
+      status: "error",
+      error: message,
+      errorCode: code,
+    });
+    return {
+      success: false,
+      error: message,
+      errorCode: code,
+      provider,
+      model,
+      durationMs,
+    };
   }
 
   async generatePersonProfile(
     object: LifeObject,
     notes: Note[],
     relations: Relation[],
-    getObjectName: (id: string) => string
-  ): Promise<PersonInsight> {
+    getObjectName: (id: string) => string,
+    options: { forceMock?: boolean } = {}
+  ): Promise<AIInsightResult<PersonInsight>> {
+    if (!options.forceMock && !this.shouldRun()) {
+      return {
+        success: false,
+        error: "AI is disabled",
+        errorCode: "unknown",
+        provider: "mock",
+        model: "mock",
+        durationMs: 0,
+      };
+    }
+
     const shape = JSON.stringify(
       {
         traits: ["string"],
@@ -162,16 +362,40 @@ class AIService {
       getLanguage()
     );
 
-    const text = await this.generate(prompt);
-    return normalizePersonInsight(safeJsonParse(text));
+    const start = performance.now();
+    const config = options.forceMock
+      ? { provider: "mock" as const, apiKey: "", baseUrl: "", model: "mock" }
+      : getCurrentConfig();
+
+    try {
+      const { text, durationMs } = await this.generate(prompt, options.forceMock);
+      const parsed = parseJsonResponse(text);
+      const data = normalizePersonInsight(parsed);
+      return this.makeResult(data, config.provider, config.model, durationMs, options.forceMock);
+    } catch (err) {
+      const durationMs = Math.round(performance.now() - start);
+      return this.makeErrorResult(err, config.provider, config.model, config.baseUrl, durationMs);
+    }
   }
 
   async generateSelfState(
     object: LifeObject,
     notes: Note[],
     relations: Relation[],
-    getObjectName: (id: string) => string
-  ): Promise<SelfInsight> {
+    getObjectName: (id: string) => string,
+    options: { forceMock?: boolean } = {}
+  ): Promise<AIInsightResult<SelfInsight>> {
+    if (!options.forceMock && !this.shouldRun()) {
+      return {
+        success: false,
+        error: "AI is disabled",
+        errorCode: "unknown",
+        provider: "mock",
+        model: "mock",
+        durationMs: 0,
+      };
+    }
+
     const shape = JSON.stringify(
       {
         focus_areas: ["string"],
@@ -193,14 +417,38 @@ class AIService {
       getLanguage()
     );
 
-    const text = await this.generate(prompt);
-    return normalizeSelfInsight(safeJsonParse(text));
+    const start = performance.now();
+    const config = options.forceMock
+      ? { provider: "mock" as const, apiKey: "", baseUrl: "", model: "mock" }
+      : getCurrentConfig();
+
+    try {
+      const { text, durationMs } = await this.generate(prompt, options.forceMock);
+      const parsed = parseJsonResponse(text);
+      const data = normalizeSelfInsight(parsed);
+      return this.makeResult(data, config.provider, config.model, durationMs, options.forceMock);
+    } catch (err) {
+      const durationMs = Math.round(performance.now() - start);
+      return this.makeErrorResult(err, config.provider, config.model, config.baseUrl, durationMs);
+    }
   }
 
   async generateEventInsight(
     object: LifeObject,
-    notes: Note[]
-  ): Promise<EventGoalInsight> {
+    notes: Note[],
+    options: { forceMock?: boolean } = {}
+  ): Promise<AIInsightResult<EventGoalInsight>> {
+    if (!options.forceMock && !this.shouldRun()) {
+      return {
+        success: false,
+        error: "AI is disabled",
+        errorCode: "unknown",
+        provider: "mock",
+        model: "mock",
+        durationMs: 0,
+      };
+    }
+
     const shape = JSON.stringify(
       {
         summary: "string",
@@ -221,8 +469,20 @@ class AIService {
       getLanguage()
     );
 
-    const text = await this.generate(prompt);
-    return normalizeEventGoalInsight(safeJsonParse(text));
+    const start = performance.now();
+    const config = options.forceMock
+      ? { provider: "mock" as const, apiKey: "", baseUrl: "", model: "mock" }
+      : getCurrentConfig();
+
+    try {
+      const { text, durationMs } = await this.generate(prompt, options.forceMock);
+      const parsed = parseJsonResponse(text);
+      const data = normalizeEventGoalInsight(parsed);
+      return this.makeResult(data, config.provider, config.model, durationMs, options.forceMock);
+    } catch (err) {
+      const durationMs = Math.round(performance.now() - start);
+      return this.makeErrorResult(err, config.provider, config.model, config.baseUrl, durationMs);
+    }
   }
 }
 

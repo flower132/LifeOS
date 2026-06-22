@@ -12,11 +12,19 @@ import {
   Download,
   Upload,
   Trash2,
+  Activity,
+  Terminal,
+  History,
+  CheckCircle2,
+  XCircle,
+  Loader2,
 } from "lucide-react";
 import { useSettingsStore } from "@/stores/settingsStore";
 import { hydrateStores } from "@/stores";
 import { useTranslation } from "@/lib/useTranslation";
 import { AIProviderId } from "@/lib/ai/types";
+import { aiService, AITestResult, getAILogs, clearAILogs } from "@/lib/ai";
+import { AIUsageLog } from "@/lib/ai/types";
 import {
   exportAllData,
   downloadJson,
@@ -65,9 +73,18 @@ export default function SettingsPage() {
   const [importing, setImporting] = useState(false);
   const [importError, setImportError] = useState<string | null>(null);
   const [clearing, setClearing] = useState(false);
+  const [testingAI, setTestingAI] = useState(false);
+  const [testResult, setTestResult] = useState<AITestResult | null>(null);
+  const [logs, setLogs] = useState<AIUsageLog[]>(() => getAILogs());
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const storageUsage = useMemo(() => calculateStorageUsage(), []);
+
+  const maskedApiKey = useMemo(() => {
+    if (!aiApiKey) return "";
+    if (aiApiKey.length <= 8) return "*".repeat(aiApiKey.length);
+    return `${aiApiKey.slice(0, 4)}${"*".repeat(aiApiKey.length - 8)}${aiApiKey.slice(-4)}`;
+  }, [aiApiKey]);
 
   const activeProviderLabel = useMemo(() => {
     switch (aiProvider) {
@@ -147,6 +164,27 @@ export default function SettingsPage() {
     setClearing(true);
     await clearAllData();
     window.location.reload();
+  };
+
+  const handleTestConnection = async () => {
+    setTestingAI(true);
+    setTestResult(null);
+    try {
+      const result = await aiService.testConnection();
+      setTestResult(result);
+      setLogs(getAILogs());
+    } finally {
+      setTestingAI(false);
+    }
+  };
+
+  const handleClearLogs = () => {
+    clearAILogs();
+    setLogs([]);
+  };
+
+  const refreshLogs = () => {
+    setLogs(getAILogs());
   };
 
   if (!loaded) {
@@ -484,6 +522,167 @@ export default function SettingsPage() {
                 {t("keyStoredLocally")}
               </p>
             </div>
+
+            <button
+              type="button"
+              onClick={() => void handleTestConnection()}
+              disabled={testingAI || aiProvider === "mock"}
+              className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-input bg-background px-4 py-2 text-sm font-medium text-foreground hover:bg-muted disabled:opacity-50"
+            >
+              {testingAI ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Activity className="h-4 w-4" />
+              )}
+              {testingAI ? t("testing") : t("testConnection")}
+            </button>
+
+            {aiProvider === "mock" && (
+              <p className="text-xs text-muted-foreground">
+                {t("testConnectionMockNotAvailable")}
+              </p>
+            )}
+
+            {testResult && (
+              <div
+                className={`rounded-lg border px-4 py-3 text-sm ${
+                  testResult.success
+                    ? "border-green-500/20 bg-green-500/10 text-green-700"
+                    : "border-destructive/20 bg-destructive/10 text-destructive"
+                }`}
+              >
+                <div className="flex items-center gap-2 font-medium">
+                  {testResult.success ? (
+                    <CheckCircle2 className="h-4 w-4" />
+                  ) : (
+                    <XCircle className="h-4 w-4" />
+                  )}
+                  {testResult.success
+                    ? t("connectionSuccess")
+                    : t("connectionFailed")}
+                </div>
+                <div className="mt-1 space-y-1 text-xs opacity-90">
+                  <p>
+                    {t("aiProvider")}: {activeProviderLabel}
+                  </p>
+                  <p>
+                    {t("aiModel")}: {testResult.model || "-"}
+                  </p>
+                  {testResult.durationMs > 0 && (
+                    <p>
+                      {t("duration")}: {testResult.durationMs}ms
+                    </p>
+                  )}
+                  {testResult.error && (
+                    <p className="font-medium">{testResult.error}</p>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        </SectionCard>
+
+        {/* AI Debug */}
+        <SectionCard icon={Terminal} title={t("aiDebug")}>
+          <div className="space-y-3 text-sm">
+            <div className="flex items-center justify-between">
+              <span className="text-muted-foreground">{t("aiProvider")}</span>
+              <span className="font-medium text-foreground">
+                {activeProviderLabel}
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-muted-foreground">{t("aiModel")}</span>
+              <span className="font-medium text-foreground">{aiModel || "-"}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-muted-foreground">{t("aiBaseUrl")}</span>
+              <span className="max-w-[60%] truncate font-medium text-foreground">
+                {aiBaseUrl || "-"}
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-muted-foreground">{t("aiApiKey")}</span>
+              <span className="font-medium text-foreground">
+                {maskedApiKey || t("apiKeyHidden")}
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-muted-foreground">{t("aiEnabled")}</span>
+              <span className="font-medium text-foreground">
+                {aiEnabled ? "On" : "Off"}
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-muted-foreground">
+                {t("aiPrivacyMode")}
+              </span>
+              <span className="font-medium text-foreground">
+                {aiPrivacyMode ? "On" : "Off"}
+              </span>
+            </div>
+          </div>
+        </SectionCard>
+
+        {/* AI Logs */}
+        <SectionCard icon={History} title={t("aiLogs")}>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <button
+                type="button"
+                onClick={refreshLogs}
+                className="text-xs font-medium text-accent hover:underline"
+              >
+                {t("refresh")}
+              </button>
+              <button
+                type="button"
+                onClick={handleClearLogs}
+                className="text-xs font-medium text-destructive hover:underline"
+              >
+                {t("clearLogs")}
+              </button>
+            </div>
+
+            {logs.length === 0 ? (
+              <p className="text-sm text-muted-foreground">{t("noLogsYet")}</p>
+            ) : (
+              <div className="max-h-64 space-y-2 overflow-auto pr-1">
+                {logs.map((log) => (
+                  <div
+                    key={log.id}
+                    className="rounded-lg border border-border bg-background p-3 text-xs"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium text-foreground">
+                        {new Date(log.timestamp).toLocaleString()}
+                      </span>
+                      <span
+                        className={`rounded-full px-2 py-0.5 font-medium ${
+                          log.status === "success"
+                            ? "bg-green-500/10 text-green-700"
+                            : "bg-destructive/10 text-destructive"
+                        }`}
+                      >
+                        {log.status === "success" ? t("success") : t("error")}
+                      </span>
+                    </div>
+                    <div className="mt-1 space-y-0.5 text-muted-foreground">
+                      <p>
+                        {t("aiProvider")}: {log.provider} · {t("aiModel")}:{" "}
+                        {log.model}
+                      </p>
+                      <p>
+                        {t("duration")}: {log.durationMs}ms
+                      </p>
+                      {log.error && (
+                        <p className="text-destructive">{log.error}</p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </SectionCard>
 

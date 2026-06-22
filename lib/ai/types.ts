@@ -23,21 +23,64 @@ export interface AIProvider {
   generate(prompt: string): Promise<string>;
 }
 
+export type AIErrorCode =
+  | "invalid_key"
+  | "model_not_found"
+  | "rate_limit"
+  | "network"
+  | "cors"
+  | "mixed_content"
+  | "json_parse"
+  | "timeout"
+  | "unknown";
+
+export interface AIInsightResult<T> {
+  success: boolean;
+  data?: T;
+  error?: string;
+  errorCode?: AIErrorCode;
+  provider: AIProviderId;
+  model: string;
+  durationMs: number;
+  fallback?: boolean;
+}
+
+export interface AIUsageLog {
+  id: string;
+  timestamp: string;
+  provider: AIProviderId;
+  model: string;
+  durationMs: number;
+  status: "success" | "error";
+  error?: string;
+  errorCode?: AIErrorCode;
+}
+
+export interface AITestResult {
+  success: boolean;
+  message?: string;
+  error?: string;
+  errorCode?: AIErrorCode;
+  provider: AIProviderId;
+  model: string;
+  durationMs: number;
+}
+
 export const DEFAULT_PROVIDER_CONFIGS: Record<
   AIProviderId,
   { baseUrl: string; model: string }
 > = {
   mock: { baseUrl: "", model: "mock" },
-  openai: { baseUrl: "https://api.openai.com/v1", model: "gpt-4o-mini" },
+  openai: { baseUrl: "https://api.openai.com/v1", model: "gpt-4.1-mini" },
   anthropic: {
     baseUrl: "https://api.anthropic.com/v1",
-    model: "claude-3-5-sonnet-latest",
+    model: "claude-sonnet-4-6-20251001",
   },
   deepseek: { baseUrl: "https://api.deepseek.com/v1", model: "deepseek-chat" },
   kimi: { baseUrl: "https://api.moonshot.cn/v1", model: "moonshot-v1-8k" },
   gemini: {
     baseUrl: "https://generativelanguage.googleapis.com/v1beta",
-    model: "gemini-1.5-flash",
+    model: "gemini-2.5-flash",
   },
   openrouter: {
     baseUrl: "https://openrouter.ai/api/v1",

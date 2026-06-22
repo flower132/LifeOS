@@ -263,11 +263,27 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   },
 
   setAIProvider: async (aiProvider) => {
-    set({ aiProvider });
+    const current = get();
+    const defaults = DEFAULT_PROVIDER_CONFIGS[aiProvider];
+
+    // Preserve user configuration for custom provider; otherwise load defaults.
+    const nextModel =
+      aiProvider === "custom" ? current.aiModel : defaults.model;
+    const nextBaseUrl =
+      aiProvider === "custom" ? current.aiBaseUrl : defaults.baseUrl;
+
+    set({ aiProvider, aiModel: nextModel, aiBaseUrl: nextBaseUrl });
     try {
-      await storage.setSettings({ aiProvider });
+      await storage.setSettings({
+        aiProvider,
+        aiModel: nextModel,
+        aiBaseUrl: nextBaseUrl,
+      });
     } catch (err) {
-      set({ error: err instanceof Error ? err.message : "Failed to save AI provider" });
+      set({
+        error:
+          err instanceof Error ? err.message : "Failed to save AI provider",
+      });
     }
   },
 
