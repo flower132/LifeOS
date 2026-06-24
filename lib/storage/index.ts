@@ -1,22 +1,84 @@
 import { LocalStorageAdapter, STORAGE_VERSION } from "./localStorageAdapter";
-import { StorageAdapter } from "./types";
+import { SupabaseAdapter } from "./supabaseAdapter";
+import type { StorageAdapter } from "./types";
+import { supabase } from "@/lib/supabaseClient";
 
-function createStorageAdapter(): StorageAdapter {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+type Mode = "local" | "sync";
 
-  if (supabaseUrl && supabaseKey) {
-    // SupabaseAdapter is a placeholder and will crash the app if selected.
-    // Until it is fully implemented, always fall back to LocalStorageAdapter.
-     
-    console.warn(
-      "[LifeOS] Supabase env vars detected but SupabaseAdapter is not implemented. Falling back to localStorage."
-    );
-  }
-
-  return new LocalStorageAdapter();
+// ---- internal helpers ------------------------------------------------
+function readMode(): Mode {
+  if (typeof window === "undefined") return "local";
+  return (localStorage.getItem("lifeos-mode") as Mode) || "local";
 }
 
-export const storage = createStorageAdapter();
-export type { StorageAdapter };
+export function setMode(mode: Mode): void {
+  if (typeof window === "undefined") return;
+  localStorage.setItem("lifeos-mode", mode);
+}
+
+export function getMode(): Mode {
+  return readMode();
+}
+
+function isLoggedIn(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    const stored = localStorage.getItem("lifeos-supabase-auth");
+    if (!stored) return false;
+    const parsed = JSON.parse(stored);
+    return !!parsed?.access_token;
+  } catch {
+    return false;
+  }
+}
+
+// ---- adapter instances ---------------------------------------------------
+let _syncAdapter: SupabaseAdapter | null = null;
+
+function getSyncAdapter(): SupabaseAdapter {
+  if (!_syncAdapter) {
+    _syncAdapter = new SupabaseAdapter();
+  }
+  return _syncAdapter;
+}
+
+const localAdapter = new LocalStorageAdapter();
+
+function getActiveAdapter(): StorageAdapter {
+  const mode = readMode();
+  if (mode === "sync" && isLoggedIn()) {
+    return getSyncAdapter() as unknown as StorageAdapter;
+  }
+  return localAdapter as unknown as StorageAdapter;
+}
+
+// ---- storage proxy (delegates to active adapter) -----------------------
+const STORAGE_METHODS: (keyof StorageAdapter)[] = [
+  "getStorageVersion", "setStorageVersion", "migrateIfNeeded", "ensureDefaultTemplates",
+  "getObjects", "getObjectById", "createObject", "updateObject", "deleteObject", "setObjects",
+  "getNotes", "getNotesByObjectId", "createNote", "deleteNote", "setNotes",
+  "getRelations", "getRelationsByObjectId", "createRelation", "deleteRelation", "setRelations",
+  "getTags", "createTag", "updateTag", "deleteTag", "setTags",
+  "getTemplates", "createTemplate", "updateTemplate", "deleteTemplate", "setTemplates",
+  "getSettings", "setSettings",
+];
+
+const storageProxy = {} as StorageAdapter;
+for (const method of STORAGE_METHODS) {
+  (storageProxy as unknown as Record<string, unknown>)[method] = async (...args: unknown[]) => {
+    const adapter = getActiveAdapter();
+    return (adapter as unknown as Record<string, (...a: unknown[]) => unknown>)[method](...args);
+  };
+}
+
+export const storage: StorageAdapter = storageProxy;
+
+// ---- auth helpers -------------------------------------------------------
+export async function signOut(): Promise<void> {
+  await supabase.auth.signOut();
+  localStorage.removeItem("lifeos-supabase-auth");
+  _syncAdapter = null;
+}
+
 export { LocalStorageAdapter, STORAGE_VERSION };
+export type { StorageAdapter } from "./types";
