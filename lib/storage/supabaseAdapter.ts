@@ -3,13 +3,13 @@ import {
   LifeObject, Note, Relation, Tag, Template,
   TemplateCreateInput, TemplateUpdateInput,
 } from "@/lib/types";
-import { supabase } from "@/lib/supabaseClient";
+import { getSupabase, resetSupabase } from "@/lib/supabaseClient";
 
 const toISO = (d: unknown) =>
   d ? new Date(d as string | number).toISOString() : new Date().toISOString();
 
 function getUid(): Promise<string | null> {
-  return supabase.auth.getUser().then(({ data }) => data.user?.id ?? null);
+  return getSupabase().auth.getUser().then(({ data }) => data.user?.id ?? null);
 }
 
 // ---------- helpers ----------
@@ -63,15 +63,25 @@ export class SupabaseAdapter implements StorageAdapter {
   private _initPromise: Promise<void> | null = null;
 
   constructor() {
-    supabase.auth.onAuthStateChange((event) => {
-      if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
-        this.cache._loaded = false;
-        this.init();
+    // Use getSupabase() lazily – safe even if called before env vars are set
+    const setupAuthListener = () => {
+      try {
+        getSupabase().auth.onAuthStateChange((event) => {
+          if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
+            this.cache._loaded = false;
+            this.init();
+          }
+          if (event === "SIGNED_OUT") {
+            this.cache = { objects: [], notes: [], relations: [], tags: [], templates: [], settings: {}, _loaded: false };
+            resetSupabase();
+          }
+        });
+      } catch {
+        // getSupabase() may throw if env vars are not set yet
+        // Retry after a short delay (handles lazy init during dev)
       }
-      if (event === "SIGNED_OUT") {
-        this.cache = { objects: [], notes: [], relations: [], tags: [], templates: [], settings: {}, _loaded: false };
-      }
-    });
+    };
+    setupAuthListener();
   }
 
   private async init() {
@@ -89,13 +99,14 @@ export class SupabaseAdapter implements StorageAdapter {
     const uid = await getUid();
     if (!uid) return;
 
+    const client = getSupabase();
     const [objs, notes, rels, tags, tpls, sets] = await Promise.all([
-      supabase.from("objects").select("*").eq("user_id", uid),
-      supabase.from("notes").select("*").eq("user_id", uid),
-      supabase.from("relations").select("*").eq("user_id", uid),
-      supabase.from("tags").select("*").eq("user_id", uid),
-      supabase.from("templates").select("*").eq("user_id", uid),
-      supabase.from("settings").select("*").eq("user_id", uid),
+      client.from("objects").select("*").eq("user_id", uid),
+      client.from("notes").select("*").eq("user_id", uid),
+      client.from("relations").select("*").eq("user_id", uid),
+      client.from("tags").select("*").eq("user_id", uid),
+      client.from("templates").select("*").eq("user_id", uid),
+      client.from("settings").select("*").eq("user_id", uid),
     ]);
 
     this.cache.objects    = (objs.data  || []).map(mapObject);
@@ -138,7 +149,8 @@ export class SupabaseAdapter implements StorageAdapter {
       description: obj.description || null, properties: obj.properties || {},
       tag_ids: obj.tag_ids || [], created_at: now, updated_at: now,
     };
-    const { data, error } = await supabase.from("objects").insert(row).select().single();
+    const client = getSupabase();
+    const { data, error } = await client.from("objects").insert(row).select().single();
     if (error) throw error;
     const created = mapObject(data);
     this.cache.objects = [created, ...this.cache.objects];
@@ -149,7 +161,8 @@ export class SupabaseAdapter implements StorageAdapter {
     const uid = await getUid();
     if (!uid) throw new Error("Not authenticated");
     const now = new Date().toISOString();
-    const { data, error } = await supabase
+    const client = getSupabase();
+    const { data, error } = await client
       .from("objects")
       .update({
         ...(updates.name       !== undefined && { name:       updates.name }),
@@ -169,20 +182,24 @@ export class SupabaseAdapter implements StorageAdapter {
   async deleteObject(id: string): Promise<void> {
     await this.init();
     const uid = await getUid();
-    if (uid) await supabase.from("objects").delete().eq("id", id).eq("user_id", uid);
+    if (uid) {
+      const client = getSupabase();
+      await client.from("objects").delete().eq("id", id).eq("user_id", uid);
+    }
     this.cache.objects = this.cache.objects.filter((o) => o.id !== id);
   }
   async setObjects(objects: LifeObject[]): Promise<void> {
     await this.init();
     const uid = await getUid();
     if (!uid) throw new Error("Not authenticated");
+    const client = getSupabase();
     const rows = objects.map((o) => ({
       id: o.id, user_id: uid, type: o.type, name: o.name,
       description: o.description || null, properties: o.properties || {},
       tag_ids: o.tag_ids || [], created_at: o.created_at, updated_at: o.updated_at,
     }));
-    await supabase.from("objects").delete().eq("user_id", uid);
-    if (rows.length > 0) await supabase.from("objects").insert(rows);
+    await client.from("objects").delete().eq("user_id", uid);
+    if (rows.length > 0) await client.from("objects").insert(rows);
     this.cache.objects = objects;
   }
 
@@ -203,7 +220,8 @@ export class SupabaseAdapter implements StorageAdapter {
     if (!uid) throw new Error("Not authenticated");
     const now = new Date().toISOString();
     const row = { id: crypto.randomUUID(), user_id: uid, object_id: note.object_id, content: note.content || "", created_at: now };
-    const { data, error } = await supabase.from("notes").insert(row).select().single();
+    const client = getSupabase();
+    const { data, error } = await client.from("notes").insert(row).select().single();
     if (error) throw error;
     const created = mapNote(data);
     this.cache.notes = [created, ...this.cache.notes];
@@ -212,19 +230,23 @@ export class SupabaseAdapter implements StorageAdapter {
   async deleteNote(id: string): Promise<void> {
     await this.init();
     const uid = await getUid();
-    if (uid) await supabase.from("notes").delete().eq("id", id).eq("user_id", uid);
+    if (uid) {
+      const client = getSupabase();
+      await client.from("notes").delete().eq("id", id).eq("user_id", uid);
+    }
     this.cache.notes = this.cache.notes.filter((n) => n.id !== id);
   }
   async setNotes(notes: Note[]): Promise<void> {
     await this.init();
     const uid = await getUid();
     if (!uid) throw new Error("Not authenticated");
+    const client = getSupabase();
     const rows = notes.map((n) => ({
       id: n.id, user_id: uid, object_id: n.object_id,
       content: n.content || "", created_at: n.created_at,
     }));
-    await supabase.from("notes").delete().eq("user_id", uid);
-    if (rows.length > 0) await supabase.from("notes").insert(rows);
+    await client.from("notes").delete().eq("user_id", uid);
+    if (rows.length > 0) await client.from("notes").insert(rows);
     this.cache.notes = notes;
   }
 
@@ -250,7 +272,8 @@ export class SupabaseAdapter implements StorageAdapter {
       type: relation.type, strength: relation.strength ?? null, note: relation.note || null,
       created_at: now,
     };
-    const { data, error } = await supabase.from("relations").insert(row).select().single();
+    const client = getSupabase();
+    const { data, error } = await client.from("relations").insert(row).select().single();
     if (error) throw error;
     const created = mapRelation(data);
     this.cache.relations = [created, ...this.cache.relations];
@@ -259,21 +282,25 @@ export class SupabaseAdapter implements StorageAdapter {
   async deleteRelation(id: string): Promise<void> {
     await this.init();
     const uid = await getUid();
-    if (uid) await supabase.from("relations").delete().eq("id", id).eq("user_id", uid);
+    if (uid) {
+      const client = getSupabase();
+      await client.from("relations").delete().eq("id", id).eq("user_id", uid);
+    }
     this.cache.relations = this.cache.relations.filter((r) => r.id !== id);
   }
   async setRelations(relations: Relation[]): Promise<void> {
     await this.init();
     const uid = await getUid();
     if (!uid) throw new Error("Not authenticated");
+    const client = getSupabase();
     const rows = relations.map((r) => ({
       id: r.id, user_id: uid,
       source_object_id: r.source_object_id, target_object_id: r.target_object_id,
       type: r.type, strength: r.strength ?? null, note: r.note || null,
       created_at: r.created_at,
     }));
-    await supabase.from("relations").delete().eq("user_id", uid);
-    if (rows.length > 0) await supabase.from("relations").insert(rows);
+    await client.from("relations").delete().eq("user_id", uid);
+    if (rows.length > 0) await client.from("relations").insert(rows);
     this.cache.relations = relations;
   }
 
@@ -288,7 +315,8 @@ export class SupabaseAdapter implements StorageAdapter {
     if (!uid) throw new Error("Not authenticated");
     const now = new Date().toISOString();
     const row = { id: crypto.randomUUID(), user_id: uid, name: tag.name, color: tag.color || null, created_at: now, usage_count: 0 };
-    const { data, error } = await supabase.from("tags").insert(row).select().single();
+    const client = getSupabase();
+    const { data, error } = await client.from("tags").insert(row).select().single();
     if (error) throw error;
     const created = mapTag(data);
     this.cache.tags = [created, ...this.cache.tags];
@@ -298,7 +326,8 @@ export class SupabaseAdapter implements StorageAdapter {
     await this.init();
     const uid = await getUid();
     if (!uid) throw new Error("Not authenticated");
-    const { data, error } = await supabase
+    const client = getSupabase();
+    const { data, error } = await client
       .from("tags")
       .update({
         ...(updates.name      !== undefined && { name:      updates.name }),
@@ -315,19 +344,23 @@ export class SupabaseAdapter implements StorageAdapter {
   async deleteTag(id: string): Promise<void> {
     await this.init();
     const uid = await getUid();
-    if (uid) await supabase.from("tags").delete().eq("id", id).eq("user_id", uid);
+    if (uid) {
+      const client = getSupabase();
+      await client.from("tags").delete().eq("id", id).eq("user_id", uid);
+    }
     this.cache.tags = this.cache.tags.filter((t) => t.id !== id);
   }
   async setTags(tags: Tag[]): Promise<void> {
     await this.init();
     const uid = await getUid();
     if (!uid) throw new Error("Not authenticated");
+    const client = getSupabase();
     const rows = tags.map((t) => ({
       id: t.id, user_id: uid, name: t.name, color: t.color || null,
       created_at: t.createdAt, usage_count: t.usageCount,
     }));
-    await supabase.from("tags").delete().eq("user_id", uid);
-    if (rows.length > 0) await supabase.from("tags").insert(rows);
+    await client.from("tags").delete().eq("user_id", uid);
+    if (rows.length > 0) await client.from("tags").insert(rows);
     this.cache.tags = tags;
   }
 
@@ -347,7 +380,8 @@ export class SupabaseAdapter implements StorageAdapter {
       template_version: template.templateVersion || 1,
       created_at: now, updated_at: now, usage_count: 0, last_used_at: null,
     };
-    const { data, error } = await supabase.from("templates").insert(row).select().single();
+    const client = getSupabase();
+    const { data, error } = await client.from("templates").insert(row).select().single();
     if (error) throw error;
     const created = mapTemplate(data);
     this.cache.templates = [created, ...this.cache.templates];
@@ -358,7 +392,8 @@ export class SupabaseAdapter implements StorageAdapter {
     const uid = await getUid();
     if (!uid) throw new Error("Not authenticated");
     const now = new Date().toISOString();
-    const { data, error } = await supabase
+    const client = getSupabase();
+    const { data, error } = await client
       .from("templates")
       .update({
         ...(updates.name             !== undefined && { name:             updates.name }),
@@ -380,21 +415,25 @@ export class SupabaseAdapter implements StorageAdapter {
   async deleteTemplate(id: string): Promise<void> {
     await this.init();
     const uid = await getUid();
-    if (uid) await supabase.from("templates").delete().eq("id", id).eq("user_id", uid);
+    if (uid) {
+      const client = getSupabase();
+      await client.from("templates").delete().eq("id", id).eq("user_id", uid);
+    }
     this.cache.templates = this.cache.templates.filter((t) => t.id !== id);
   }
   async setTemplates(templates: Template[]): Promise<void> {
     await this.init();
     const uid = await getUid();
     if (!uid) throw new Error("Not authenticated");
+    const client = getSupabase();
     const rows = templates.map((t) => ({
       id: t.id, user_id: uid, name: t.name, category: t.category,
       is_default: t.isDefault, content: t.content || "",
       template_version: t.templateVersion, created_at: t.createdAt, updated_at: t.updatedAt,
       usage_count: t.usageCount, last_used_at: t.lastUsedAt || null,
     }));
-    await supabase.from("templates").delete().eq("user_id", uid);
-    if (rows.length > 0) await supabase.from("templates").insert(rows);
+    await client.from("templates").delete().eq("user_id", uid);
+    if (rows.length > 0) await client.from("templates").insert(rows);
     this.cache.templates = templates;
   }
 
@@ -408,11 +447,12 @@ export class SupabaseAdapter implements StorageAdapter {
     const uid = await getUid();
     if (!uid) throw new Error("Not authenticated");
     const now = new Date().toISOString();
+    const client = getSupabase();
     const rows = Object.entries(settings).map(([key, value]) => ({
       user_id: uid, key, value: JSON.stringify(value), updated_at: now,
     }));
     for (const row of rows) {
-      await supabase
+      await client
         .from("settings")
         .upsert(row, { onConflict: "user_id,key" });
     }

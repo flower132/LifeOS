@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabaseClient";
+import { getSupabase } from "@/lib/supabaseClient";
 import { setMode, getMode, signOut } from "@/lib/storage";
 
 type Mode = "local" | "sync";
@@ -16,10 +16,10 @@ export default function AuthButton() {
   const [user, setUser] = useState<{ email: string } | null>(null);
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
+    getSupabase().auth.getUser().then(({ data }) => {
       if (data.user) setUser({ email: data.user.email || "" });
     });
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: listener } = getSupabase().auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ? { email: session.user.email || "" } : null);
     });
     return () => listener.subscription.unsubscribe();
@@ -30,10 +30,10 @@ export default function AuthButton() {
     setLoading(true);
     try {
       if (isSignUp) {
-        const { error } = await supabase.auth.signUp({ email, password });
+        const { error } = await getSupabase().auth.signUp({ email, password });
         if (error) throw error;
       } else {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        const { error } = await getSupabase().auth.signInWithPassword({ email, password });
         if (error) throw error;
       }
       setMode("sync");

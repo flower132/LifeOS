@@ -1,7 +1,7 @@
 import { LocalStorageAdapter, STORAGE_VERSION } from "./localStorageAdapter";
 import { SupabaseAdapter } from "./supabaseAdapter";
 import type { StorageAdapter } from "./types";
-import { supabase } from "@/lib/supabaseClient";
+import { getSupabase, resetSupabase } from "@/lib/supabaseClient";
 
 type Mode = "local" | "sync";
 
@@ -75,9 +75,14 @@ export const storage: StorageAdapter = storageProxy;
 
 // ---- auth helpers -------------------------------------------------------
 export async function signOut(): Promise<void> {
-  await supabase.auth.signOut();
+  try {
+    await getSupabase().auth.signOut();
+  } catch {
+    // ignore if supabase is not configured
+  }
   localStorage.removeItem("lifeos-supabase-auth");
   _syncAdapter = null;
+  resetSupabase();
 }
 
 export { LocalStorageAdapter, STORAGE_VERSION };
