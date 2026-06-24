@@ -40,9 +40,21 @@ self.addEventListener("activate", (event) => {
 
 self.addEventListener("fetch", (event) => {
   const { request } = event;
+  const url = new URL(request.url);
 
   // Skip non-GET requests
   if (request.method !== "GET") return;
+
+  // Never cache _next/ static chunks — always fetch from network
+  // This prevents "Failed to load chunk" errors after deployment
+  const isNextChunk =
+    url.pathname.startsWith("/_next/static/") ||
+    url.pathname.startsWith("/_next/");
+
+  if (isNextChunk) {
+    event.respondWith(fetch(request));
+    return;
+  }
 
   event.respondWith(
     caches.match(request).then((cached) => {
