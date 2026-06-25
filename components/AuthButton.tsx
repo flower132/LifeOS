@@ -29,16 +29,25 @@ export default function AuthButton() {
     setError("");
     setLoading(true);
     try {
+      const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+      console.log("[LifeOS Debug] SUPABASE_URL:", url);
+      console.log("[LifeOS Debug] SUPABASE_KEY prefix:", key?.substring(0, 30) + "...");
+      console.log("[LifeOS Debug] SUPABASE_KEY length:", key?.length);
+
       if (isSignUp) {
-        const { error } = await getSupabase().auth.signUp({ email, password });
+        const { data, error } = await getSupabase().auth.signUp({ email, password });
+        console.log("[LifeOS Debug] signUp result:", { data, error });
         if (error) throw error;
       } else {
-        const { error } = await getSupabase().auth.signInWithPassword({ email, password });
+        const { data, error } = await getSupabase().auth.signInWithPassword({ email, password });
+        console.log("[LifeOS Debug] signIn result:", { data, error });
         if (error) throw error;
       }
       setMode("sync");
       setLocalMode("sync");
     } catch (e: any) {
+      console.error("[LifeOS Debug] Auth error:", e);
       setError(e.message);
     } finally {
       setLoading(false);
