@@ -5,6 +5,10 @@ import {
   Tag,
   Template,
   TemplateCreateInput,
+  AIAnalysisHistoryEntry,
+  ObjectAIInsight,
+  ObjectAISuggestion,
+  ObjectMemory,
 } from "./types";
 
 const VALID_OBJECT_TYPES = new Set([
@@ -13,6 +17,8 @@ const VALID_OBJECT_TYPES = new Set([
   "event",
   "idea",
   "goal",
+  "project",
+  "knowledge",
 ]);
 
 const VALID_RELATION_TYPES = new Set([
@@ -57,6 +63,18 @@ export function isValidLifeObject(obj: unknown): obj is LifeObject {
     return false;
   }
   if (o.properties !== undefined && (typeof o.properties !== "object" || o.properties === null)) {
+    return false;
+  }
+  if (o.aiProfile !== undefined && (typeof o.aiProfile !== "object" || o.aiProfile === null)) {
+    return false;
+  }
+  if (o.aiInsights !== undefined && !Array.isArray(o.aiInsights)) {
+    return false;
+  }
+  if (o.aiSuggestions !== undefined && !Array.isArray(o.aiSuggestions)) {
+    return false;
+  }
+  if (o.memories !== undefined && !Array.isArray(o.memories)) {
     return false;
   }
 
@@ -196,3 +214,80 @@ export function validateInputTemplate(template: TemplateCreateInput): void {
     throw new Error("Template templateVersion must be a number");
   }
 }
+
+// ── AI Object Intelligence validators ───────────────────────────────────────
+
+export function isValidObjectAIInsight(obj: unknown): obj is ObjectAIInsight {
+  if (!obj || typeof obj !== "object") return false;
+  const item = obj as Record<string, unknown>;
+
+  if (!isValidId(item.id)) return false;
+  if (typeof item.category !== "string") return false;
+  if (typeof item.title !== "string") return false;
+  if (typeof item.description !== "string") return false;
+  if (typeof item.confidence !== "number" || item.confidence < 0 || item.confidence > 100) {
+    return false;
+  }
+  if (!Array.isArray(item.evidence)) return false;
+  if (!isValidIsoDate(item.createdAt)) return false;
+
+  return true;
+}
+
+export function isValidObjectAISuggestion(obj: unknown): obj is ObjectAISuggestion {
+  if (!obj || typeof obj !== "object") return false;
+  const item = obj as Record<string, unknown>;
+
+  if (!isValidId(item.id)) return false;
+  if (typeof item.title !== "string") return false;
+  if (typeof item.description !== "string") return false;
+  if (!["low", "medium", "high"].includes(item.priority as string)) return false;
+  if (!isValidIsoDate(item.generatedAt)) return false;
+
+  return true;
+}
+
+export function isValidObjectMemory(obj: unknown): obj is ObjectMemory {
+  if (!obj || typeof obj !== "object") return false;
+  const item = obj as Record<string, unknown>;
+
+  if (!isValidId(item.id)) return false;
+  if (typeof item.content !== "string") return false;
+  if (!["user", "ai", "import", "note"].includes(item.source as string)) return false;
+  if (!isValidIsoDate(item.createdAt)) return false;
+
+  return true;
+}
+
+export function isValidAIAnalysisHistoryEntry(obj: unknown): obj is AIAnalysisHistoryEntry {
+  if (!obj || typeof obj !== "object") return false;
+  const h = obj as Record<string, unknown>;
+
+  if (!isValidId(h.id)) return false;
+  if (!VALID_OBJECT_TYPES.has(h.objectType as string)) return false;
+  if (h.objectId !== undefined && typeof h.objectId !== "string") return false;
+  if (!isValidIsoDate(h.createdAt)) return false;
+  if (typeof h.rawTextInput !== "string") return false;
+  if (typeof h.imageCount !== "number" || h.imageCount < 0) return false;
+  if (!Array.isArray(h.imageThumbnails)) return false;
+  if (typeof h.provider !== "string") return false;
+  if (typeof h.model !== "string") return false;
+  if (typeof h.durationMs !== "number" || h.durationMs < 0) return false;
+  if (typeof h.rawOutput !== "string") return false;
+
+  if (h.profileSnapshot !== undefined && (typeof h.profileSnapshot !== "object" || h.profileSnapshot === null)) {
+    return false;
+  }
+  if (h.insightsSnapshot !== undefined && !Array.isArray(h.insightsSnapshot)) {
+    return false;
+  }
+  if (h.suggestionsSnapshot !== undefined && !Array.isArray(h.suggestionsSnapshot)) {
+    return false;
+  }
+  if (h.memoriesSnapshot !== undefined && !Array.isArray(h.memoriesSnapshot)) {
+    return false;
+  }
+
+  return true;
+}
+

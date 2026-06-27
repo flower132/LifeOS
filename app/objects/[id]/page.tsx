@@ -1,24 +1,31 @@
 "use client";
 
+import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Trash2, StickyNote, Link as LinkIcon, Sparkles, Info } from "lucide-react";
+import { ArrowLeft, Trash2 } from "lucide-react";
 import { useObjectStore } from "@/stores/objectStore";
 import { useNoteStore } from "@/stores/noteStore";
 import { useRelationStore } from "@/stores/relationStore";
 import { useTagStore } from "@/stores/tagStore";
 import { ObjectTypeBadge } from "@/components/object/ObjectTypeBadge";
-import { TagBadge } from "@/components/tag/TagBadge";
-import { TagSelect } from "@/components/tag/TagSelect";
-import { NoteTimeline } from "@/components/note/NoteTimeline";
-import { RelationList } from "@/components/relation/RelationList";
-import { RelationForm } from "@/components/relation/RelationForm";
-import { PersonInsightCard } from "@/components/ai/PersonInsightCard";
-import { SelfInsightCard } from "@/components/ai/SelfInsightCard";
-import { GoalEventInsightCard } from "@/components/ai/GoalEventInsightCard";
-import { ObjectPropertiesForm } from "@/components/object/ObjectPropertiesForm";
 import { useTranslation } from "@/lib/useTranslation";
 import { ObjectProperties } from "@/lib/types";
+import { OverviewTab } from "./tabs/OverviewTab";
+import { AIProfileTab } from "./tabs/AIProfileTab";
+import { AIInsightsTab } from "./tabs/AIInsightsTab";
+import { AISuggestionsTab } from "./tabs/AISuggestionsTab";
+import { MemoriesTab } from "./tabs/MemoriesTab";
+
+type DetailTab = "overview" | "aiProfile" | "aiInsights" | "aiSuggestions" | "memories";
+
+const TABS: DetailTab[] = [
+  "overview",
+  "aiProfile",
+  "aiInsights",
+  "aiSuggestions",
+  "memories",
+];
 
 export default function ObjectDetailPage() {
   const params = useParams();
@@ -31,19 +38,16 @@ export default function ObjectDetailPage() {
   const { getByObjectId: getRelationsByObjectId } = useRelationStore();
   const { tags } = useTagStore();
 
+  const [activeTab, setActiveTab] = useState<DetailTab>("overview");
+
   const object = objects.find((o) => o.id === id);
   const notes = object ? getNotesByObjectId(object.id) : [];
   const relations = object ? getRelationsByObjectId(object.id) : [];
   const objectTags = object
     ? object.tag_ids
-        .map((tagId) => tags.find((t) => t.id === tagId))
+        .map((tagId) => tags.find((tag) => tag.id === tagId))
         .filter((tag): tag is NonNullable<typeof tag> => Boolean(tag))
     : [];
-
-  const getObjectName = (objectId: string) => {
-    const found = objects.find((o) => o.id === objectId);
-    return found?.name || "Unknown";
-  };
 
   const handleDelete = async () => {
     if (!object) return;
@@ -90,6 +94,12 @@ export default function ObjectDetailPage() {
     );
   }
 
+  const hasAnyAIData =
+    object.aiProfile ||
+    (object.aiInsights && object.aiInsights.length > 0) ||
+    (object.aiSuggestions && object.aiSuggestions.length > 0) ||
+    (object.memories && object.memories.length > 0);
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-background px-6 py-5">
@@ -122,108 +132,45 @@ export default function ObjectDetailPage() {
         </div>
       </header>
 
-      <div className="mx-auto max-w-4xl space-y-10 px-6 py-6">
-        {/* Properties / Basic Info */}
-        <section className="space-y-3">
-          <div className="flex items-center gap-2">
-            <Info className="h-4 w-4 text-muted-foreground" />
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-              {t("basicInfo")}
-            </h2>
-          </div>
-          <div className="rounded-xl border border-border bg-card p-4">
-            <ObjectPropertiesForm
-              key={object.id}
-              object={object}
-              onChange={handlePropertiesChange}
-            />
-          </div>
-        </section>
+      <div className="mx-auto max-w-4xl px-6 py-6">
+        <nav className="mb-8 border-b border-border">
+          <ul className="flex gap-1 overflow-x-auto">
+            {TABS.map((tab) => {
+              const isDisabled = tab !== "overview" && !hasAnyAIData;
+              return (
+                <li key={tab}>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab(tab)}
+                    disabled={isDisabled}
+                    className={`whitespace-nowrap border-b-2 px-4 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
+                      activeTab === tab
+                        ? "border-accent text-accent"
+                        : "border-transparent text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {t(`detailTab_${tab}`)}
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </nav>
 
-        {/* Tags */}
-        <section className="space-y-3">
-          <div className="flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-muted-foreground" />
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-              {t("tagsSection")}
-            </h2>
-          </div>
-          <div className="rounded-xl border border-border bg-card p-4">
-            <TagSelect
-              selectedTagIds={object.tag_ids}
-              onChange={handleTagChange}
-            />
-            {objectTags.length > 0 && (
-              <div className="mt-3 flex flex-wrap gap-2">
-                {objectTags.map((tag) => (
-                  <TagBadge key={tag.id} tag={tag} />
-                ))}
-              </div>
-            )}
-          </div>
-        </section>
-
-        {/* AI Insight */}
-        <section className="space-y-3">
-          <div className="flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-accent" />
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-              {t("aiUnderstanding")}
-            </h2>
-          </div>
-          {object.type === "person" && (
-            <PersonInsightCard
-              object={object}
-              notes={notes}
-              relations={relations}
-              getObjectName={getObjectName}
-            />
-          )}
-          {object.type === "self" && (
-            <SelfInsightCard
-              object={object}
-              notes={notes}
-              relations={relations}
-              getObjectName={getObjectName}
-            />
-          )}
-          {(object.type === "event" || object.type === "goal" || object.type === "idea") && (
-            <GoalEventInsightCard object={object} notes={notes} />
-          )}
-        </section>
-
-        {/* Relations */}
-        <section className="space-y-3">
-          <div className="flex items-center gap-2">
-            <LinkIcon className="h-4 w-4 text-muted-foreground" />
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-              {t("relations")}
-            </h2>
-          </div>
-          <RelationForm sourceObjectId={object.id} />
-          <div className="pt-2">
-            <RelationList objectId={object.id} relations={relations} />
-          </div>
-        </section>
-
-        {/* Notes */}
-        <section className="space-y-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <StickyNote className="h-4 w-4 text-muted-foreground" />
-              <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                {t("notesTimeline")}
-              </h2>
-            </div>
-            <Link
-              href={`/create-note?objectId=${object.id}`}
-              className="text-sm font-medium text-accent hover:text-accent/90"
-            >
-              + {t("addNote")}
-            </Link>
-          </div>
-          <NoteTimeline notes={notes} />
-        </section>
+        {activeTab === "overview" && (
+          <OverviewTab
+            object={object}
+            notes={notes}
+            relations={relations}
+            objectTags={objectTags}
+            onTagChange={handleTagChange}
+            onPropertiesChange={handlePropertiesChange}
+          />
+        )}
+        {activeTab === "aiProfile" && <AIProfileTab object={object} />}
+        {activeTab === "aiInsights" && <AIInsightsTab object={object} />}
+        {activeTab === "aiSuggestions" && <AISuggestionsTab object={object} />}
+        {activeTab === "memories" && <MemoriesTab object={object} />}
       </div>
     </div>
   );

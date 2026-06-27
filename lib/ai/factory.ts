@@ -1,6 +1,8 @@
 import {
+  AIImageInput,
   AIProvider,
   AIProviderConfig,
+  AIStructuredGenerationRequest,
   DEFAULT_PROVIDER_CONFIGS,
 } from "./types";
 
@@ -12,9 +14,16 @@ export function getDefaultModel(provider: AIProviderConfig["provider"]): string 
   return DEFAULT_PROVIDER_CONFIGS[provider].model;
 }
 
+export type OpenAIMessageContent =
+  | string
+  | Array<
+      | { type: "text"; text: string }
+      | { type: "image_url"; image_url: { url: string } }
+    >;
+
 export interface OpenAIMessage {
   role: "system" | "user" | "assistant";
-  content: string;
+  content: OpenAIMessageContent;
 }
 
 export async function callOpenAICompatible(
@@ -64,19 +73,61 @@ export async function callOpenAICompatible(
   return content;
 }
 
+function buildOpenAIUserMessage(
+  prompt: string,
+  images?: AIImageInput[]
+): OpenAIMessage {
+  if (!images || images.length === 0) {
+    return { role: "user", content: prompt };
+  }
+
+  const content: OpenAIMessageContent = [
+    { type: "text", text: prompt },
+    ...images.map((img) => ({
+      type: "image_url" as const,
+      image_url: { url: `data:${img.mimeType};base64,${img.base64Data}` },
+    })),
+  ];
+
+  return { role: "user", content };
+}
+
 function createOpenAICompatibleProvider(
   config: AIProviderConfig
 ): AIProvider {
+  const systemMessage: OpenAIMessage = {
+    role: "system",
+    content:
+      "You are a structured understanding engine for a personal life OS. Respond only with valid JSON matching the requested shape.",
+  };
+
   return {
     async generate(prompt: string): Promise<string> {
       const content = await callOpenAICompatible(config, [
-        {
-          role: "system",
-          content:
-            "You are a structured understanding engine for a personal life OS. Respond only with valid JSON matching the requested shape.",
-        },
+        systemMessage,
         { role: "user", content: prompt },
       ]);
+      return extractJson(content);
+    },
+    async generateWithImages(
+      prompt: string,
+      images: AIImageInput[]
+    ): Promise<string> {
+      const content = await callOpenAICompatible(
+        config,
+        [systemMessage, buildOpenAIUserMessage(prompt, images)],
+        true
+      );
+      return extractJson(content);
+    },
+    async generateStructuredObject(
+      request: AIStructuredGenerationRequest
+    ): Promise<string> {
+      const content = await callOpenAICompatible(
+        config,
+        [systemMessage, buildOpenAIUserMessage(request.prompt, request.images)],
+        true
+      );
       return extractJson(content);
     },
   };
@@ -137,141 +188,324 @@ export function createCustomProvider(config: AIProviderConfig): AIProvider {
 }
 
 export function createAnthropicProvider(config: AIProviderConfig): AIProvider {
-  return {
-    async generate(prompt: string): Promise<string> {
-      const apiKey = config.apiKey;
-      const baseUrl = config.baseUrl || getDefaultBaseUrl("anthropic");
-      const model = config.model || getDefaultModel("anthropic");
+  const apiKey = config.apiKey;
+  const baseUrl = config.baseUrl || getDefaultBaseUrl("anthropic");
+  const model = config.model || getDefaultModel("anthropic");
 
-      if (!apiKey) {
-        throw new Error("Anthropic API key is not set");
-      }
+  const systemPrompt =
+    "You are a structured understanding engine for a personal life OS. Respond only with valid JSON matching the requested shape.";
 
-      const response = await fetch(`${baseUrl}/messages`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-api-key": apiKey,
-          "anthropic-version": "2023-06-01",
+  async function generateText(prompt: string): Promise<string> {
+    if (!apiKey) {
+      throw new Error("Anthropic API key is not set");
+    }
+
+    const response = await fetch(`${baseUrl}/messages`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+      },
+      body: JSON.stringify({
+        model,
+        max_tokens: 1024,
+        system: systemPrompt,
+        messages: [{ role: "user", content: prompt }],
+        temperature: 0.2,
+      }),
+    });
+
+    if (!response.ok) {
+      const text = await response.text();
+      throw new Error(`Anthropic API error: ${response.status} ${text}`);
+    }
+
+    const data = (await response.json()) as {
+      content: { type: string; text: string }[];
+    };
+
+    const text = data.content.find((c) => c.type === "text")?.text;
+    if (!text) throw new Error("Empty response from Anthropic");
+
+    return extractJson(text);
+  }
+
+  async function generateWithImagesText(
+    prompt: string,
+    images: AIImageInput[]
+  ): Promise<string> {
+    if (!apiKey) {
+      throw new Error("Anthropic API key is not set");
+    }
+
+    const content = [
+      ...images.map((img) => ({
+        type: "image" as const,
+        source: {
+          type: "base64" as const,
+          media_type: img.mimeType as
+            | "image/jpeg"
+            | "image/png"
+            | "image/gif"
+            | "image/webp",
+          data: img.base64Data,
         },
-        body: JSON.stringify({
-          model,
-          max_tokens: 1024,
-          system:
-            "You are a structured understanding engine for a personal life OS. Respond only with valid JSON matching the requested shape.",
-          messages: [{ role: "user", content: prompt }],
-          temperature: 0.2,
-        }),
-      });
+      })),
+      { type: "text" as const, text: prompt },
+    ];
 
-      if (!response.ok) {
-        const text = await response.text();
-        throw new Error(`Anthropic API error: ${response.status} ${text}`);
+    const response = await fetch(`${baseUrl}/messages`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+      },
+      body: JSON.stringify({
+        model,
+        max_tokens: 4096,
+        system: systemPrompt,
+        messages: [{ role: "user", content }],
+        temperature: 0.2,
+      }),
+    });
+
+    if (!response.ok) {
+      const text = await response.text();
+      throw new Error(`Anthropic API error: ${response.status} ${text}`);
+    }
+
+    const data = (await response.json()) as {
+      content: { type: string; text: string }[];
+    };
+
+    const text = data.content.find((c) => c.type === "text")?.text;
+    if (!text) throw new Error("Empty response from Anthropic");
+
+    return extractJson(text);
+  }
+
+  return {
+    generate: generateText,
+    generateWithImages: generateWithImagesText,
+    async generateStructuredObject(
+      request: AIStructuredGenerationRequest
+    ): Promise<string> {
+      if (request.images && request.images.length > 0) {
+        return generateWithImagesText(request.prompt, request.images);
       }
-
-      const data = (await response.json()) as {
-        content: { type: string; text: string }[];
-      };
-
-      const text = data.content.find((c) => c.type === "text")?.text;
-      if (!text) throw new Error("Empty response from Anthropic");
-
-      return extractJson(text);
+      return generateText(request.prompt);
     },
   };
 }
 
 export function createGeminiProvider(config: AIProviderConfig): AIProvider {
-  return {
-    async generate(prompt: string): Promise<string> {
-      const apiKey = config.apiKey;
-      const baseUrl = config.baseUrl || getDefaultBaseUrl("gemini");
-      const model = config.model || getDefaultModel("gemini");
+  const apiKey = config.apiKey;
+  const baseUrl = config.baseUrl || getDefaultBaseUrl("gemini");
+  const model = config.model || getDefaultModel("gemini");
 
-      if (!apiKey) {
-        throw new Error("Gemini API key is not set");
-      }
+  async function generateText(prompt: string): Promise<string> {
+    if (!apiKey) {
+      throw new Error("Gemini API key is not set");
+    }
 
-      const url = `${baseUrl}/models/${model}:generateContent?key=${apiKey}`;
-      const response = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [
-            {
-              role: "user",
-              parts: [
-                {
-                  text: `You are a structured understanding engine for a personal life OS. Respond only with valid JSON matching the requested shape.\n\n${prompt}`,
+    const url = `${baseUrl}/models/${model}:generateContent?key=${apiKey}`;
+    const response = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [
+          {
+            role: "user",
+            parts: [
+              {
+                text: `You are a structured understanding engine for a personal life OS. Respond only with valid JSON matching the requested shape.\n\n${prompt}`,
+              },
+            ],
+          },
+        ],
+        generationConfig: { temperature: 0.2 },
+      }),
+    });
+
+    if (!response.ok) {
+      const text = await response.text();
+      throw new Error(`Gemini API error: ${response.status} ${text}`);
+    }
+
+    const data = (await response.json()) as {
+      candidates?: {
+        content?: { parts?: { text?: string }[] };
+      }[];
+    };
+
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!text) throw new Error("Empty response from Gemini");
+
+    return extractJson(text);
+  }
+
+  async function generateWithImagesText(
+    prompt: string,
+    images: AIImageInput[]
+  ): Promise<string> {
+    if (!apiKey) {
+      throw new Error("Gemini API key is not set");
+    }
+
+    const url = `${baseUrl}/models/${model}:generateContent?key=${apiKey}`;
+    const response = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [
+          {
+            role: "user",
+            parts: [
+              {
+                text: `You are a structured understanding engine for a personal life OS. Respond only with valid JSON matching the requested shape.\n\n${prompt}`,
+              },
+              ...images.map((img) => ({
+                inlineData: {
+                  mimeType: img.mimeType,
+                  data: img.base64Data,
                 },
-              ],
-            },
-          ],
-          generationConfig: { temperature: 0.2 },
-        }),
-      });
+              })),
+            ],
+          },
+        ],
+        generationConfig: { temperature: 0.2 },
+      }),
+    });
 
-      if (!response.ok) {
-        const text = await response.text();
-        throw new Error(`Gemini API error: ${response.status} ${text}`);
+    if (!response.ok) {
+      const text = await response.text();
+      throw new Error(`Gemini API error: ${response.status} ${text}`);
+    }
+
+    const data = (await response.json()) as {
+      candidates?: {
+        content?: { parts?: { text?: string }[] };
+      }[];
+    };
+
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!text) throw new Error("Empty response from Gemini");
+
+    return extractJson(text);
+  }
+
+  return {
+    generate: generateText,
+    generateWithImages: generateWithImagesText,
+    async generateStructuredObject(
+      request: AIStructuredGenerationRequest
+    ): Promise<string> {
+      if (request.images && request.images.length > 0) {
+        return generateWithImagesText(request.prompt, request.images);
       }
-
-      const data = (await response.json()) as {
-        candidates?: {
-          content?: { parts?: { text?: string }[] };
-        }[];
-      };
-
-      const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-      if (!text) throw new Error("Empty response from Gemini");
-
-      return extractJson(text);
+      return generateText(request.prompt);
     },
   };
 }
 
 export function createOllamaProvider(config: AIProviderConfig): AIProvider {
+  const baseUrl = config.baseUrl || getDefaultBaseUrl("ollama");
+  const model = config.model || getDefaultModel("ollama");
+
+  async function generateText(prompt: string): Promise<string> {
+    if (!model) {
+      throw new Error("Ollama model is not set");
+    }
+
+    const response = await fetch(`${baseUrl}/chat`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model,
+        messages: [
+          {
+            role: "system",
+            content:
+              "You are a structured understanding engine for a personal life OS. Respond only with valid JSON matching the requested shape.",
+          },
+          { role: "user", content: prompt },
+        ],
+        stream: false,
+        format: "json",
+        options: { temperature: 0.2 },
+      }),
+    });
+
+    if (!response.ok) {
+      const text = await response.text();
+      throw new Error(`Ollama API error: ${response.status} ${text}`);
+    }
+
+    const data = (await response.json()) as {
+      message?: { content?: string };
+    };
+
+    const content = data.message?.content;
+    if (!content) throw new Error("Empty response from Ollama");
+
+    return extractJson(content);
+  }
+
+  async function generateWithImagesText(
+    prompt: string,
+    images: AIImageInput[]
+  ): Promise<string> {
+    if (!model) {
+      throw new Error("Ollama model is not set");
+    }
+
+    const response = await fetch(`${baseUrl}/chat`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model,
+        messages: [
+          {
+            role: "system",
+            content:
+              "You are a structured understanding engine for a personal life OS. Respond only with valid JSON matching the requested shape.",
+          },
+          { role: "user", content: prompt },
+        ],
+        images: images.map((img) => img.base64Data),
+        stream: false,
+        format: "json",
+        options: { temperature: 0.2 },
+      }),
+    });
+
+    if (!response.ok) {
+      const text = await response.text();
+      throw new Error(`Ollama API error: ${response.status} ${text}`);
+    }
+
+    const data = (await response.json()) as {
+      message?: { content?: string };
+    };
+
+    const content = data.message?.content;
+    if (!content) throw new Error("Empty response from Ollama");
+
+    return extractJson(content);
+  }
+
   return {
-    async generate(prompt: string): Promise<string> {
-      const baseUrl = config.baseUrl || getDefaultBaseUrl("ollama");
-      const model = config.model || getDefaultModel("ollama");
-
-      if (!model) {
-        throw new Error("Ollama model is not set");
+    generate: generateText,
+    generateWithImages: generateWithImagesText,
+    async generateStructuredObject(
+      request: AIStructuredGenerationRequest
+    ): Promise<string> {
+      if (request.images && request.images.length > 0) {
+        return generateWithImagesText(request.prompt, request.images);
       }
-
-      const response = await fetch(`${baseUrl}/chat`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model,
-          messages: [
-            {
-              role: "system",
-              content:
-                "You are a structured understanding engine for a personal life OS. Respond only with valid JSON matching the requested shape.",
-            },
-            { role: "user", content: prompt },
-          ],
-          stream: false,
-          format: "json",
-          options: { temperature: 0.2 },
-        }),
-      });
-
-      if (!response.ok) {
-        const text = await response.text();
-        throw new Error(`Ollama API error: ${response.status} ${text}`);
-      }
-
-      const data = (await response.json()) as {
-        message?: { content?: string };
-      };
-
-      const content = data.message?.content;
-      if (!content) throw new Error("Empty response from Ollama");
-
-      return extractJson(content);
+      return generateText(request.prompt);
     },
   };
 }

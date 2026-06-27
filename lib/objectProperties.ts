@@ -479,12 +479,121 @@ const IDEA_SCHEMA: PropertyFieldSchema[] = [
   },
 ];
 
+const PROJECT_SCHEMA: PropertyFieldSchema[] = [
+  {
+    key: "project_name",
+    label: { zh: "项目名称", en: "Project Name" },
+    placeholder: { zh: "请输入项目名称", en: "Enter project name" },
+    type: "text",
+  },
+  {
+    key: "status",
+    label: { zh: "当前状态", en: "Current Status" },
+    placeholder: { zh: "请选择当前状态", en: "Select current status" },
+    type: "select",
+    options: [
+      { value: "not_started", label: { zh: "未开始", en: "Not Started" } },
+      { value: "in_progress", label: { zh: "进行中", en: "In Progress" } },
+      { value: "completed", label: { zh: "已完成", en: "Completed" } },
+      { value: "paused", label: { zh: "已暂停", en: "Paused" } },
+    ],
+  },
+  {
+    key: "start_date",
+    label: { zh: "开始日期", en: "Start Date" },
+    placeholder: { zh: "请选择开始日期", en: "Select start date" },
+    type: "date",
+  },
+  {
+    key: "target_date",
+    label: { zh: "目标日期", en: "Target Date" },
+    placeholder: { zh: "请选择目标日期", en: "Select target date" },
+    type: "date",
+  },
+  {
+    key: "stakeholders",
+    label: { zh: "干系人", en: "Stakeholders" },
+    placeholder: { zh: "请输入干系人，用逗号分隔", en: "Enter stakeholders, separated by commas" },
+    type: "tags",
+  },
+  {
+    key: "goals",
+    label: { zh: "项目目标", en: "Project Goals" },
+    placeholder: { zh: "请输入项目目标", en: "Enter project goals" },
+    type: "textarea",
+  },
+  {
+    key: "risks",
+    label: { zh: "风险", en: "Risks" },
+    placeholder: { zh: "请输入风险", en: "Enter risks" },
+    type: "textarea",
+  },
+  {
+    key: "next_action",
+    label: { zh: "下一步行动", en: "Next Action" },
+    placeholder: { zh: "请输入下一步行动", en: "Enter next action" },
+    type: "textarea",
+  },
+];
+
+const KNOWLEDGE_SCHEMA: PropertyFieldSchema[] = [
+  {
+    key: "topic",
+    label: { zh: "主题", en: "Topic" },
+    placeholder: { zh: "请输入主题", en: "Enter topic" },
+    type: "text",
+  },
+  {
+    key: "source",
+    label: { zh: "来源", en: "Source" },
+    placeholder: { zh: "请输入来源", en: "Enter source" },
+    type: "text",
+  },
+  {
+    key: "category",
+    label: { zh: "分类", en: "Category" },
+    placeholder: { zh: "请输入分类", en: "Enter category" },
+    type: "text",
+  },
+  {
+    key: "difficulty",
+    label: { zh: "难度", en: "Difficulty" },
+    placeholder: { zh: "请选择难度", en: "Select difficulty" },
+    type: "select",
+    options: [
+      { value: "beginner", label: { zh: "入门", en: "Beginner" } },
+      { value: "intermediate", label: { zh: "进阶", en: "Intermediate" } },
+      { value: "advanced", label: { zh: "高级", en: "Advanced" } },
+    ],
+  },
+  {
+    key: "related_topics",
+    label: { zh: "相关主题", en: "Related Topics" },
+    placeholder: { zh: "请输入相关主题，用逗号分隔", en: "Enter related topics, separated by commas" },
+    type: "tags",
+  },
+  {
+    key: "key_points",
+    label: { zh: "核心要点", en: "Key Points" },
+    placeholder: { zh: "请输入核心要点", en: "Enter key points" },
+    type: "textarea",
+  },
+  {
+    key: "notes",
+    label: { zh: "笔记", en: "Notes" },
+    placeholder: { zh: "请输入笔记", en: "Enter notes" },
+    type: "textarea",
+  },
+];
+
 export const PROPERTY_SCHEMAS: Record<LifeObjectType, PropertyFieldSchema[]> = {
   person: PERSON_SCHEMA,
   self: SELF_SCHEMA,
   goal: GOAL_SCHEMA,
   event: EVENT_SCHEMA,
   idea: IDEA_SCHEMA,
+  project: PROJECT_SCHEMA,
+  knowledge: KNOWLEDGE_SCHEMA,
 };
 
 export function getDefaultProperties(): ObjectProperties {
@@ -810,6 +919,8 @@ const LABEL_TO_KEY_MAPS: Record<LifeObjectType, Map<string, string>> = {
   goal: buildLabelToKeyMap("goal"),
   event: buildLabelToKeyMap("event"),
   idea: buildLabelToKeyMap("idea"),
+  project: buildLabelToKeyMap("project"),
+  knowledge: buildLabelToKeyMap("knowledge"),
 };
 
 /**

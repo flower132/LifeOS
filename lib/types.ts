@@ -1,4 +1,11 @@
-export type LifeObjectType = "person" | "self" | "event" | "idea" | "goal";
+export type LifeObjectType =
+  | "person"
+  | "self"
+  | "event"
+  | "idea"
+  | "goal"
+  | "project"
+  | "knowledge";
 
 export const LIFE_OBJECT_TYPES: LifeObjectType[] = [
   "person",
@@ -6,6 +13,8 @@ export const LIFE_OBJECT_TYPES: LifeObjectType[] = [
   "event",
   "idea",
   "goal",
+  "project",
+  "knowledge",
 ];
 
 export interface LifeObject {
@@ -14,12 +23,148 @@ export interface LifeObject {
   name: string;
   description?: string;
   properties?: Record<string, unknown>;
+  aiProfile?: ObjectAIProfile;
+  aiInsights?: ObjectAIInsight[];
+  aiSuggestions?: ObjectAISuggestion[];
+  memories?: ObjectMemory[];
   tag_ids: string[];
   created_at: string;
   updated_at: string;
 }
 
 export type ObjectProperties = Record<string, unknown>;
+
+// ── AI Object Intelligence Engine ───────────────────────────────────────────
+
+export interface Evidence {
+  quote: string;
+  source: string; // e.g. "chat_log_line_12", "screenshot_3"
+}
+
+export interface ObjectAIInsight {
+  id: string;
+  category: string;
+  title: string;
+  description: string;
+  confidence: number; // 0-100
+  evidence: Evidence[];
+  createdAt: string; // ISO
+}
+
+export type AISuggestionPriority = "low" | "medium" | "high";
+
+export interface ObjectAISuggestion {
+  id: string;
+  title: string;
+  description: string;
+  priority: AISuggestionPriority;
+  generatedAt: string; // ISO
+}
+
+export type MemorySource = "user" | "ai" | "import" | "note";
+
+export interface ObjectMemory {
+  id: string;
+  content: string;
+  source: MemorySource;
+  createdAt: string; // ISO
+}
+
+// ── AI Profiles (discriminated by object type) ──────────────────────────────
+
+export interface PersonAIProfile {
+  type: "person";
+  mbti: string;
+  mbtiConfidence: number;
+  bigFive: {
+    openness: number;
+    conscientiousness: number;
+    extraversion: number;
+    agreeableness: number;
+    emotionalStability: number;
+  };
+  personalitySummary: string;
+}
+
+export interface GoalAIProfile {
+  type: "goal";
+  difficulty: number;
+  successProbability: number;
+  requiredResources: string[];
+  estimatedDuration: string;
+  motivationType: "intrinsic" | "extrinsic" | "mixed";
+}
+
+export interface ProjectAIProfile {
+  type: "project";
+  complexity: number;
+  riskLevel: "low" | "medium" | "high";
+  timelineEstimate: string;
+  keyStakeholders: string[];
+}
+
+export interface SelfAIProfile {
+  type: "self";
+  strengths: string[];
+  weaknesses: string[];
+  growthAreas: string[];
+  currentFocus: string;
+}
+
+export interface KnowledgeAIProfile {
+  type: "knowledge";
+  difficulty: number;
+  relatedTopics: string[];
+  knowledgeGraph: { node: string; relation: string; target: string }[];
+}
+
+export interface EventAIProfile {
+  type: "event";
+  impactLevel: "low" | "medium" | "high";
+  importance: number;
+  stakeholders: string[];
+}
+
+export interface IdeaAIProfile {
+  type: "idea";
+  novelty: number;
+  feasibility: number;
+  marketPotential: number;
+  relatedDomains: string[];
+}
+
+export type ObjectAIProfile =
+  | PersonAIProfile
+  | GoalAIProfile
+  | ProjectAIProfile
+  | SelfAIProfile
+  | KnowledgeAIProfile
+  | EventAIProfile
+  | IdeaAIProfile;
+
+export type ObjectAIProfileType = ObjectAIProfile["type"];
+
+// ── AI Analysis History ─────────────────────────────────────────────────────
+
+export interface AIAnalysisHistoryEntry {
+  id: string;
+  objectType: LifeObjectType;
+  objectId?: string;
+  createdAt: string;
+  rawTextInput: string;
+  imageCount: number;
+  imageThumbnails: string[];
+  provider: string;
+  model: string;
+  durationMs: number;
+  rawOutput: string;
+  profileSnapshot?: ObjectAIProfile;
+  insightsSnapshot?: ObjectAIInsight[];
+  suggestionsSnapshot?: ObjectAISuggestion[];
+  memoriesSnapshot?: ObjectMemory[];
+}
+
+// ── Core domain types ───────────────────────────────────────────────────────
 
 export interface Note {
   id: string;
@@ -84,6 +229,8 @@ export type TemplateCategory =
   | "goal"
   | "event"
   | "idea"
+  | "project"
+  | "knowledge"
   | "task"
   | "custom";
 
@@ -93,6 +240,8 @@ export const TEMPLATE_CATEGORIES: TemplateCategory[] = [
   "goal",
   "event",
   "idea",
+  "project",
+  "knowledge",
   "task",
   "custom",
 ];
@@ -118,4 +267,3 @@ export type TemplateCreateInput = Omit<
 export type TemplateUpdateInput = Partial<Omit<Template, "id" | "createdAt">>;
 
 export type WithRequired<T, K extends keyof T> = T & Required<Pick<T, K>>;
-

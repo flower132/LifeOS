@@ -2,6 +2,7 @@ import { StorageAdapter } from "./types";
 import {
   LifeObject, Note, Relation, Tag, Template,
   TemplateCreateInput, TemplateUpdateInput,
+  AIAnalysisHistoryEntry, ObjectAIProfile,
 } from "@/lib/types";
 import { getSupabase, resetSupabase } from "@/lib/supabaseClient";
 
@@ -12,44 +13,141 @@ function getUid(): Promise<string | null> {
   return getSupabase().auth.getUser().then(({ data }) => data.user?.id ?? null);
 }
 
+type DbRow = Record<string, unknown>;
+
+function getString(row: DbRow, key: string): string {
+  const value = row[key];
+  return typeof value === "string" ? value : "";
+}
+
+function getOptionalString(row: DbRow, key: string): string | undefined {
+  const value = row[key];
+  if (value === undefined || value === null) return undefined;
+  return typeof value === "string" ? value : undefined;
+}
+
+function getNumber(row: DbRow, key: string): number {
+  const value = row[key];
+  return typeof value === "number" ? value : 0;
+}
+
+function getBoolean(row: DbRow, key: string): boolean {
+  const value = row[key];
+  return typeof value === "boolean" ? value : false;
+}
+
+function getArray<T>(row: DbRow, key: string): T[] {
+  const value = row[key];
+  return Array.isArray(value) ? value : [];
+}
+
+function getRecord(row: DbRow, key: string): Record<string, unknown> {
+  const value = row[key];
+  return value !== null && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
+}
+
 // ---------- helpers ----------
-function mapObject(r: any): LifeObject {
+function mapObject(r: DbRow): LifeObject {
   return {
-    id: r.id, type: r.type, name: r.name,
-    description: r.description || undefined,
-    properties: r.properties || {},
-    tag_ids: r.tag_ids || [],
+    id: getString(r, "id"),
+    type: getString(r, "type") as LifeObject["type"],
+    name: getString(r, "name"),
+    description: getOptionalString(r, "description"),
+    properties: getRecord(r, "properties"),
+    aiProfile: r.ai_profile !== null && r.ai_profile !== undefined
+      ? (r.ai_profile as ObjectAIProfile)
+      : undefined,
+    aiInsights: getArray(r, "ai_insights"),
+    aiSuggestions: getArray(r, "ai_suggestions"),
+    memories: getArray(r, "memories"),
+    tag_ids: getArray(r, "tag_ids"),
     created_at: toISO(r.created_at),
     updated_at: toISO(r.updated_at),
   };
 }
-function mapNote(r: any): Note {
-  return { id: r.id, object_id: r.object_id, content: r.content || "", created_at: toISO(r.created_at) };
-}
-function mapRelation(r: any): Relation {
+
+function mapNote(r: DbRow): Note {
   return {
-    id: r.id, source_object_id: r.source_object_id, target_object_id: r.target_object_id,
-    type: r.type, strength: r.strength ?? undefined, note: r.note || undefined,
+    id: getString(r, "id"),
+    object_id: getString(r, "object_id"),
+    content: getString(r, "content"),
     created_at: toISO(r.created_at),
   };
 }
-function mapTag(r: any): Tag {
-  return { id: r.id, name: r.name, color: r.color || undefined, createdAt: toISO(r.created_at), usageCount: r.usage_count || 0 };
-}
-function mapTemplate(r: any): Template {
+
+function mapRelation(r: DbRow): Relation {
   return {
-    id: r.id, name: r.name, category: r.category,
-    isDefault: r.is_default, content: r.content || "",
-    templateVersion: r.template_version || 1,
-    createdAt: toISO(r.created_at), updatedAt: toISO(r.updated_at),
-    usageCount: r.usage_count || 0,
+    id: getString(r, "id"),
+    source_object_id: getString(r, "source_object_id"),
+    target_object_id: getString(r, "target_object_id"),
+    type: getString(r, "type") as Relation["type"],
+    strength: typeof r.strength === "number" ? r.strength : undefined,
+    note: getOptionalString(r, "note"),
+    created_at: toISO(r.created_at),
+  };
+}
+
+function mapTag(r: DbRow): Tag {
+  return {
+    id: getString(r, "id"),
+    name: getString(r, "name"),
+    color: getOptionalString(r, "color"),
+    createdAt: toISO(r.created_at),
+    usageCount: getNumber(r, "usage_count"),
+  };
+}
+
+function mapTemplate(r: DbRow): Template {
+  return {
+    id: getString(r, "id"),
+    name: getString(r, "name"),
+    category: getString(r, "category") as Template["category"],
+    isDefault: getBoolean(r, "is_default"),
+    content: getString(r, "content"),
+    templateVersion: getNumber(r, "template_version") || 1,
+    createdAt: toISO(r.created_at),
+    updatedAt: toISO(r.updated_at),
+    usageCount: getNumber(r, "usage_count"),
     lastUsedAt: r.last_used_at ? toISO(r.last_used_at) : undefined,
   };
 }
-function mapSettings(rows: any[]): Record<string, unknown> {
+
+function mapSettings(rows: DbRow[]): Record<string, unknown> {
   const s: Record<string, unknown> = {};
-  rows.forEach((r: any) => { s[r.key] = r.value; });
+  for (const r of rows) {
+    const key = getString(r, "key");
+    if (key) s[key] = r.value;
+  }
   return s;
+}
+
+function mapHistory(r: DbRow): AIAnalysisHistoryEntry {
+  const profileSnapshot = r.profile_snapshot;
+  return {
+    id: getString(r, "id"),
+    objectType: getString(r, "object_type") as AIAnalysisHistoryEntry["objectType"],
+    objectId: getOptionalString(r, "object_id"),
+    createdAt: toISO(r.created_at),
+    rawTextInput: getString(r, "raw_text_input"),
+    imageCount: getNumber(r, "image_count"),
+    imageThumbnails: getArray<string>(r, "image_thumbnails"),
+    provider: getString(r, "provider"),
+    model: getString(r, "model"),
+    durationMs: getNumber(r, "duration_ms"),
+    rawOutput: getString(r, "raw_output"),
+    profileSnapshot:
+      profileSnapshot !== null &&
+      profileSnapshot !== undefined &&
+      typeof profileSnapshot === "object" &&
+      !Array.isArray(profileSnapshot)
+        ? (profileSnapshot as ObjectAIProfile)
+        : undefined,
+    insightsSnapshot: getArray(r, "insights_snapshot"),
+    suggestionsSnapshot: getArray(r, "suggestions_snapshot"),
+    memoriesSnapshot: getArray(r, "memories_snapshot"),
+  };
 }
 
 // ---------- SupabaseAdapter ----------
@@ -57,8 +155,9 @@ export class SupabaseAdapter implements StorageAdapter {
   private cache: {
     objects: LifeObject[]; notes: Note[]; relations: Relation[];
     tags: Tag[]; templates: Template[]; settings: Record<string, unknown>;
+    aiAnalysisHistory: AIAnalysisHistoryEntry[];
     _loaded: boolean;
-  } = { objects: [], notes: [], relations: [], tags: [], templates: [], settings: {}, _loaded: false };
+  } = { objects: [], notes: [], relations: [], tags: [], templates: [], settings: {}, aiAnalysisHistory: [], _loaded: false };
 
   private _initPromise: Promise<void> | null = null;
 
@@ -72,7 +171,7 @@ export class SupabaseAdapter implements StorageAdapter {
             this.init();
           }
           if (event === "SIGNED_OUT") {
-            this.cache = { objects: [], notes: [], relations: [], tags: [], templates: [], settings: {}, _loaded: false };
+            this.cache = { objects: [], notes: [], relations: [], tags: [], templates: [], settings: {}, aiAnalysisHistory: [], _loaded: false };
             resetSupabase();
           }
         });
@@ -100,13 +199,14 @@ export class SupabaseAdapter implements StorageAdapter {
     if (!uid) return;
 
     const client = getSupabase();
-    const [objs, notes, rels, tags, tpls, sets] = await Promise.all([
+    const [objs, notes, rels, tags, tpls, sets, history] = await Promise.all([
       client.from("objects").select("*").eq("user_id", uid),
       client.from("notes").select("*").eq("user_id", uid),
       client.from("relations").select("*").eq("user_id", uid),
       client.from("tags").select("*").eq("user_id", uid),
       client.from("templates").select("*").eq("user_id", uid),
       client.from("settings").select("*").eq("user_id", uid),
+      client.from("ai_analysis_history").select("*").eq("user_id", uid),
     ]);
 
     this.cache.objects    = (objs.data  || []).map(mapObject);
@@ -115,6 +215,7 @@ export class SupabaseAdapter implements StorageAdapter {
     this.cache.tags      = (tags.data  || []).map(mapTag);
     this.cache.templates = (tpls.data || []).map(mapTemplate);
     this.cache.settings  = mapSettings(sets.data || []);
+    this.cache.aiAnalysisHistory = (history.data || []).map(mapHistory);
   }
 
   // ---------- version ----------
@@ -147,6 +248,10 @@ export class SupabaseAdapter implements StorageAdapter {
       id: crypto.randomUUID(), user_id: uid,
       type: obj.type, name: obj.name,
       description: obj.description || null, properties: obj.properties || {},
+      ai_profile: obj.aiProfile || null,
+      ai_insights: obj.aiInsights || [],
+      ai_suggestions: obj.aiSuggestions || [],
+      memories: obj.memories || [],
       tag_ids: obj.tag_ids || [], created_at: now, updated_at: now,
     };
     const client = getSupabase();
@@ -165,11 +270,15 @@ export class SupabaseAdapter implements StorageAdapter {
     const { data, error } = await client
       .from("objects")
       .update({
-        ...(updates.name       !== undefined && { name:       updates.name }),
-        ...(updates.type       !== undefined && { type:       updates.type }),
+        ...(updates.name !== undefined && { name: updates.name }),
+        ...(updates.type !== undefined && { type: updates.type }),
         ...(updates.description !== undefined && { description: updates.description }),
         ...(updates.properties !== undefined && { properties: updates.properties }),
-        ...(updates.tag_ids    !== undefined && { tag_ids:    updates.tag_ids }),
+        ...(updates.aiProfile !== undefined && { ai_profile: updates.aiProfile }),
+        ...(updates.aiInsights !== undefined && { ai_insights: updates.aiInsights }),
+        ...(updates.aiSuggestions !== undefined && { ai_suggestions: updates.aiSuggestions }),
+        ...(updates.memories !== undefined && { memories: updates.memories }),
+        ...(updates.tag_ids !== undefined && { tag_ids: updates.tag_ids }),
         updated_at: now,
       })
       .eq("id", id).eq("user_id", uid)
@@ -196,6 +305,10 @@ export class SupabaseAdapter implements StorageAdapter {
     const rows = objects.map((o) => ({
       id: o.id, user_id: uid, type: o.type, name: o.name,
       description: o.description || null, properties: o.properties || {},
+      ai_profile: o.aiProfile || null,
+      ai_insights: o.aiInsights || [],
+      ai_suggestions: o.aiSuggestions || [],
+      memories: o.memories || [],
       tag_ids: o.tag_ids || [], created_at: o.created_at, updated_at: o.updated_at,
     }));
     await client.from("objects").delete().eq("user_id", uid);
@@ -464,5 +577,108 @@ export class SupabaseAdapter implements StorageAdapter {
   async getSetting(key: string): Promise<unknown> {
     await this.init();
     return this.cache.settings[key];
+  }
+
+  // ---------- AI Analysis History ----------
+  async getAIAnalysisHistory(): Promise<AIAnalysisHistoryEntry[]> {
+    await this.init();
+    return [...this.cache.aiAnalysisHistory].sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+  }
+
+  async getAIAnalysisHistoryByObjectId(objectId: string): Promise<AIAnalysisHistoryEntry[]> {
+    await this.init();
+    return this.cache.aiAnalysisHistory
+      .filter((h) => h.objectId === objectId)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }
+
+  async getAIAnalysisHistoryByType(
+    objectType: import("@/lib/types").LifeObjectType
+  ): Promise<AIAnalysisHistoryEntry[]> {
+    await this.init();
+    return this.cache.aiAnalysisHistory
+      .filter((h) => h.objectType === objectType)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }
+
+  async getAIAnalysisHistoryEntryById(id: string): Promise<AIAnalysisHistoryEntry | null> {
+    await this.init();
+    return this.cache.aiAnalysisHistory.find((h) => h.id === id) ?? null;
+  }
+
+  async createAIAnalysisHistory(
+    entry: Omit<AIAnalysisHistoryEntry, "id" | "createdAt">
+  ): Promise<AIAnalysisHistoryEntry> {
+    await this.init();
+    const uid = await getUid();
+    if (!uid) throw new Error("Not authenticated");
+
+    const now = new Date().toISOString();
+    const row = {
+      id: crypto.randomUUID(),
+      user_id: uid,
+      object_type: entry.objectType,
+      object_id: entry.objectId || null,
+      created_at: now,
+      raw_text_input: entry.rawTextInput,
+      image_count: entry.imageCount,
+      image_thumbnails: entry.imageThumbnails,
+      provider: entry.provider,
+      model: entry.model,
+      duration_ms: entry.durationMs,
+      raw_output: entry.rawOutput,
+      profile_snapshot: entry.profileSnapshot || null,
+      insights_snapshot: entry.insightsSnapshot || [],
+      suggestions_snapshot: entry.suggestionsSnapshot || [],
+      memories_snapshot: entry.memoriesSnapshot || [],
+    };
+
+    const client = getSupabase();
+    const { data, error } = await client.from("ai_analysis_history").insert(row).select().single();
+    if (error) throw error;
+
+    const created = mapHistory(data);
+    this.cache.aiAnalysisHistory = [created, ...this.cache.aiAnalysisHistory];
+    return created;
+  }
+
+  async updateAIAnalysisHistoryObjectId(historyId: string, objectId: string): Promise<void> {
+    await this.init();
+    const uid = await getUid();
+    if (!uid) throw new Error("Not authenticated");
+
+    const client = getSupabase();
+    const { error } = await client
+      .from("ai_analysis_history")
+      .update({ object_id: objectId })
+      .eq("id", historyId)
+      .eq("user_id", uid);
+    if (error) throw error;
+
+    this.cache.aiAnalysisHistory = this.cache.aiAnalysisHistory.map((h) =>
+      h.id === historyId ? { ...h, objectId } : h
+    );
+  }
+
+  async deleteAIAnalysisHistory(id: string): Promise<void> {
+    await this.init();
+    const uid = await getUid();
+    if (uid) {
+      const client = getSupabase();
+      await client.from("ai_analysis_history").delete().eq("id", id).eq("user_id", uid);
+    }
+    this.cache.aiAnalysisHistory = this.cache.aiAnalysisHistory.filter((h) => h.id !== id);
+  }
+
+  async clearAIAnalysisHistory(): Promise<void> {
+    await this.init();
+    const uid = await getUid();
+    if (uid) {
+      const client = getSupabase();
+      await client.from("ai_analysis_history").delete().eq("user_id", uid);
+    }
+    this.cache.aiAnalysisHistory = [];
   }
 }

@@ -1,30 +1,51 @@
-import { LifeObject, Note, Relation } from "@/lib/types";
-import { useSettingsStore } from "@/stores/settingsStore";
-import { propertiesToPromptContext } from "@/lib/objectProperties";
-import { registry } from "./registry";
 import {
-  AIInsightResult,
+  AIAnalysisRunResult,
+  AIErrorCode,
   AIProvider,
   AIProviderConfig,
   AITestResult,
-  EventGoalInsight,
-  Language,
   PersonInsight,
   SelfInsight,
+  EventGoalInsight,
 } from "./types";
-import {
-  normalizeEventGoalInsight,
-  normalizePersonInsight,
-  normalizeSelfInsight,
-} from "./normalize";
+import { useSettingsStore } from "@/stores/settingsStore";
+import { registry } from "./registry";
+import { propertiesToPromptContext } from "@/lib/objectProperties";
 import {
   addAILog,
   detectMixedContent,
   formatErrorForUser,
 } from "./logs";
+import {
+  objectIntelligenceEngine,
+  selectProviderForAnalysis,
+  shouldRunAnalysis,
+} from "./objectIntelligence";
+import {
+  AIAnalysisInput,
+  AIAnalysisResult,
+} from "./objectIntelligence/types";
+import {
+  addAIAnalysisHistory,
+  createAIAnalysisHistoryEntryInput,
+} from "./objectIntelligence/history";
+import { LifeObject, Note, Relation, LifeObjectType } from "@/lib/types";
+import { Language } from "@/lib/i18n";
+import {
+  normalizeEventGoalInsight,
+  normalizePersonInsight,
+  normalizeSelfInsight,
+} from "./normalize";
 
 export { getAILogs, clearAILogs } from "./logs";
-export type { AIInsightResult, AITestResult } from "./types";
+export type {
+  AIAnalysisRunResult,
+  AITestResult,
+  AIInsightResult,
+  PersonInsight,
+  SelfInsight,
+  EventGoalInsight,
+} from "./types";
 
 function getLanguage(): Language {
   if (typeof window === "undefined") return "en";
@@ -42,23 +63,6 @@ function getCurrentConfig(): AIProviderConfig {
     baseUrl: state.aiBaseUrl,
     model: state.aiModel,
   };
-}
-
-function selectProvider(forceMock = false): AIProvider {
-  const settings =
-    typeof window !== "undefined" ? useSettingsStore.getState() : null;
-
-  if (!settings || forceMock || settings.aiPrivacyMode || !settings.aiEnabled) {
-    return registry.create("mock", {
-      provider: "mock",
-      apiKey: "",
-      baseUrl: "",
-      model: "",
-    });
-  }
-
-  const config = getCurrentConfig();
-  return registry.create(config.provider, config);
 }
 
 function notesToText(notes: Note[]): string {
@@ -139,23 +143,48 @@ ${relationsText !== undefined ? `\nRelations:\n${relationsText || "None"}` : ""}
 async function runWithLogging(
   prompt: string,
   forceMock = false
-): Promise<{ text: string; durationMs: number; provider: AIProviderConfig["provider"]; model: string }> {
+): Promise<{
+  text: string;
+  durationMs: number;
+  provider: AIProviderConfig["provider"];
+  model: string;
+}> {
   const start = performance.now();
-  const provider = selectProvider(forceMock);
-  const config = forceMock
-    ? { provider: "mock" as const, apiKey: "", baseUrl: "", model: "mock" }
-    : getCurrentConfig();
+  const selected = forceMock
+    ? {
+        provider: registry.create("mock", {
+          provider: "mock",
+          apiKey: "",
+          baseUrl: "",
+          model: "mock",
+        }) as AIProvider,
+        config: {
+          provider: "mock" as const,
+          apiKey: "",
+          baseUrl: "",
+          model: "mock",
+        },
+      }
+    : {
+        provider: registry.create(getCurrentConfig().provider, getCurrentConfig()),
+        config: getCurrentConfig(),
+      };
 
   try {
-    const text = await provider.generate(prompt);
+    const text = await selected.provider.generate(prompt);
     const durationMs = Math.round(performance.now() - start);
-    return { text, durationMs, provider: config.provider, model: config.model };
+    return {
+      text,
+      durationMs,
+      provider: selected.config.provider,
+      model: selected.config.model,
+    };
   } catch (err) {
     const durationMs = Math.round(performance.now() - start);
-    const { message, code } = formatErrorForUser(err, config.baseUrl);
+    const { message, code } = formatErrorForUser(err, selected.config.baseUrl);
     addAILog({
-      provider: config.provider,
-      model: config.model,
+      provider: selected.config.provider,
+      model: selected.config.model,
       durationMs,
       status: "error",
       error: message,
@@ -165,13 +194,19 @@ async function runWithLogging(
   }
 }
 
+/**
+ * High-level AI service facade.
+ *
+ * AIService is responsible for:
+ *   - Provider selection and fallback handling.
+ *   - Invoking the type-agnostic ObjectIntelligenceEngine.
+ *   - Logging successes and failures.
+ *   - Persisting analysis history through the StorageAdapter.
+ *
+ * It is the only AI layer module that coordinates side effects; the engine
+ * itself remains pure and provider/storage/UI agnostic.
+ */
 class AIService {
-  private shouldRun(): boolean {
-    if (typeof window === "undefined") return false;
-    const state = useSettingsStore.getState();
-    return state.aiEnabled;
-  }
-
   async testConnection(): Promise<AITestResult> {
     if (typeof window === "undefined") {
       return {
@@ -275,63 +310,81 @@ class AIService {
     }
   }
 
-  private async generate(
-    prompt: string,
-    forceMock = false
-  ): Promise<{ text: string; durationMs: number; provider: AIProviderConfig["provider"]; model: string }> {
-    return runWithLogging(prompt, forceMock);
-  }
+  /**
+   * Analyze raw input for any supported LifeObject type.
+   *
+   * @param type - Object type to analyze (e.g. "person", "goal").
+   * @param input - Text and optional images.
+   * @param options - `forceMock` skips enabled checks; `saveHistory` controls
+   *                  whether a history entry is persisted (default true).
+   */
+  async analyzeObject(
+    type: LifeObjectType,
+    input: AIAnalysisInput,
+    options: { forceMock?: boolean; saveHistory?: boolean } = {}
+  ): Promise<AIAnalysisRunResult<AIAnalysisResult>> {
+    if (!options.forceMock && !shouldRunAnalysis()) {
+      return {
+        success: false,
+        error: "AI is disabled",
+        errorCode: "unknown" as AIErrorCode,
+        provider: "mock",
+        model: "mock",
+        durationMs: 0,
+        fallback: false,
+      };
+    }
 
-  private makeResult<T>(
-    data: T,
-    provider: AIProviderConfig["provider"],
-    model: string,
-    durationMs: number,
-    fallback = false
-  ): AIInsightResult<T> {
-    addAILog({
-      provider,
-      model,
-      durationMs,
-      status: "success",
+    const selected = options.forceMock
+      ? this.createMockSelection()
+      : selectProviderForAnalysis();
+
+    const result = await objectIntelligenceEngine.analyze(type, input, {
+      provider: selected.provider,
+      providerId: selected.providerId,
+      model: selected.model,
+      language: getLanguage(),
     });
-    return { success: true, data, provider, model, durationMs, fallback };
+
+    if (result.success) {
+      addAILog({
+        provider: result.provider,
+        model: result.model,
+        durationMs: result.durationMs,
+        status: "success",
+      });
+
+      if (options.saveHistory !== false) {
+        await this.saveHistoryEntry(type, input, result);
+      }
+    } else {
+      addAILog({
+        provider: result.provider,
+        model: result.model,
+        durationMs: result.durationMs,
+        status: "error",
+        error: result.error,
+        errorCode: result.errorCode,
+      });
+    }
+
+    return result;
   }
 
-  private makeErrorResult<T>(
-    error: unknown,
-    provider: AIProviderConfig["provider"],
-    model: string,
-    baseUrl: string,
-    durationMs: number
-  ): AIInsightResult<T> {
-    const { message, code } = formatErrorForUser(error, baseUrl);
-    addAILog({
-      provider,
-      model,
-      durationMs,
-      status: "error",
-      error: message,
-      errorCode: code,
-    });
-    return {
-      success: false,
-      error: message,
-      errorCode: code,
-      provider,
-      model,
-      durationMs,
-    };
-  }
+  // ── Deprecated object-type-specific methods ───────────────────────────────
+  // These methods are kept temporarily for backward compatibility with the
+  // existing UI cards. They will be removed in Phase 2 once components switch
+  // to the type-agnostic analyzeObject API.
 
+  /** @deprecated Use analyzeObject with the person profile instead. */
   async generatePersonProfile(
     object: LifeObject,
     notes: Note[],
     relations: Relation[],
     getObjectName: (id: string) => string,
     options: { forceMock?: boolean } = {}
-  ): Promise<AIInsightResult<PersonInsight>> {
-    if (!options.forceMock && !this.shouldRun()) {
+  ): Promise<import("./types").AIInsightResult<PersonInsight>> {
+    if (!options.forceMock && !this.shouldRunLegacy()) {
       return {
         success: false,
         error: "AI is disabled",
@@ -368,24 +421,25 @@ class AIService {
       : getCurrentConfig();
 
     try {
-      const { text, durationMs } = await this.generate(prompt, options.forceMock);
+      const { text, durationMs } = await runWithLogging(prompt, options.forceMock);
       const parsed = parseJsonResponse(text);
       const data = normalizePersonInsight(parsed);
-      return this.makeResult(data, config.provider, config.model, durationMs, options.forceMock);
+      return this.makeLegacyResult(data, config.provider, config.model, durationMs, options.forceMock);
     } catch (err) {
       const durationMs = Math.round(performance.now() - start);
-      return this.makeErrorResult(err, config.provider, config.model, config.baseUrl, durationMs);
+      return this.makeLegacyErrorResult(err, config.provider, config.model, config.baseUrl, durationMs);
     }
   }
 
+  /** @deprecated Use analyzeObject with the self profile instead. */
   async generateSelfState(
     object: LifeObject,
     notes: Note[],
     relations: Relation[],
     getObjectName: (id: string) => string,
     options: { forceMock?: boolean } = {}
-  ): Promise<AIInsightResult<SelfInsight>> {
-    if (!options.forceMock && !this.shouldRun()) {
+  ): Promise<import("./types").AIInsightResult<SelfInsight>> {
+    if (!options.forceMock && !this.shouldRunLegacy()) {
       return {
         success: false,
         error: "AI is disabled",
@@ -423,22 +477,23 @@ class AIService {
       : getCurrentConfig();
 
     try {
-      const { text, durationMs } = await this.generate(prompt, options.forceMock);
+      const { text, durationMs } = await runWithLogging(prompt, options.forceMock);
       const parsed = parseJsonResponse(text);
       const data = normalizeSelfInsight(parsed);
-      return this.makeResult(data, config.provider, config.model, durationMs, options.forceMock);
+      return this.makeLegacyResult(data, config.provider, config.model, durationMs, options.forceMock);
     } catch (err) {
       const durationMs = Math.round(performance.now() - start);
-      return this.makeErrorResult(err, config.provider, config.model, config.baseUrl, durationMs);
+      return this.makeLegacyErrorResult(err, config.provider, config.model, config.baseUrl, durationMs);
     }
   }
 
+  /** @deprecated Use analyzeObject with the event/goal profile instead. */
   async generateEventInsight(
     object: LifeObject,
     notes: Note[],
     options: { forceMock?: boolean } = {}
-  ): Promise<AIInsightResult<EventGoalInsight>> {
-    if (!options.forceMock && !this.shouldRun()) {
+  ): Promise<import("./types").AIInsightResult<EventGoalInsight>> {
+    if (!options.forceMock && !this.shouldRunLegacy()) {
       return {
         success: false,
         error: "AI is disabled",
@@ -475,16 +530,106 @@ class AIService {
       : getCurrentConfig();
 
     try {
-      const { text, durationMs } = await this.generate(prompt, options.forceMock);
+      const { text, durationMs } = await runWithLogging(prompt, options.forceMock);
       const parsed = parseJsonResponse(text);
       const data = normalizeEventGoalInsight(parsed);
-      return this.makeResult(data, config.provider, config.model, durationMs, options.forceMock);
+      return this.makeLegacyResult(data, config.provider, config.model, durationMs, options.forceMock);
     } catch (err) {
       const durationMs = Math.round(performance.now() - start);
-      return this.makeErrorResult(err, config.provider, config.model, config.baseUrl, durationMs);
+      return this.makeLegacyErrorResult(err, config.provider, config.model, config.baseUrl, durationMs);
+    }
+  }
+
+  private shouldRunLegacy(): boolean {
+    if (typeof window === "undefined") return false;
+    return useSettingsStore.getState().aiEnabled;
+  }
+
+  private makeLegacyResult<T>(
+    data: T,
+    provider: AIProviderConfig["provider"],
+    model: string,
+    durationMs: number,
+    fallback = false
+  ): import("./types").AIInsightResult<T> {
+    addAILog({
+      provider,
+      model,
+      durationMs,
+      status: "success",
+    });
+    return { success: true, data, provider, model, durationMs, fallback };
+  }
+
+  private makeLegacyErrorResult<T>(
+    error: unknown,
+    provider: AIProviderConfig["provider"],
+    model: string,
+    baseUrl: string,
+    durationMs: number
+  ): import("./types").AIInsightResult<T> {
+    const { message, code } = formatErrorForUser(error, baseUrl);
+    addAILog({
+      provider,
+      model,
+      durationMs,
+      status: "error",
+      error: message,
+      errorCode: code,
+    });
+    return {
+      success: false,
+      error: message,
+      errorCode: code,
+      provider,
+      model,
+      durationMs,
+    };
+  }
+
+  private createMockSelection() {
+    const mockConfig: AIProviderConfig = {
+      provider: "mock",
+      apiKey: "",
+      baseUrl: "",
+      model: "mock",
+    };
+    return {
+      provider: registry.create("mock", mockConfig),
+      providerId: "mock" as const,
+      model: "mock",
+      isMock: true,
+    };
+  }
+
+  private async saveHistoryEntry(
+    type: LifeObjectType,
+    input: AIAnalysisInput,
+    result: AIAnalysisRunResult
+  ): Promise<void> {
+    try {
+      const data = result.data as AIAnalysisResult | undefined;
+      const entry = createAIAnalysisHistoryEntryInput({
+        objectType: type,
+        rawTextInput: input.textInput,
+        imageCount: input.images.length,
+        imageThumbnails: input.images.map((img) => img.base64Data.slice(0, 120)),
+        provider: result.provider,
+        model: result.model,
+        durationMs: result.durationMs,
+        rawOutput: result.rawOutput || "",
+        profileSnapshot: data?.profile,
+        insightsSnapshot: data?.insights,
+        suggestionsSnapshot: data?.suggestions,
+        memoriesSnapshot: data?.memories,
+      });
+
+      await addAIAnalysisHistory(entry);
+    } catch (err) {
+      // History persistence is best-effort; never fail the analysis because of it.
+      console.error("[AIService] Failed to save analysis history:", err);
     }
   }
 }
 
 export const aiService = new AIService();
-export type { PersonInsight, SelfInsight, EventGoalInsight };

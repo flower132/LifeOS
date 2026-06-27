@@ -2,10 +2,11 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, ChevronRight } from "lucide-react";
 import { ObjectForm } from "@/components/object/ObjectForm";
 import { TemplateSelector } from "@/components/template/TemplateSelector";
+import { AIMethodSelector } from "@/components/ai/AIMethodSelector";
 import { useTranslation } from "@/lib/useTranslation";
 import { LifeObjectType, LIFE_OBJECT_TYPES, Template } from "@/lib/types";
 import {
@@ -14,11 +15,13 @@ import {
   templateToEditableProperties,
 } from "@/lib/objectProperties";
 import { useTemplateStore } from "@/stores/templateStore";
+import { isAIProfileSupported } from "@/lib/ai/objectIntelligence/profiles";
 
-type CreateStep = "type" | "template" | "form";
+type CreateStep = "type" | "method" | "template" | "form";
 
 export default function CreateObjectPage() {
   const { t } = useTranslation();
+  const router = useRouter();
   const searchParams = useSearchParams();
   const incrementUsage = useTemplateStore((s) => s.incrementUsage);
 
@@ -27,6 +30,8 @@ export default function CreateObjectPage() {
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(
     null
   );
+
+  const aiSupported = isAIProfileSupported(type);
 
   const initialProperties = (() => {
     if (!selectedTemplate) return getDefaultProperties();
@@ -49,7 +54,8 @@ export default function CreateObjectPage() {
       LIFE_OBJECT_TYPES.includes(typeParam as LifeObjectType)
     ) {
       /* eslint-disable react-hooks/set-state-in-effect */
-      setType(typeParam as LifeObjectType);
+      const resolvedType = typeParam as LifeObjectType;
+      setType(resolvedType);
       if (templateParam) {
         const template = useTemplateStore.getState().getById(templateParam);
         if (template) {
@@ -58,14 +64,26 @@ export default function CreateObjectPage() {
           return;
         }
       }
-      setStep("template");
+      setStep(isAIProfileSupported(resolvedType) ? "method" : "template");
       /* eslint-enable react-hooks/set-state-in-effect */
     }
   }, [searchParams]);
 
   const handleSelectType = (selectedType: LifeObjectType) => {
     setType(selectedType);
+    if (isAIProfileSupported(selectedType)) {
+      setStep("method");
+    } else {
+      setStep("template");
+    }
+  };
+
+  const handleSelectMethodManual = () => {
     setStep("template");
+  };
+
+  const handleSelectMethodAI = () => {
+    router.push(`/create-object-ai?type=${type}`);
   };
 
   const handleSelectTemplate = (template: Template | null) => {
@@ -105,7 +123,30 @@ export default function CreateObjectPage() {
       color: "bg-indigo-100 text-indigo-700",
       darkColor: "dark:bg-indigo-900/30 dark:text-indigo-300",
     },
+    project: {
+      label: t("project"),
+      color: "bg-cyan-100 text-cyan-700",
+      darkColor: "dark:bg-cyan-900/30 dark:text-cyan-300",
+    },
+    knowledge: {
+      label: t("knowledge"),
+      color: "bg-violet-100 text-violet-700",
+      darkColor: "dark:bg-violet-900/30 dark:text-violet-300",
+    },
   };
+
+  const stepItems = aiSupported
+    ? [
+        { key: "type", label: t("type") },
+        { key: "method", label: t("method") || "Method" },
+        { key: "template", label: t("selectTemplate") },
+        { key: "form", label: t("name") },
+      ]
+    : [
+        { key: "type", label: t("type") },
+        { key: "template", label: t("selectTemplate") },
+        { key: "form", label: t("name") },
+      ];
 
   return (
     <div className="min-h-screen bg-background">
@@ -120,6 +161,7 @@ export default function CreateObjectPage() {
           </Link>
           <h1 className="text-2xl font-semibold tracking-tight text-foreground">
             {step === "type" && t("chooseType")}
+            {step === "method" && t("chooseCreationMethod")}
             {step === "template" && t("chooseTemplate")}
             {step === "form" &&
               t("createObjectWithTemplate", {
@@ -128,16 +170,13 @@ export default function CreateObjectPage() {
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
             {step === "type" && t("chooseTypeSubtitle")}
+            {step === "method" && t("chooseCreationMethodSubtitle")}
             {step === "template" && t("chooseTemplateSubtitle")}
             {step === "form" && t("createObjectSubtitle")}
           </p>
 
-          <div className="mt-4 flex items-center gap-2 text-xs text-muted-foreground">
-            {[
-              { key: "type", label: t("type") },
-              { key: "template", label: t("selectTemplate") },
-              { key: "form", label: t("name") },
-            ].map((item, index) => (
+          <div className="mt-4 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+            {stepItems.map((item, index) => (
               <div key={item.key} className="flex items-center gap-2">
                 <span
                   className={`rounded-full px-2 py-0.5 font-medium ${
@@ -148,7 +187,7 @@ export default function CreateObjectPage() {
                 >
                   {index + 1}. {item.label}
                 </span>
-                {index < 2 && (
+                {index < stepItems.length - 1 && (
                   <ChevronRight className="h-3 w-3" />
                 )}
               </div>
@@ -183,6 +222,23 @@ export default function CreateObjectPage() {
           </div>
         )}
 
+        {step === "method" && (
+          <div className="space-y-6">
+            <AIMethodSelector
+              type={type}
+              onManual={handleSelectMethodManual}
+              onAI={handleSelectMethodAI}
+            />
+            <button
+              type="button"
+              onClick={() => setStep("type")}
+              className="text-sm font-medium text-muted-foreground hover:text-foreground"
+            >
+              ← {t("cancel")}
+            </button>
+          </div>
+        )}
+
         {step === "template" && (
           <div className="space-y-6">
             <TemplateSelector
@@ -191,10 +247,10 @@ export default function CreateObjectPage() {
             />
             <button
               type="button"
-              onClick={() => setStep("type")}
+              onClick={() => setStep(aiSupported ? "method" : "type")}
               className="text-sm font-medium text-muted-foreground hover:text-foreground"
             >
-              ← {t("cancel")}
+              ← {aiSupported ? t("back") : t("cancel")}
             </button>
           </div>
         )}

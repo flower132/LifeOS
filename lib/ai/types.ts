@@ -1,3 +1,5 @@
+import { LifeObjectType } from "@/lib/types";
+
 export type Language = "zh" | "en";
 
 export type AIProviderId =
@@ -19,8 +21,30 @@ export interface AIProviderConfig {
   model: string;
 }
 
+export interface AIImageInput {
+  mimeType: string; // e.g. "image/jpeg" / "image/png"
+  base64Data: string; // without data URI prefix
+}
+
+/**
+ * Request for structured object generation.
+ * Engine only uses this shape; providers decide how to enforce JSON output.
+ */
+export interface AIStructuredGenerationRequest {
+  prompt: string;
+  images?: AIImageInput[];
+  /** Human-readable schema hint or JSON-schema string describing the expected output. */
+  schemaHint?: string;
+  /** The target LifeObjectType, used by the mock provider to return a type-safe shape. */
+  objectType?: LifeObjectType;
+}
+
 export interface AIProvider {
   generate(prompt: string): Promise<string>;
+  generateWithImages?(prompt: string, images: AIImageInput[]): Promise<string>;
+  /** Structured generation used by ObjectIntelligenceEngine. */
+  generateStructuredObject(request: AIStructuredGenerationRequest): Promise<string>;
+  supportsVision?: boolean;
 }
 
 export type AIErrorCode =
@@ -43,6 +67,24 @@ export interface AIInsightResult<T> {
   model: string;
   durationMs: number;
   fallback?: boolean;
+}
+
+/**
+ * Result returned by ObjectIntelligenceEngine after a single analysis run.
+ * Generic so the engine can be typed to AIAnalysisResult when imported.
+ */
+export interface AIAnalysisRunResult<T = unknown> {
+  success: boolean;
+  data?: T;
+  error?: string;
+  errorCode?: AIErrorCode;
+  provider: AIProviderId;
+  model: string;
+  durationMs: number;
+  /** True when the result was produced by the mock provider as a fallback. */
+  fallback: boolean;
+  /** Raw provider output retained for debugging and history. */
+  rawOutput?: string;
 }
 
 export interface AIUsageLog {

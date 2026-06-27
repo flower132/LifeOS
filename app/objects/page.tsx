@@ -27,6 +27,8 @@ export default function ObjectsPage() {
     event: t("events"),
     idea: t("ideas"),
     goal: t("goals"),
+    project: t("projects"),
+    knowledge: t("knowledge"),
   };
 
   const filtered = objects

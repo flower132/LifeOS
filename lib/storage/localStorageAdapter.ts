@@ -8,6 +8,7 @@ import {
   TemplateCreateInput,
   TemplateUpdateInput,
   TEMPLATE_CATEGORIES,
+  AIAnalysisHistoryEntry,
 } from "@/lib/types";
 import {
   isValidLifeObject,
@@ -15,6 +16,7 @@ import {
   isValidRelation,
   isValidTag,
   isValidTemplate,
+  isValidAIAnalysisHistoryEntry,
   validateInputObject,
   validateInputNote,
   validateInputRelation,
@@ -44,6 +46,7 @@ const KEYS = {
   tags: "lifeos_tags",
   templates: "lifeos_templates",
   settings: "lifeos_settings",
+  aiAnalysisHistory: "lifeos_ai_analysis_history",
 };
 
 const ENTITY_KEYS = [
@@ -575,7 +578,7 @@ export class LocalStorageAdapter implements StorageAdapter {
     const index = objects.findIndex((o) => o.id === id);
     if (index === -1) throw new Error(`Object ${id} not found`);
 
-    if (updates.type && !["person", "self", "event", "idea", "goal"].includes(updates.type)) {
+    if (updates.type && !["person", "self", "event", "idea", "goal", "project", "knowledge"].includes(updates.type)) {
       throw new Error(`Invalid object type: ${updates.type}`);
     }
     if (updates.name !== undefined && updates.name.trim().length === 0) {
@@ -858,6 +861,85 @@ export class LocalStorageAdapter implements StorageAdapter {
     const current = await this.getSettings();
     maybeBackup(KEYS.settings);
     safeSetItem(KEYS.settings, { ...current, ...settings });
+  }
+
+  // AI Analysis History
+  async getAIAnalysisHistory(): Promise<AIAnalysisHistoryEntry[]> {
+    const items = safeGetItem<unknown[]>(KEYS.aiAnalysisHistory, []);
+    return filterValid(items, isValidAIAnalysisHistoryEntry, "aiAnalysisHistory");
+  }
+
+  async getAIAnalysisHistoryByObjectId(
+    objectId: string
+  ): Promise<AIAnalysisHistoryEntry[]> {
+    const history = await this.getAIAnalysisHistory();
+    return history
+      .filter((h) => h.objectId === objectId)
+      .sort(
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
+  }
+
+  async getAIAnalysisHistoryByType(
+    objectType: import("@/lib/types").LifeObjectType
+  ): Promise<AIAnalysisHistoryEntry[]> {
+    const history = await this.getAIAnalysisHistory();
+    return history
+      .filter((h) => h.objectType === objectType)
+      .sort(
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
+  }
+
+  async getAIAnalysisHistoryEntryById(
+    id: string
+  ): Promise<AIAnalysisHistoryEntry | null> {
+    const history = await this.getAIAnalysisHistory();
+    return history.find((h) => h.id === id) ?? null;
+  }
+
+  async createAIAnalysisHistory(
+    entry: Omit<AIAnalysisHistoryEntry, "id" | "createdAt">
+  ): Promise<AIAnalysisHistoryEntry> {
+    const history = await this.getAIAnalysisHistory();
+    const created: AIAnalysisHistoryEntry = {
+      ...entry,
+      id: uuidv4(),
+      createdAt: now(),
+    };
+    const MAX_HISTORY = 50;
+    const next = [created, ...history].slice(0, MAX_HISTORY);
+    maybeBackup(KEYS.aiAnalysisHistory);
+    safeSetItem(KEYS.aiAnalysisHistory, next);
+    return created;
+  }
+
+  async updateAIAnalysisHistoryObjectId(
+    historyId: string,
+    objectId: string
+  ): Promise<void> {
+    const history = await this.getAIAnalysisHistory();
+    const updated = history.map((h) =>
+      h.id === historyId ? { ...h, objectId } : h
+    );
+    maybeBackup(KEYS.aiAnalysisHistory);
+    safeSetItem(KEYS.aiAnalysisHistory, updated);
+  }
+
+  async deleteAIAnalysisHistory(id: string): Promise<void> {
+    const history = (await this.getAIAnalysisHistory()).filter(
+      (h) => h.id !== id
+    );
+    maybeBackup(KEYS.aiAnalysisHistory);
+    safeSetItem(KEYS.aiAnalysisHistory, history);
+  }
+
+  async clearAIAnalysisHistory(): Promise<void> {
+    if (typeof window === "undefined") return;
+    maybeBackup(KEYS.aiAnalysisHistory);
+    window.localStorage.removeItem(KEYS.aiAnalysisHistory);
   }
 }
 

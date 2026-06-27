@@ -11,6 +11,10 @@ const typeStyles: Record<LifeObjectType, string> = {
   idea:
     "bg-emerald-50 text-emerald-700 border-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-800",
   goal: "bg-rose-50 text-rose-700 border-rose-100 dark:bg-rose-900/30 dark:text-rose-300 dark:border-rose-800",
+  project:
+    "bg-cyan-50 text-cyan-700 border-cyan-100 dark:bg-cyan-900/30 dark:text-cyan-300 dark:border-cyan-800",
+  knowledge:
+    "bg-violet-50 text-violet-700 border-violet-100 dark:bg-violet-900/30 dark:text-violet-300 dark:border-violet-800",
 };
 
 interface ObjectTypeBadgeProps {
@@ -26,6 +30,8 @@ export function ObjectTypeBadge({ type, className }: ObjectTypeBadgeProps) {
     event: t("event"),
     idea: t("idea"),
     goal: t("goal"),
+    project: t("project"),
+    knowledge: t("knowledge"),
   };
 
   return (

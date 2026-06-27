@@ -36,6 +36,18 @@ const categoryStyles: Record<
     darkBg: "dark:bg-indigo-900/30",
     darkText: "dark:text-indigo-300",
   },
+  project: {
+    bg: "bg-cyan-100",
+    text: "text-cyan-700",
+    darkBg: "dark:bg-cyan-900/30",
+    darkText: "dark:text-cyan-300",
+  },
+  knowledge: {
+    bg: "bg-violet-100",
+    text: "text-violet-700",
+    darkBg: "dark:bg-violet-900/30",
+    darkText: "dark:text-violet-300",
+  },
   task: {
     bg: "bg-slate-100",
     text: "text-slate-700",

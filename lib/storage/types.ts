@@ -6,6 +6,7 @@ import {
   Template,
   TemplateCreateInput,
   TemplateUpdateInput,
+  AIAnalysisHistoryEntry,
 } from "@/lib/types";
 
 import { AIProviderId } from "@/lib/ai/types";
@@ -87,6 +88,18 @@ export interface StorageAdapter {
   // Settings
   getSettings(): Promise<Partial<AppSettings>>;
   setSettings(settings: Partial<AppSettings>): Promise<void>;
+
+  // AI Analysis History
+  getAIAnalysisHistory(): Promise<AIAnalysisHistoryEntry[]>;
+  getAIAnalysisHistoryByObjectId(objectId: string): Promise<AIAnalysisHistoryEntry[]>;
+  getAIAnalysisHistoryByType(objectType: import("@/lib/types").LifeObjectType): Promise<AIAnalysisHistoryEntry[]>;
+  getAIAnalysisHistoryEntryById(id: string): Promise<AIAnalysisHistoryEntry | null>;
+  createAIAnalysisHistory(
+    entry: Omit<AIAnalysisHistoryEntry, "id" | "createdAt">
+  ): Promise<AIAnalysisHistoryEntry>;
+  updateAIAnalysisHistoryObjectId(historyId: string, objectId: string): Promise<void>;
+  deleteAIAnalysisHistory(id: string): Promise<void>;
+  clearAIAnalysisHistory(): Promise<void>;
 }
 
 export interface StorageConfig {
