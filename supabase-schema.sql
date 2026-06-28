@@ -34,6 +34,8 @@ create table if not exists public.notes (
   user_id     uuid references auth.users(id) on delete cascade not null,
   object_id   uuid references public.objects(id) on delete cascade not null,
   content     text default '',
+  source_type text default 'text',
+  attachments jsonb default '[]'::jsonb,
   created_at  timestamptz default now()
 );
 alter table public.notes enable row level security;

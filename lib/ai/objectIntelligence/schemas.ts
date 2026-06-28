@@ -28,6 +28,8 @@ export const ObjectAISuggestionSchema: z.ZodType<ObjectAISuggestion> =
     title: z.string().default(""),
     description: z.string().default(""),
     priority: z.enum(["low", "medium", "high"]).default("medium"),
+    status: z.enum(["active", "done", "dismissed"]).default("active"),
+    completedAt: z.string().optional(),
     generatedAt: z.string().default(""),
   });
 

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Trash2 } from "lucide-react";
+import { ArrowLeft, Trash2, Sparkles } from "lucide-react";
 import { useObjectStore } from "@/stores/objectStore";
 import { useNoteStore } from "@/stores/noteStore";
 import { useRelationStore } from "@/stores/relationStore";
@@ -16,8 +16,9 @@ import { AIProfileTab } from "./tabs/AIProfileTab";
 import { AIInsightsTab } from "./tabs/AIInsightsTab";
 import { AISuggestionsTab } from "./tabs/AISuggestionsTab";
 import { MemoriesTab } from "./tabs/MemoriesTab";
+import { HistoryTab } from "./tabs/HistoryTab";
 
-type DetailTab = "overview" | "aiProfile" | "aiInsights" | "aiSuggestions" | "memories";
+type DetailTab = "overview" | "aiProfile" | "aiInsights" | "aiSuggestions" | "memories" | "history";
 
 const TABS: DetailTab[] = [
   "overview",
@@ -25,6 +26,7 @@ const TABS: DetailTab[] = [
   "aiInsights",
   "aiSuggestions",
   "memories",
+  "history",
 ];
 
 export default function ObjectDetailPage() {
@@ -122,13 +124,24 @@ export default function ObjectDetailPage() {
               <p className="max-w-2xl text-sm text-muted-foreground">{object.description}</p>
             )}
           </div>
-          <button
-            onClick={handleDelete}
-            className="rounded-lg p-2 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
-            title={t("deleteObject")}
-          >
-            <Trash2 className="h-4 w-4" />
-          </button>
+          <div className="flex items-center gap-2">
+            {object.type === "person" && (
+              <Link
+                href={`/objects/${object.id}/update-ai`}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-accent px-3 py-2 text-sm font-medium text-accent-foreground hover:bg-accent/90"
+              >
+                <Sparkles className="h-4 w-4" />
+                {t("updatePersonAITitle")}
+              </Link>
+            )}
+            <button
+              onClick={handleDelete}
+              className="rounded-lg p-2 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+              title={t("deleteObject")}
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
+          </div>
         </div>
       </header>
 
@@ -171,6 +184,7 @@ export default function ObjectDetailPage() {
         {activeTab === "aiInsights" && <AIInsightsTab object={object} />}
         {activeTab === "aiSuggestions" && <AISuggestionsTab object={object} />}
         {activeTab === "memories" && <MemoriesTab object={object} />}
+        {activeTab === "history" && <HistoryTab object={object} />}
       </div>
     </div>
   );

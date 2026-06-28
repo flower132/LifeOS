@@ -29,6 +29,8 @@ export function QuickCapture() {
       const created = await addNote({
         object_id: objectId,
         content: content.trim(),
+        sourceType: "text",
+        attachments: [],
       });
       setContent("");
       setObjectId("");

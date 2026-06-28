@@ -12,6 +12,7 @@ import { AIAnalysisInput, AIProfileDefinition } from "../types";
 
 const PersonAIProfileSchema: z.ZodType<PersonAIProfile> = z.object({
   type: z.literal("person"),
+  relationshipContext: z.string().default(""),
   mbti: z.string().default(""),
   mbtiConfidence: z.number().min(0).max(100).default(0),
   bigFive: z.object({
@@ -22,6 +23,7 @@ const PersonAIProfileSchema: z.ZodType<PersonAIProfile> = z.object({
     emotionalStability: z.number().min(0).max(100).default(0),
   }),
   personalitySummary: z.string().default(""),
+  rollingSummary: z.string().default(""),
 });
 
 const PersonAIOutputSchema = z.object({
@@ -34,6 +36,7 @@ const PersonAIOutputSchema = z.object({
   }).default(() => ({ name: "", nickname: "", age: "", occupation: "", city: "" })),
   profile: PersonAIProfileSchema.default({
     type: "person",
+    relationshipContext: "",
     mbti: "",
     mbtiConfidence: 0,
     bigFive: {
@@ -44,6 +47,7 @@ const PersonAIOutputSchema = z.object({
       emotionalStability: 0,
     },
     personalitySummary: "",
+    rollingSummary: "",
   }),
   insights: z.array(z.object({
     category: z.string(),
@@ -82,6 +86,7 @@ function buildPersonPrompt(input: AIAnalysisInput, language: Language): string {
       },
       profile: {
         type: "person",
+        relationshipContext: "string or empty (e.g. leader, customer, friend, lover, family, mentor, colleague, subordinate)",
         mbti: "string or empty",
         mbtiConfidence: 0,
         bigFive: {
@@ -92,6 +97,7 @@ function buildPersonPrompt(input: AIAnalysisInput, language: Language): string {
           emotionalStability: 0,
         },
         personalitySummary: "string",
+        rollingSummary: "string: a concise, evolving summary of how to relate to this person",
       },
       insights: [
         {
@@ -113,21 +119,24 @@ function buildPersonPrompt(input: AIAnalysisInput, language: Language): string {
     2
   );
 
-  return `你是一位结构化关系智能分析引擎。请基于用户提供的原始素材，输出 ONLY 一个合法的 JSON 对象，严格匹配以下结构：
+  return `你是一位专注于关系经营的 AI 助手。请基于用户提供的原始素材，输出 ONLY 一个合法的 JSON 对象，严格匹配以下结构：
 ${shape}
 
 分析要求：
 1. 基础画像：提取姓名、昵称、年龄、职业、城市，无法确认时留空，禁止编造。
-2. Person AI Profile：MBTI 及置信度、Big Five 五维分数（0-100）、人格总结。
-3. AI Insights：性格、行为、沟通、关系、情绪、价值观、动机、风险等方面的洞察。每个洞察必须包含 category、title、description、confidence（0-100）、evidence（直接引用素材来源）。
-4. AI Suggestions：基于洞察给出可执行的相处/沟通建议，包含 title、description、priority（low/medium/high）。
-5. Memories：从素材中提取的重要事件/观察记录，作为初始记忆。
-6. confidence_score：整体置信度（0-1）。
-7. analysis_summary：整体分析摘要。
+2. Relationship Context：根据素材推断你与这个人的关系角色（例如 leader, customer, friend, lover, family, mentor, colleague, subordinate）。如果不确定，留空。
+3. Person AI Profile：MBTI 及置信度、Big Five 五维分数（0-100）、人格总结、Rolling Summary。
+4. Rolling Summary：一段简洁的、不断更新的关系经营摘要。用 2-4 句话总结：这个人是谁、你们的关系状态、当前最重要的相处原则。不要罗列事实，要提炼成可指导行动的摘要。
+5. AI Insights：只输出与“如何与这个人相处”相关的洞察。聚焦：沟通风格、合作偏好、决策方式、信任信号、相处风险、边界感。每个洞察必须包含 category、title、description、confidence（0-100）、evidence（直接引用素材来源）。禁止输出纯粹的标签式描述，例如“他很外向”。
+6. AI Suggestions：必须是面向用户的行动建议，回答“我应该做什么？”。
+7. Memories：从素材中提取的重要事件/观察记录，作为初始记忆。
+8. confidence_score：整体置信度（0-1）。
+9. analysis_summary：整体分析摘要，重点说明对关系经营的意义。
 
 规则：
 - 不要编造证据，数据不足时 confidence 设为 0。
 - 保持客观，不做医疗或心理诊断。
+- 所有洞察和建议必须服务于“我该如何与这个人建立和维护更好的关系”。
 - ${langHint}
 - ${imageHint}
 
@@ -178,6 +187,7 @@ function mapPersonSuggestions(raw: unknown): ObjectAISuggestion[] {
     title: item.title,
     description: item.description,
     priority: item.priority,
+    status: "active",
     generatedAt: now,
   }));
 }
@@ -209,6 +219,18 @@ function PersonAIProfileEditor({
 
   return (
     <div className="rounded-xl border border-border bg-card p-4 space-y-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <Field label={t("aiProfileRelationshipContext")}>
+          <input
+            type="text"
+            value={profile.relationshipContext || ""}
+            onChange={(e) => onChange({ ...profile, relationshipContext: e.target.value })}
+            placeholder={t("aiProfileRelationshipContextPlaceholder")}
+            className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-accent focus:ring-2 focus:ring-accent"
+          />
+        </Field>
+      </div>
+
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Field label={t("aiProfileMbti")}>
           <input

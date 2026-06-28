@@ -55,6 +55,7 @@ export function mapObjectAnalysisResult(
   const normalizedSuggestions: ObjectAISuggestion[] = suggestions.map((suggestion) => ({
     ...suggestion,
     id: suggestion.id || generateSuggestionId(),
+    status: suggestion.status || "active",
     generatedAt: suggestion.generatedAt || now,
   }));
 

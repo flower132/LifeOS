@@ -51,6 +51,8 @@ export interface ObjectAIInsight {
   createdAt: string; // ISO
 }
 
+export type AISuggestionStatus = "active" | "done" | "dismissed";
+
 export type AISuggestionPriority = "low" | "medium" | "high";
 
 export interface ObjectAISuggestion {
@@ -58,6 +60,8 @@ export interface ObjectAISuggestion {
   title: string;
   description: string;
   priority: AISuggestionPriority;
+  status: AISuggestionStatus;
+  completedAt?: string;
   generatedAt: string; // ISO
 }
 
@@ -74,6 +78,7 @@ export interface ObjectMemory {
 
 export interface PersonAIProfile {
   type: "person";
+  relationshipContext?: string;
   mbti: string;
   mbtiConfidence: number;
   bigFive: {
@@ -84,6 +89,7 @@ export interface PersonAIProfile {
     emotionalStability: number;
   };
   personalitySummary: string;
+  rollingSummary?: string;
 }
 
 export interface GoalAIProfile {
@@ -166,10 +172,26 @@ export interface AIAnalysisHistoryEntry {
 
 // ── Core domain types ───────────────────────────────────────────────────────
 
+export type NoteSourceType =
+  | "text"
+  | "chat"
+  | "email"
+  | "social_post"
+  | "document"
+  | "resume"
+  | "image";
+
+export interface NoteAttachment {
+  mimeType: string;
+  base64Data: string;
+}
+
 export interface Note {
   id: string;
   object_id: string;
   content: string;
+  sourceType: NoteSourceType;
+  attachments: NoteAttachment[];
   created_at: string;
 }
 

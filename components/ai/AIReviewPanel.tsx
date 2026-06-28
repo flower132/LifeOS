@@ -95,6 +95,7 @@ export function AIReviewPanel({
           title: "",
           description: "",
           priority: "medium" as const,
+          status: "active" as const,
           generatedAt: new Date().toISOString(),
         })}
       >

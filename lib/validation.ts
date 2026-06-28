@@ -40,6 +40,16 @@ const VALID_TEMPLATE_CATEGORIES = new Set([
   "custom",
 ]);
 
+const VALID_NOTE_SOURCE_TYPES = new Set([
+  "text",
+  "chat",
+  "email",
+  "social_post",
+  "document",
+  "resume",
+  "image",
+]);
+
 export function isValidId(value: unknown): value is string {
   return typeof value === "string" && value.length > 0;
 }
@@ -88,6 +98,12 @@ export function isValidNote(obj: unknown): obj is Note {
   if (!isValidId(n.id)) return false;
   if (!isValidId(n.object_id)) return false;
   if (typeof n.content !== "string" || n.content.trim().length === 0) {
+    return false;
+  }
+  if (n.sourceType !== undefined && !VALID_NOTE_SOURCE_TYPES.has(n.sourceType as string)) {
+    return false;
+  }
+  if (n.attachments !== undefined && !Array.isArray(n.attachments)) {
     return false;
   }
   if (!isValidIsoDate(n.created_at)) return false;
@@ -151,6 +167,9 @@ export function validateInputNote(
   }
   if (!note.content || note.content.trim().length === 0) {
     throw new Error("Note content is required");
+  }
+  if (note.attachments !== undefined && !Array.isArray(note.attachments)) {
+    throw new Error("Note attachments must be an array");
   }
 }
 
@@ -242,6 +261,10 @@ export function isValidObjectAISuggestion(obj: unknown): obj is ObjectAISuggesti
   if (typeof item.title !== "string") return false;
   if (typeof item.description !== "string") return false;
   if (!["low", "medium", "high"].includes(item.priority as string)) return false;
+  if (item.status !== undefined && !["active", "done", "dismissed"].includes(item.status as string)) {
+    return false;
+  }
+  if (item.completedAt !== undefined && !isValidIsoDate(item.completedAt)) return false;
   if (!isValidIsoDate(item.generatedAt)) return false;
 
   return true;

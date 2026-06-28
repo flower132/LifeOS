@@ -7,6 +7,7 @@ import { useTranslation } from "@/lib/useTranslation";
 
 export interface AIInputWizardProps {
   defaultText?: string;
+  defaultImages?: AIImageInput[];
   onAnalyze: (text: string, images: AIImageInput[]) => void;
   isAnalyzing?: boolean;
   disabled?: boolean;
@@ -30,13 +31,14 @@ function fileToBase64(file: File): Promise<string> {
 
 export function AIInputWizard({
   defaultText = "",
+  defaultImages = [],
   onAnalyze,
   isAnalyzing = false,
   disabled = false,
 }: AIInputWizardProps) {
   const { t } = useTranslation();
   const [text, setText] = useState(defaultText);
-  const [images, setImages] = useState<AIImageInput[]>([]);
+  const [images, setImages] = useState<AIImageInput[]>(defaultImages);
   const [error, setError] = useState<string | null>(null);
 
   const handleFiles = useCallback(

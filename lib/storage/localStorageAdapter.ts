@@ -36,7 +36,7 @@ import {
   migrateLegacyTemplateContent,
 } from "@/lib/templates/defaultTemplates";
 
-const STORAGE_VERSION = 5;
+const STORAGE_VERSION = 6;
 const VERSION_KEY = "lifeos_version";
 
 const KEYS = {
@@ -264,6 +264,9 @@ export class LocalStorageAdapter implements StorageAdapter {
     if (version < 5) {
       await this.migrateV4ToV5();
     }
+    if (version < 6) {
+      await this.migrateV5ToV6();
+    }
 
     await this.setStorageVersion(STORAGE_VERSION);
   }
@@ -439,6 +442,35 @@ export class LocalStorageAdapter implements StorageAdapter {
       safeSetItem(KEYS.objects, migrated);
       console.log(
         `[LifeOS] Migrated ${migrated.length} objects to template-in-properties (v5)`
+      );
+    }
+  }
+
+  private async migrateV5ToV6(): Promise<void> {
+    // Add default sourceType and attachments fields to notes created before
+    // the Living Person MVP introduced structured intelligence capture.
+    const notes = await this.getNotes();
+    let mutated = false;
+    const migrated = notes.map((note) => {
+      if (
+        (note.sourceType !== undefined && note.sourceType !== null) &&
+        note.attachments !== undefined
+      ) {
+        return note;
+      }
+      mutated = true;
+      return {
+        ...note,
+        sourceType: note.sourceType || "text",
+        attachments: note.attachments || [],
+      };
+    });
+
+    if (mutated) {
+      maybeBackup(KEYS.notes);
+      safeSetItem(KEYS.notes, migrated);
+      console.log(
+        `[LifeOS] Migrated ${migrated.length} notes to include sourceType and attachments (v6)`
       );
     }
   }
@@ -650,6 +682,8 @@ export class LocalStorageAdapter implements StorageAdapter {
     const notes = await this.getNotes();
     const created: Note = {
       ...note,
+      sourceType: note.sourceType || "text",
+      attachments: note.attachments || [],
       id: uuidv4(),
       created_at: now(),
     };

@@ -2,7 +2,7 @@ import { StorageAdapter } from "./types";
 import {
   LifeObject, Note, Relation, Tag, Template,
   TemplateCreateInput, TemplateUpdateInput,
-  AIAnalysisHistoryEntry, ObjectAIProfile,
+  AIAnalysisHistoryEntry, ObjectAIProfile, NoteAttachment,
 } from "@/lib/types";
 import { getSupabase, resetSupabase } from "@/lib/supabaseClient";
 
@@ -73,6 +73,8 @@ function mapNote(r: DbRow): Note {
     id: getString(r, "id"),
     object_id: getString(r, "object_id"),
     content: getString(r, "content"),
+    sourceType: (getString(r, "source_type") as Note["sourceType"]) || "text",
+    attachments: getArray<NoteAttachment>(r, "attachments"),
     created_at: toISO(r.created_at),
   };
 }
@@ -332,7 +334,7 @@ export class SupabaseAdapter implements StorageAdapter {
     const uid = await getUid();
     if (!uid) throw new Error("Not authenticated");
     const now = new Date().toISOString();
-    const row = { id: crypto.randomUUID(), user_id: uid, object_id: note.object_id, content: note.content || "", created_at: now };
+    const row = { id: crypto.randomUUID(), user_id: uid, object_id: note.object_id, content: note.content || "", source_type: note.sourceType || "text", attachments: note.attachments || [], created_at: now };
     const client = getSupabase();
     const { data, error } = await client.from("notes").insert(row).select().single();
     if (error) throw error;
@@ -356,7 +358,7 @@ export class SupabaseAdapter implements StorageAdapter {
     const client = getSupabase();
     const rows = notes.map((n) => ({
       id: n.id, user_id: uid, object_id: n.object_id,
-      content: n.content || "", created_at: n.created_at,
+      content: n.content || "", source_type: n.sourceType || "text", attachments: n.attachments || [], created_at: n.created_at,
     }));
     await client.from("notes").delete().eq("user_id", uid);
     if (rows.length > 0) await client.from("notes").insert(rows);

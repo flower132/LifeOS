@@ -159,6 +159,7 @@ function mapIdeaSuggestions(raw: unknown): ObjectAISuggestion[] {
     title: item.title,
     description: item.description,
     priority: item.priority,
+    status: "active" as const,
     generatedAt: now,
   }));
 }

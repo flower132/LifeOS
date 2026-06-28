@@ -40,6 +40,9 @@ function PersonAIProfileView({ profile }: { profile: PersonAIProfile }) {
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <Card label={t("aiProfileRelationshipContext")}>
+          {profile.relationshipContext || t("aiNotAvailable")}
+        </Card>
         <Card label={t("aiProfileMbti")}>{profile.mbti || t("aiNotAvailable")}</Card>
         <Card label={t("aiProfileMbtiConfidence")}>
           {profile.mbtiConfidence}%
@@ -71,6 +74,12 @@ function PersonAIProfileView({ profile }: { profile: PersonAIProfile }) {
       <Card label={t("aiProfileSummary")}>
         {profile.personalitySummary || t("aiNotAvailable")}
       </Card>
+
+      {profile.rollingSummary && (
+        <Card label={t("aiProfileRollingSummary") ?? "Rolling Summary"}>
+          {profile.rollingSummary}
+        </Card>
+      )}
     </div>
   );
 }
