@@ -3,14 +3,14 @@
 import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Trash2, Sparkles } from "lucide-react";
+import { ArrowLeft, Trash2, Sparkles, Compass } from "lucide-react";
 import { useObjectStore } from "@/stores/objectStore";
 import { useNoteStore } from "@/stores/noteStore";
 import { useRelationStore } from "@/stores/relationStore";
 import { useTagStore } from "@/stores/tagStore";
 import { ObjectTypeBadge } from "@/components/object/ObjectTypeBadge";
 import { useTranslation } from "@/lib/useTranslation";
-import { ObjectProperties } from "@/lib/types";
+import { LifeObjectType, ObjectProperties } from "@/lib/types";
 import { OverviewTab } from "./tabs/OverviewTab";
 import { AIProfileTab } from "./tabs/AIProfileTab";
 import { AIInsightsTab } from "./tabs/AIInsightsTab";
@@ -28,6 +28,8 @@ const TABS: DetailTab[] = [
   "memories",
   "history",
 ];
+
+const ADVISOR_TYPES: LifeObjectType[] = ["person", "goal", "project", "self"];
 
 export default function ObjectDetailPage() {
   const params = useParams();
@@ -125,6 +127,15 @@ export default function ObjectDetailPage() {
             )}
           </div>
           <div className="flex items-center gap-2">
+            {ADVISOR_TYPES.includes(object.type) && (
+              <Link
+                href={`/advisor?objectId=${object.id}`}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-accent/30 bg-accent/10 px-3 py-2 text-sm font-medium text-accent hover:bg-accent/20"
+              >
+                <Compass className="h-4 w-4" />
+                {t("askLifeOS")}
+              </Link>
+            )}
             {object.type === "person" && (
               <Link
                 href={`/objects/${object.id}/update-ai`}
