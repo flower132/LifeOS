@@ -5,6 +5,7 @@ import {
   AIAnalysisHistoryEntry, ObjectAIProfile, NoteAttachment,
 } from "@/lib/types";
 import { getSupabase, resetSupabase } from "@/lib/supabaseClient";
+import { generateId } from "@/lib/id";
 
 const toISO = (d: unknown) =>
   d ? new Date(d as string | number).toISOString() : new Date().toISOString();
@@ -247,7 +248,7 @@ export class SupabaseAdapter implements StorageAdapter {
     if (!uid) throw new Error("Not authenticated");
     const now = new Date().toISOString();
     const row = {
-      id: crypto.randomUUID(), user_id: uid,
+      id: generateId(), user_id: uid,
       type: obj.type, name: obj.name,
       description: obj.description || null, properties: obj.properties || {},
       ai_profile: obj.aiProfile || null,
@@ -334,7 +335,7 @@ export class SupabaseAdapter implements StorageAdapter {
     const uid = await getUid();
     if (!uid) throw new Error("Not authenticated");
     const now = new Date().toISOString();
-    const row = { id: crypto.randomUUID(), user_id: uid, object_id: note.object_id, content: note.content || "", source_type: note.sourceType || "text", attachments: note.attachments || [], created_at: now };
+    const row = { id: generateId(), user_id: uid, object_id: note.object_id, content: note.content || "", source_type: note.sourceType || "text", attachments: note.attachments || [], created_at: now };
     const client = getSupabase();
     const { data, error } = await client.from("notes").insert(row).select().single();
     if (error) throw error;
@@ -382,7 +383,7 @@ export class SupabaseAdapter implements StorageAdapter {
     if (!uid) throw new Error("Not authenticated");
     const now = new Date().toISOString();
     const row = {
-      id: crypto.randomUUID(), user_id: uid,
+      id: generateId(), user_id: uid,
       source_object_id: relation.source_object_id, target_object_id: relation.target_object_id,
       type: relation.type, strength: relation.strength ?? null, note: relation.note || null,
       created_at: now,
@@ -429,7 +430,7 @@ export class SupabaseAdapter implements StorageAdapter {
     const uid = await getUid();
     if (!uid) throw new Error("Not authenticated");
     const now = new Date().toISOString();
-    const row = { id: crypto.randomUUID(), user_id: uid, name: tag.name, color: tag.color || null, created_at: now, usage_count: 0 };
+    const row = { id: generateId(), user_id: uid, name: tag.name, color: tag.color || null, created_at: now, usage_count: 0 };
     const client = getSupabase();
     const { data, error } = await client.from("tags").insert(row).select().single();
     if (error) throw error;
@@ -490,7 +491,7 @@ export class SupabaseAdapter implements StorageAdapter {
     if (!uid) throw new Error("Not authenticated");
     const now = new Date().toISOString();
     const row = {
-      id: crypto.randomUUID(), user_id: uid, name: template.name, category: template.category,
+      id: generateId(), user_id: uid, name: template.name, category: template.category,
       is_default: template.isDefault, content: template.content || "",
       template_version: template.templateVersion || 1,
       created_at: now, updated_at: now, usage_count: 0, last_used_at: null,
@@ -619,7 +620,7 @@ export class SupabaseAdapter implements StorageAdapter {
 
     const now = new Date().toISOString();
     const row = {
-      id: crypto.randomUUID(),
+      id: generateId(),
       user_id: uid,
       object_type: entry.objectType,
       object_id: entry.objectId || null,
