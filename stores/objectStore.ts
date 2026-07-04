@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { LifeObject, LIFE_OBJECT_TYPES } from "@/lib/types";
+import { LifeObject, LIFE_OBJECT_TYPES, ObjectDeletionSnapshot } from "@/lib/types";
 import { storage } from "@/lib/storage";
 import { emit, subscribe } from "./storeEvents";
 
@@ -19,6 +19,8 @@ interface ObjectState {
     updates: Partial<Omit<LifeObject, "id" | "created_at" | "updated_at">>
   ) => Promise<void>;
   removeObject: (id: string) => Promise<void>;
+  removeObjects: (ids: string[]) => Promise<ObjectDeletionSnapshot>;
+  restoreObjects: (snapshot: ObjectDeletionSnapshot) => Promise<void>;
   getById: (id: string) => LifeObject | undefined;
   getByType: (type: LifeObject["type"]) => LifeObject[];
 }
@@ -91,12 +93,50 @@ export const useObjectStore = create<ObjectState>((set, get) => {
           objects: state.objects.filter((o) => o.id !== id),
           error: null,
         }));
+        emit("objectsChanged");
         emit("tagsChanged");
         emit("notesChanged");
         emit("relationsChanged");
       } catch (err) {
         const message =
           err instanceof Error ? err.message : "Failed to delete object";
+        set({ error: message });
+        throw err;
+      }
+    },
+
+    removeObjects: async (ids) => {
+      try {
+        const snapshot = await storage.deleteObjects(ids);
+        const idSet = new Set(ids);
+        set((state) => ({
+          objects: state.objects.filter((o) => !idSet.has(o.id)),
+          error: null,
+        }));
+        emit("objectsChanged");
+        emit("tagsChanged");
+        emit("notesChanged");
+        emit("relationsChanged");
+        return snapshot;
+      } catch (err) {
+        const message =
+          err instanceof Error ? err.message : "Failed to delete objects";
+        set({ error: message });
+        throw err;
+      }
+    },
+
+    restoreObjects: async (snapshot) => {
+      try {
+        await storage.restoreObjects(snapshot);
+        await get().load();
+        emit("objectsChanged");
+        emit("tagsChanged");
+        emit("notesChanged");
+        emit("relationsChanged");
+      } catch (err) {
+        const message =
+          err instanceof Error ? err.message : "Failed to restore objects";
         set({ error: message });
         throw err;
       }

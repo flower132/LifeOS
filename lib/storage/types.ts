@@ -7,6 +7,7 @@ import {
   TemplateCreateInput,
   TemplateUpdateInput,
   AIAnalysisHistoryEntry,
+  ObjectDeletionSnapshot,
 } from "@/lib/types";
 
 import { AIProviderId } from "@/lib/ai/types";
@@ -50,6 +51,11 @@ export interface StorageAdapter {
     updates: Partial<Omit<LifeObject, "id" | "created_at" | "updated_at">>
   ): Promise<LifeObject>;
   deleteObject(id: string): Promise<void>;
+  deleteObjects(
+    ids: string[],
+    options?: { preserveNotes?: boolean }
+  ): Promise<ObjectDeletionSnapshot>;
+  restoreObjects(snapshot: ObjectDeletionSnapshot): Promise<void>;
   setObjects(objects: LifeObject[]): Promise<void>;
 
   // Notes

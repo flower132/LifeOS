@@ -20,7 +20,7 @@ export function resolveEvidenceSource(
     case "note": {
       const note = context.notes.find((n) => n.id === id);
       if (note) {
-        return { kind, id, objectId: note.object_id };
+        return { kind, id, objectId: note.object_id ?? undefined };
       }
       return undefined;
     }

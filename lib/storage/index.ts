@@ -55,7 +55,7 @@ function getActiveAdapter(): StorageAdapter {
 // ---- storage proxy (delegates to active adapter) -----------------------
 const STORAGE_METHODS: (keyof StorageAdapter)[] = [
   "getStorageVersion", "setStorageVersion", "migrateIfNeeded", "ensureDefaultTemplates",
-  "getObjects", "getObjectById", "createObject", "updateObject", "deleteObject", "setObjects",
+  "getObjects", "getObjectById", "createObject", "updateObject", "deleteObject", "deleteObjects", "restoreObjects", "setObjects",
   "getNotes", "getNotesByObjectId", "createNote", "deleteNote", "setNotes",
   "getRelations", "getRelationsByObjectId", "createRelation", "deleteRelation", "setRelations",
   "getTags", "createTag", "updateTag", "deleteTag", "setTags",

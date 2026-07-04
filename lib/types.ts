@@ -188,11 +188,19 @@ export interface NoteAttachment {
 
 export interface Note {
   id: string;
-  object_id: string;
+  object_id: string | null;
   content: string;
   sourceType: NoteSourceType;
   attachments: NoteAttachment[];
   created_at: string;
+}
+
+export interface ObjectDeletionSnapshot {
+  objects: LifeObject[];
+  relations: Relation[];
+  notes: Note[]; // unlinked notes that still hold their original object_id
+  aiHistoryEntries: { id: string; objectId: string }[];
+  deletedAt: number;
 }
 
 export type RelationType =

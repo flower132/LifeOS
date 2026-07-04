@@ -96,7 +96,7 @@ export function isValidNote(obj: unknown): obj is Note {
   const n = obj as Record<string, unknown>;
 
   if (!isValidId(n.id)) return false;
-  if (!isValidId(n.object_id)) return false;
+  if (n.object_id !== null && !isValidId(n.object_id)) return false;
   if (typeof n.content !== "string" || n.content.trim().length === 0) {
     return false;
   }
@@ -162,7 +162,7 @@ export function validateInputObject(
 export function validateInputNote(
   note: Omit<Note, "id" | "created_at">
 ): void {
-  if (!note.object_id || note.object_id.trim().length === 0) {
+  if (note.object_id !== null && (!note.object_id || note.object_id.trim().length === 0)) {
     throw new Error("Note object_id is required");
   }
   if (!note.content || note.content.trim().length === 0) {

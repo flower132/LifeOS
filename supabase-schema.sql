@@ -32,7 +32,7 @@ create policy "Users can only access their own objects"
 create table if not exists public.notes (
   id          uuid primary key default uuid_generate_v4(),
   user_id     uuid references auth.users(id) on delete cascade not null,
-  object_id   uuid references public.objects(id) on delete cascade not null,
+  object_id   uuid references public.objects(id) on delete set null,
   content     text default '',
   source_type text default 'text',
   attachments jsonb default '[]'::jsonb,

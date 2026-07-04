@@ -9,6 +9,7 @@ import {
   TemplateUpdateInput,
   TEMPLATE_CATEGORIES,
   AIAnalysisHistoryEntry,
+  ObjectDeletionSnapshot,
 } from "@/lib/types";
 import {
   isValidLifeObject,
@@ -653,6 +654,117 @@ export class LocalStorageAdapter implements StorageAdapter {
     await recalcTagUsage();
   }
 
+  async deleteObjects(
+    ids: string[],
+    options?: { preserveNotes?: boolean }
+  ): Promise<ObjectDeletionSnapshot> {
+    const preserveNotes = options?.preserveNotes !== false;
+    const idSet = new Set(ids);
+    const deletedAt = Date.now();
+
+    const allObjects = await this.getObjects();
+    const deletedObjects = allObjects.filter((o) => idSet.has(o.id));
+    const remainingObjects = allObjects.filter((o) => !idSet.has(o.id));
+
+    const allNotes = await this.getNotes();
+    const notesToUnlink = preserveNotes
+      ? allNotes.filter((n) => n.object_id !== null && idSet.has(n.object_id))
+      : [];
+    const notesSnapshot: Note[] = notesToUnlink.map((n) => ({ ...n }));
+    const remainingNotes = preserveNotes
+      ? allNotes.map((n) =>
+          n.object_id !== null && idSet.has(n.object_id)
+            ? { ...n, object_id: null }
+            : n
+        )
+      : allNotes.filter((n) => n.object_id === null || !idSet.has(n.object_id));
+
+    const allRelations = await this.getRelations();
+    const deletedRelations = allRelations.filter(
+      (r) => idSet.has(r.source_object_id) || idSet.has(r.target_object_id)
+    );
+    const remainingRelations = allRelations.filter(
+      (r) =>
+        !idSet.has(r.source_object_id) && !idSet.has(r.target_object_id)
+    );
+
+    const allHistory = await this.getAIAnalysisHistory();
+    const historyEntries = allHistory
+      .filter((h) => h.objectId !== undefined && idSet.has(h.objectId))
+      .map((h) => ({ id: h.id, objectId: h.objectId as string }));
+    const remainingHistory = allHistory.map((h) =>
+      h.objectId !== undefined && idSet.has(h.objectId)
+        ? { ...h, objectId: undefined }
+        : h
+    );
+
+    maybeBackup(KEYS.objects);
+    safeSetItem(KEYS.objects, remainingObjects);
+    maybeBackup(KEYS.notes);
+    safeSetItem(KEYS.notes, remainingNotes);
+    maybeBackup(KEYS.relations);
+    safeSetItem(KEYS.relations, remainingRelations);
+    maybeBackup(KEYS.aiAnalysisHistory);
+    safeSetItem(KEYS.aiAnalysisHistory, remainingHistory);
+
+    await recalcTagUsage();
+
+    return {
+      objects: deletedObjects,
+      relations: deletedRelations,
+      notes: notesSnapshot,
+      aiHistoryEntries: historyEntries,
+      deletedAt,
+    };
+  }
+
+  async restoreObjects(snapshot: ObjectDeletionSnapshot): Promise<void> {
+    const objects = await this.getObjects();
+    const existingIds = new Set(objects.map((o) => o.id));
+    const objectsToRestore = snapshot.objects.filter((o) => !existingIds.has(o.id));
+    const nextObjects = [...objectsToRestore, ...objects];
+
+    const notes = await this.getNotes();
+    const noteTargetMap = new Map(
+      snapshot.notes.map((n) => [n.id, n.object_id])
+    );
+    const nextNotes = notes.map((n) => {
+      if (noteTargetMap.has(n.id)) {
+        return { ...n, object_id: noteTargetMap.get(n.id) ?? n.object_id };
+      }
+      return n;
+    });
+
+    const relations = await this.getRelations();
+    const relationIds = new Set(relations.map((r) => r.id));
+    const relationsToRestore = snapshot.relations.filter(
+      (r) => !relationIds.has(r.id)
+    );
+    const nextRelations = [...relationsToRestore, ...relations];
+
+    const history = await this.getAIAnalysisHistory();
+    const historyTargetMap = new Map(
+      snapshot.aiHistoryEntries.map((h) => [h.id, h.objectId])
+    );
+    const nextHistory = history.map((h) => {
+      if (historyTargetMap.has(h.id)) {
+        return { ...h, objectId: historyTargetMap.get(h.id) };
+      }
+      return h;
+    });
+
+    maybeBackup(KEYS.objects);
+    safeSetItem(KEYS.objects, nextObjects);
+    maybeBackup(KEYS.notes);
+    safeSetItem(KEYS.notes, nextNotes);
+    maybeBackup(KEYS.relations);
+    safeSetItem(KEYS.relations, nextRelations);
+    maybeBackup(KEYS.aiAnalysisHistory);
+    safeSetItem(KEYS.aiAnalysisHistory, nextHistory);
+
+    await recalcTagUsage();
+  }
+
   async setObjects(objects: LifeObject[]): Promise<void> {
     const valid = filterValid(objects, isValidLifeObject, "object");
     maybeBackup(KEYS.objects);
@@ -678,6 +790,9 @@ export class LocalStorageAdapter implements StorageAdapter {
 
   async createNote(note: Omit<Note, "id" | "created_at">): Promise<Note> {
     validateInputNote(note);
+    if (!note.object_id) {
+      throw new StorageError("Note object_id is required", "validation");
+    }
     await assertObjectExists(note.object_id, "Note target");
     const notes = await this.getNotes();
     const created: Note = {

@@ -3,6 +3,7 @@ import {
   LifeObject, Note, Relation, Tag, Template,
   TemplateCreateInput, TemplateUpdateInput,
   AIAnalysisHistoryEntry, ObjectAIProfile, NoteAttachment,
+  ObjectDeletionSnapshot,
 } from "@/lib/types";
 import { getSupabase, resetSupabase } from "@/lib/supabaseClient";
 import { generateId } from "@/lib/id";
@@ -300,6 +301,178 @@ export class SupabaseAdapter implements StorageAdapter {
     }
     this.cache.objects = this.cache.objects.filter((o) => o.id !== id);
   }
+
+  async deleteObjects(
+    ids: string[],
+    options?: { preserveNotes?: boolean }
+  ): Promise<ObjectDeletionSnapshot> {
+    await this.init();
+    const uid = await getUid();
+    const preserveNotes = options?.preserveNotes !== false;
+    const idSet = new Set(ids);
+    const deletedAt = Date.now();
+    const client = getSupabase();
+
+    const deletedObjects = this.cache.objects.filter((o) => idSet.has(o.id));
+
+    const notesToUnlink = preserveNotes
+      ? this.cache.notes.filter(
+          (n) => n.object_id !== null && idSet.has(n.object_id)
+        )
+      : [];
+    const notesSnapshot: Note[] = notesToUnlink.map((n) => ({ ...n }));
+
+    const deletedRelations = this.cache.relations.filter(
+      (r) => idSet.has(r.source_object_id) || idSet.has(r.target_object_id)
+    );
+
+    const historyEntries = this.cache.aiAnalysisHistory
+      .filter((h) => h.objectId !== undefined && idSet.has(h.objectId))
+      .map((h) => ({ id: h.id, objectId: h.objectId as string }));
+
+    if (uid) {
+      const noteIdsToUnlink = notesToUnlink.map((n) => n.id);
+      if (noteIdsToUnlink.length > 0) {
+        await client
+          .from("notes")
+          .update({ object_id: null })
+          .in("id", noteIdsToUnlink)
+          .eq("user_id", uid);
+      }
+
+      const relationIdsToDelete = deletedRelations.map((r) => r.id);
+      if (relationIdsToDelete.length > 0) {
+        await client
+          .from("relations")
+          .delete()
+          .in("id", relationIdsToDelete)
+          .eq("user_id", uid);
+      }
+
+      const historyIdsToUnlink = historyEntries.map((h) => h.id);
+      if (historyIdsToUnlink.length > 0) {
+        await client
+          .from("ai_analysis_history")
+          .update({ object_id: null })
+          .in("id", historyIdsToUnlink)
+          .eq("user_id", uid);
+      }
+
+      await client.from("objects").delete().in("id", ids).eq("user_id", uid);
+    }
+
+    this.cache.objects = this.cache.objects.filter((o) => !idSet.has(o.id));
+    this.cache.notes = preserveNotes
+      ? this.cache.notes.map((n) =>
+          n.object_id !== null && idSet.has(n.object_id)
+            ? { ...n, object_id: null }
+            : n
+        )
+      : this.cache.notes.filter(
+          (n) => n.object_id === null || !idSet.has(n.object_id)
+        );
+    this.cache.relations = this.cache.relations.filter(
+      (r) =>
+        !idSet.has(r.source_object_id) && !idSet.has(r.target_object_id)
+    );
+    this.cache.aiAnalysisHistory = this.cache.aiAnalysisHistory.map((h) =>
+      h.objectId !== undefined && idSet.has(h.objectId)
+        ? { ...h, objectId: undefined }
+        : h
+    );
+
+    return {
+      objects: deletedObjects,
+      relations: deletedRelations,
+      notes: notesSnapshot,
+      aiHistoryEntries: historyEntries,
+      deletedAt,
+    };
+  }
+
+  async restoreObjects(snapshot: ObjectDeletionSnapshot): Promise<void> {
+    await this.init();
+    const uid = await getUid();
+    if (!uid) throw new Error("Not authenticated");
+    const client = getSupabase();
+
+    const existingIds = new Set(this.cache.objects.map((o) => o.id));
+    const objectsToRestore = snapshot.objects.filter((o) => !existingIds.has(o.id));
+    if (objectsToRestore.length > 0) {
+      const rows = objectsToRestore.map((o) => ({
+        id: o.id,
+        user_id: uid,
+        type: o.type,
+        name: o.name,
+        description: o.description || null,
+        properties: o.properties || {},
+        ai_profile: o.aiProfile || null,
+        ai_insights: o.aiInsights || [],
+        ai_suggestions: o.aiSuggestions || [],
+        memories: o.memories || [],
+        tag_ids: o.tag_ids || [],
+        created_at: o.created_at,
+        updated_at: o.updated_at,
+      }));
+      await client.from("objects").upsert(rows);
+      this.cache.objects = [...objectsToRestore, ...this.cache.objects];
+    }
+
+    const noteTargetMap = new Map(snapshot.notes.map((n) => [n.id, n.object_id]));
+    if (noteTargetMap.size > 0) {
+      const noteIds = Array.from(noteTargetMap.keys());
+      for (const id of noteIds) {
+        await client
+          .from("notes")
+          .update({ object_id: noteTargetMap.get(id) })
+          .eq("id", id)
+          .eq("user_id", uid);
+      }
+      this.cache.notes = this.cache.notes.map((n) =>
+        noteTargetMap.has(n.id)
+          ? { ...n, object_id: noteTargetMap.get(n.id) ?? n.object_id }
+          : n
+      );
+    }
+
+    const relationIds = new Set(this.cache.relations.map((r) => r.id));
+    const relationsToRestore = snapshot.relations.filter(
+      (r) => !relationIds.has(r.id)
+    );
+    if (relationsToRestore.length > 0) {
+      const rows = relationsToRestore.map((r) => ({
+        id: r.id,
+        user_id: uid,
+        source_object_id: r.source_object_id,
+        target_object_id: r.target_object_id,
+        type: r.type,
+        strength: r.strength ?? null,
+        note: r.note || null,
+        created_at: r.created_at,
+      }));
+      await client.from("relations").upsert(rows);
+      this.cache.relations = [...relationsToRestore, ...this.cache.relations];
+    }
+
+    const historyTargetMap = new Map(
+      snapshot.aiHistoryEntries.map((h) => [h.id, h.objectId])
+    );
+    if (historyTargetMap.size > 0) {
+      for (const [id, objectId] of historyTargetMap.entries()) {
+        await client
+          .from("ai_analysis_history")
+          .update({ object_id: objectId })
+          .eq("id", id)
+          .eq("user_id", uid);
+      }
+      this.cache.aiAnalysisHistory = this.cache.aiAnalysisHistory.map((h) =>
+        historyTargetMap.has(h.id)
+          ? { ...h, objectId: historyTargetMap.get(h.id) }
+          : h
+      );
+    }
+  }
+
   async setObjects(objects: LifeObject[]): Promise<void> {
     await this.init();
     const uid = await getUid();

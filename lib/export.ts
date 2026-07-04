@@ -137,8 +137,8 @@ export async function exportAllDataAsMarkdown(): Promise<string> {
     lines.push("_No notes._");
   } else {
     for (const note of notes) {
-      const obj = objectMap.get(note.object_id);
-      lines.push(`### ${obj?.name ?? note.object_id}`);
+      const obj = note.object_id ? objectMap.get(note.object_id) : undefined;
+      lines.push(`### ${obj?.name ?? note.object_id ?? "Unlinked Memory"}`);
       lines.push("");
       lines.push(note.content);
       lines.push("");
