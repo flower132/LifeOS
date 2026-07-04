@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { ArrowLeft, FileSpreadsheet } from "lucide-react";
+import { FileImportFlow } from "@/components/create/FileImportFlow";
 import { useTranslation } from "@/lib/useTranslation";
 
 export default function CreateObjectImportPage() {
@@ -35,14 +36,7 @@ export default function CreateObjectImportPage() {
       </header>
 
       <div className="mx-auto max-w-3xl px-6 py-8">
-        <div className="rounded-xl border border-dashed border-border bg-card p-8 text-center">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-muted">
-            <FileSpreadsheet className="h-6 w-6 text-muted-foreground" />
-          </div>
-          <p className="text-sm text-muted-foreground">
-            {t("createSpaceFileImportComingSoon")}
-          </p>
-        </div>
+        <FileImportFlow />
       </div>
     </div>
   );

@@ -44,7 +44,6 @@ export function CreateHub() {
       icon: FileSpreadsheet,
       title: t("createSpaceFileImport"),
       description: t("createSpaceFileImportDescription"),
-      comingSoon: true,
     },
   ];
 
@@ -70,11 +69,6 @@ export function CreateHub() {
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
                 <h3 className="text-base font-medium text-foreground">{option.title}</h3>
-                {option.comingSoon && (
-                  <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
-                    {t("createSpaceComingSoonBadge")}
-                  </span>
-                )}
               </div>
               <p className="mt-1 text-sm text-muted-foreground">{option.description}</p>
             </div>
