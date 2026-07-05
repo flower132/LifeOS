@@ -17,10 +17,12 @@ import { AIInsightsTab } from "./tabs/AIInsightsTab";
 import { AISuggestionsTab } from "./tabs/AISuggestionsTab";
 import { MemoriesTab } from "./tabs/MemoriesTab";
 import { HistoryTab } from "./tabs/HistoryTab";
+import { GrowthTab } from "./tabs/GrowthTab";
+import { isAIProfileSupported } from "@/lib/ai/objectIntelligence/profiles";
 
-type DetailTab = "overview" | "aiProfile" | "aiInsights" | "aiSuggestions" | "memories" | "history";
+type DetailTab = "overview" | "aiProfile" | "aiInsights" | "aiSuggestions" | "memories" | "history" | "growth";
 
-const TABS: DetailTab[] = [
+const BASE_TABS: DetailTab[] = [
   "overview",
   "aiProfile",
   "aiInsights",
@@ -98,6 +100,11 @@ export default function ObjectDetailPage() {
     );
   }
 
+  const tabs: DetailTab[] =
+    object.type === "self"
+      ? [...BASE_TABS.slice(0, 5), "growth", ...BASE_TABS.slice(5)]
+      : BASE_TABS;
+
   const hasAnyAIData =
     object.aiProfile ||
     (object.aiInsights && object.aiInsights.length > 0) ||
@@ -136,13 +143,13 @@ export default function ObjectDetailPage() {
                 {t("askLifeOS")}
               </Link>
             )}
-            {object.type === "person" && (
+            {isAIProfileSupported(object.type) && (
               <Link
                 href={`/objects/${object.id}/update-ai`}
                 className="inline-flex items-center gap-1.5 rounded-lg bg-accent px-3 py-2 text-sm font-medium text-accent-foreground hover:bg-accent/90"
               >
                 <Sparkles className="h-4 w-4" />
-                {t("updatePersonAITitle")}
+                {t("updateObjectAITitle", { type: t(object.type) })}
               </Link>
             )}
             <button
@@ -159,8 +166,8 @@ export default function ObjectDetailPage() {
       <div className="mx-auto max-w-4xl px-6 py-6">
         <nav className="mb-8 border-b border-border">
           <ul className="flex gap-1 overflow-x-auto">
-            {TABS.map((tab) => {
-              const isDisabled = tab !== "overview" && !hasAnyAIData;
+            {tabs.map((tab) => {
+              const isDisabled = tab !== "overview" && tab !== "growth" && !hasAnyAIData;
               return (
                 <li key={tab}>
                   <button
@@ -196,6 +203,7 @@ export default function ObjectDetailPage() {
         {activeTab === "aiSuggestions" && <AISuggestionsTab object={object} />}
         {activeTab === "memories" && <MemoriesTab object={object} />}
         {activeTab === "history" && <HistoryTab object={object} />}
+        {activeTab === "growth" && object.type === "self" && <GrowthTab object={object} />}
       </div>
     </div>
   );

@@ -11,6 +11,9 @@ import { useObjectStore } from "@/stores/objectStore";
 import { TagSelect } from "../tag/TagSelect";
 import { useTranslation } from "@/lib/useTranslation";
 import { ObjectPropertyEditor } from "./ObjectPropertyEditor";
+import { aiService } from "@/lib/ai";
+import { isAIProfileSupported } from "@/lib/ai/objectIntelligence/profiles";
+import { propertiesToPromptContext } from "@/lib/objectProperties";
 
 interface ObjectFormProps {
   initialDescription?: string;
@@ -63,6 +66,40 @@ export function ObjectForm({
         properties,
         tag_ids: tagIds,
       });
+
+      if (isAIProfileSupported(type)) {
+        void (async () => {
+          try {
+            const textParts = [
+              `Name: ${trimmedName}`,
+              trimmedDescription ? `Description: ${trimmedDescription}` : "",
+              propertiesToPromptContext(type, properties),
+            ].filter(Boolean);
+
+            const result = await aiService.analyzeObject(type, {
+              textInput: textParts.join("\n\n"),
+              images: [],
+            });
+
+            if (result.success && result.data) {
+              await useObjectStore.getState().updateObject(created.id, {
+                aiProfile: result.data.profile,
+                aiInsights: result.data.insights,
+                aiSuggestions: result.data.suggestions,
+                memories: result.data.memories,
+                description:
+                  result.data.analysisSummary || created.description,
+              });
+            }
+          } catch (analyzeErr) {
+            console.error(
+              "[ObjectForm] Background AI analysis failed:",
+              analyzeErr
+            );
+          }
+        })();
+      }
+
       router.push(`/objects/${created.id}`);
     } catch (err) {
       console.error("Failed to create object:", err);

@@ -109,12 +109,26 @@ export interface ProjectAIProfile {
   keyStakeholders: string[];
 }
 
+export interface LifePattern {
+  repeatedTopics: string[];
+  goalChanges: string[];
+  emotionalTrend?: string;
+  relationshipChanges: string[];
+  learningDirections: string[];
+  valueEvolution: string[];
+  updatedAt: string;
+}
+
 export interface SelfAIProfile {
   type: "self";
   strengths: string[];
   weaknesses: string[];
   growthAreas: string[];
   currentFocus: string;
+  understandingSummary: string;
+  growthThemes: string[];
+  reflectionSeeds: string[];
+  lifePattern: LifePattern;
 }
 
 export interface KnowledgeAIProfile {

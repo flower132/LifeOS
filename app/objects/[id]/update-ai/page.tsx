@@ -11,16 +11,28 @@ import { useNoteStore } from "@/stores/noteStore";
 import { useTranslation } from "@/lib/useTranslation";
 import { AIAnalysisResult } from "@/lib/ai/objectIntelligence/types";
 import { AIImageInput } from "@/lib/ai/types";
+import { isAIProfileSupported } from "@/lib/ai/objectIntelligence/profiles";
+import { analyzeObjectUpdate } from "@/lib/ai/objectIntelligence/update";
 import { analyzePersonUpdate } from "@/lib/ai/personLiving/analyzePersonUpdate";
 import { MergePersonAnalysisResult } from "@/lib/ai/personLiving/mergePersonAnalysis";
 import {
   addAIAnalysisHistory,
   createAIAnalysisHistoryEntryInput,
 } from "@/lib/ai/objectIntelligence/history";
+import { LifeObject } from "@/lib/types";
 
 type UpdatePhase = "input" | "review";
 
-export default function PersonUpdateAIPage() {
+interface RunMeta {
+  textInput: string;
+  images: AIImageInput[];
+  provider: string;
+  model: string;
+  durationMs: number;
+  rawOutput: string;
+}
+
+export default function ObjectUpdateAIPage() {
   const params = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -57,15 +69,8 @@ export default function PersonUpdateAIPage() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [reviewResult, setReviewResult] = useState<AIAnalysisResult | null>(null);
-  const [mergeResult, setMergeResult] = useState<MergePersonAnalysisResult | null>(null);
-  const [lastRunMeta, setLastRunMeta] = useState<{
-    textInput: string;
-    images: AIImageInput[];
-    provider: string;
-    model: string;
-    durationMs: number;
-    rawOutput: string;
-  } | null>(null);
+  const [baseUpdates, setBaseUpdates] = useState<Partial<LifeObject> | null>(null);
+  const [lastRunMeta, setLastRunMeta] = useState<RunMeta | null>(null);
 
   const object = objects.find((o) => o.id === id);
   const notes = object ? getNotesByObjectId(object.id) : [];
@@ -98,7 +103,7 @@ export default function PersonUpdateAIPage() {
     );
   }
 
-  if (object.type !== "person") {
+  if (!isAIProfileSupported(object.type)) {
     return (
       <div className="min-h-screen bg-background px-6 py-10">
         <div className="mx-auto max-w-4xl text-center">
@@ -122,11 +127,40 @@ export default function PersonUpdateAIPage() {
     setError(null);
 
     try {
-      const result = await analyzePersonUpdate(
+      if (object.type === "person") {
+        const result = await analyzePersonUpdate(
+          object,
+          notes,
+          { textInput: text, images },
+          { language }
+        );
+
+        if (!result.success) {
+          setError(result.error);
+          return;
+        }
+
+        const personMerge = result.data as MergePersonAnalysisResult;
+        setReviewResult(personMerge.mergedResult);
+        setBaseUpdates(personMerge.mergedObject);
+        setLastRunMeta({
+          textInput: text,
+          images,
+          provider: result.provider,
+          model: result.model,
+          durationMs: result.durationMs,
+          rawOutput: result.rawOutput,
+        });
+        setPhase("review");
+        return;
+      }
+
+      const result = await analyzeObjectUpdate(
+        object.type,
         object,
         notes,
         { textInput: text, images },
-        { language }
+        { language, saveHistory: false }
       );
 
       if (!result.success) {
@@ -135,7 +169,7 @@ export default function PersonUpdateAIPage() {
       }
 
       setReviewResult(result.data.mergedResult);
-      setMergeResult(result.data);
+      setBaseUpdates(result.data.mergedObject);
       setLastRunMeta({
         textInput: text,
         images,
@@ -153,7 +187,7 @@ export default function PersonUpdateAIPage() {
   };
 
   const handleConfirm = async (confirmed: AIAnalysisResult) => {
-    if (!mergeResult || !lastRunMeta) return;
+    if (!baseUpdates || !lastRunMeta) return;
 
     try {
       await updateObject(object.id, {
@@ -164,11 +198,12 @@ export default function PersonUpdateAIPage() {
       });
 
       const entryInput = createAIAnalysisHistoryEntryInput({
-        objectType: "person",
+        objectType: object.type,
         rawTextInput: lastRunMeta.textInput,
         imageCount: lastRunMeta.images.length,
         imageThumbnails: lastRunMeta.images.map((img) =>
-          img.base64Data.slice(0, 120)),
+          img.base64Data.slice(0, 120)
+        ),
         provider: lastRunMeta.provider,
         model: lastRunMeta.model,
         durationMs: lastRunMeta.durationMs,
@@ -190,6 +225,8 @@ export default function PersonUpdateAIPage() {
     }
   };
 
+  const typeLabel = t(object.type);
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-background px-6 py-5">
@@ -204,14 +241,15 @@ export default function PersonUpdateAIPage() {
             </Link>
             <h1 className="text-2xl font-semibold tracking-tight text-foreground">
               {phase === "input"
-                ? t("updatePersonAITitle") ?? "Update AI Understanding"
-                : t("reviewPersonAITitle")}
+                ? t("updateObjectAITitle", { type: typeLabel })
+                : t("reviewObjectAITitle", { type: typeLabel })}
             </h1>
             <p className="text-sm text-muted-foreground">
               {phase === "input"
-                ? t("updatePersonAISubtitle") ??
-                  "Add new material and let AI update the profile."
-                : t("reviewPersonAISubtitle")}
+                ? t(`updateObjectAISubtitle_${object.type}`) ??
+                  t("updatePersonAISubtitle")
+                : t(`reviewObjectAISubtitle_${object.type}`) ??
+                  t("reviewPersonAISubtitle")}
             </p>
           </div>
         </div>

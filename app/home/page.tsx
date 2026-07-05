@@ -8,6 +8,7 @@ import { QuickCapture } from "@/components/capture/QuickCapture";
 import { ObjectCard } from "@/components/object/ObjectCard";
 import { NoteCard } from "@/components/note/NoteCard";
 import { TodayFocusCard } from "./TodayFocusCard";
+import { SelfSummaryCard } from "./SelfSummaryCard";
 import { useTranslation } from "@/lib/useTranslation";
 
 export default function HomePage() {
@@ -46,6 +47,8 @@ export default function HomePage() {
 
       <div className="mx-auto max-w-5xl space-y-8 px-6 py-6">
         <QuickCapture />
+
+        <SelfSummaryCard />
 
         <TodayFocusCard />
 

@@ -55,6 +55,14 @@ export function selectTodayFocus(
   objects: LifeObject[],
   notes: Note[]
 ): LifeObject | null {
+  const self = objects.find((o) => o.type === "self");
+  if (self) {
+    const selfNotes = notes.filter((n) => n.object_id === self.id);
+    if (selfNotes.length > 0 || (self.memories ?? []).length > 0) {
+      return self;
+    }
+  }
+
   const candidates = objects.filter((o) => isFocusType(o.type));
   if (candidates.length === 0) return null;
 

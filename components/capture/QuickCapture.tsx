@@ -6,6 +6,7 @@ import { useNoteStore } from "@/stores/noteStore";
 import { useObjectStore } from "@/stores/objectStore";
 import { PenLine } from "lucide-react";
 import { useTranslation } from "@/lib/useTranslation";
+import { triggerBackgroundObjectUpdate } from "@/lib/ai/objectIntelligence/update";
 
 export function QuickCapture() {
   const router = useRouter();
@@ -34,6 +35,12 @@ export function QuickCapture() {
       });
       setContent("");
       setObjectId("");
+
+      const targetObject = objects.find((o) => o.id === objectId);
+      if (targetObject?.type === "self") {
+        void triggerBackgroundObjectUpdate(targetObject, created);
+      }
+
       router.push(`/objects/${created.object_id}`);
     } finally {
       setSubmitting(false);

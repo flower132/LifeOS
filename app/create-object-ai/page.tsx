@@ -9,10 +9,11 @@ import { AIReviewPanel } from "@/components/ai/AIReviewPanel";
 import { ObjectTypeConfirmation } from "@/components/ai/ObjectTypeConfirmation";
 import { aiService } from "@/lib/ai";
 import { AIAnalysisInput, AIAnalysisResult } from "@/lib/ai/objectIntelligence/types";
+import { AIAnalysisRunResult } from "@/lib/ai/types";
 import { useObjectStore } from "@/stores/objectStore";
 import { useTranslation } from "@/lib/useTranslation";
 import { getObjectDisplayName } from "@/lib/ai/objectIntelligence/mapper";
-import { getAIAnalysisHistory, updateAIAnalysisHistoryObjectId } from "@/lib/ai/objectIntelligence/history";
+import { updateAIAnalysisHistoryObjectId } from "@/lib/ai/objectIntelligence/history";
 import { isAIProfileSupported } from "@/lib/ai/objectIntelligence/profiles";
 import { selectProviderForAnalysis } from "@/lib/ai/objectIntelligence/fallback";
 import { LifeObjectType, LIFE_OBJECT_TYPES } from "@/lib/types";
@@ -41,6 +42,7 @@ export default function CreateObjectAIPage() {
     model: string;
     durationMs?: number;
   } | null>(null);
+  const [lastRunResult, setLastRunResult] = useState<AIAnalysisRunResult<AIAnalysisResult> | null>(null);
 
   const handleAnalyze = useCallback(
     async (textInput: string, images: AIAnalysisInput["images"]) => {
@@ -70,6 +72,7 @@ export default function CreateObjectAIPage() {
             ? { ...prev, durationMs: runResult.durationMs }
             : { provider: runResult.provider, model: runResult.model, durationMs: runResult.durationMs }
         );
+        setLastRunResult(runResult);
         setResult(runResult.data);
         setStep("review");
       } catch (err) {
@@ -85,6 +88,7 @@ export default function CreateObjectAIPage() {
     setStep("input");
     setError(null);
     setAnalysisMeta(null);
+    setLastRunResult(null);
   }, []);
 
   const handleConfirm = useCallback(
@@ -108,10 +112,8 @@ export default function CreateObjectAIPage() {
         });
 
         try {
-          const history = await getAIAnalysisHistory();
-          const latest = history[0];
-          if (latest) {
-            await updateAIAnalysisHistoryObjectId(latest.id, created.id);
+          if (lastRunResult?.historyEntryId) {
+            await updateAIAnalysisHistoryObjectId(lastRunResult.historyEntryId, created.id);
           }
         } catch (historyErr) {
           console.error("[CreateObjectAI] Failed to link history:", historyErr);
@@ -123,7 +125,7 @@ export default function CreateObjectAIPage() {
         setIsCreating(false);
       }
     },
-    [addObject, objectType, router, t]
+    [addObject, lastRunResult, objectType, router, t]
   );
 
   if (!isAIProfileSupported(objectType)) {

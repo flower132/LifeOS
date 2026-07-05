@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { StickyNote, Link as LinkIcon, Info, Sparkles } from "lucide-react";
-import { LifeObject, Note, Relation, Tag } from "@/lib/types";
+import { LifeObject, Note, Relation, Tag, SelfAIProfile } from "@/lib/types";
 import { ObjectPropertiesForm } from "@/components/object/ObjectPropertiesForm";
 import { TagBadge } from "@/components/tag/TagBadge";
 import { TagSelect } from "@/components/tag/TagSelect";
@@ -48,6 +48,18 @@ export function OverviewTab({
           />
         </div>
       </section>
+
+      {object.type === "self" && object.aiProfile && (
+        <section className="space-y-3">
+          <div className="flex items-center gap-2">
+            <Sparkles className="h-4 w-4 text-muted-foreground" />
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+              {t("aiUnderstanding")}
+            </h2>
+          </div>
+          <SelfSummaryCard profile={object.aiProfile as SelfAIProfile} />
+        </section>
+      )}
 
       <section className="space-y-3">
         <div className="flex items-center gap-2">
@@ -98,6 +110,31 @@ export function OverviewTab({
         </div>
         <NoteTimeline notes={notes} />
       </section>
+    </div>
+  );
+}
+
+function SelfSummaryCard({ profile }: { profile: SelfAIProfile }) {
+  const { t } = useTranslation();
+
+  return (
+    <div className="rounded-xl border border-border bg-card p-4 space-y-4">
+      <div className="space-y-1">
+        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          {t("selfCurrentFocus")}
+        </p>
+        <p className="text-sm leading-relaxed text-foreground">
+          {profile.currentFocus || t("aiNotAvailable")}
+        </p>
+      </div>
+      <div className="space-y-1">
+        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          {t("selfUnderstanding")}
+        </p>
+        <p className="text-sm leading-relaxed text-foreground">
+          {profile.understandingSummary || t("aiNotAvailable")}
+        </p>
+      </div>
     </div>
   );
 }

@@ -2,6 +2,7 @@ import { z } from "zod";
 import { Language } from "@/lib/i18n";
 import { useTranslation } from "@/lib/useTranslation";
 import {
+  LifePattern,
   ObjectAIInsight,
   ObjectAISuggestion,
   ObjectMemory,
@@ -10,12 +11,33 @@ import {
 } from "@/lib/types";
 import { AIAnalysisInput, AIProfileDefinition } from "../types";
 
+const LifePatternSchema: z.ZodType<LifePattern> = z.object({
+  repeatedTopics: z.array(z.string()).default([]),
+  goalChanges: z.array(z.string()).default([]),
+  emotionalTrend: z.string().optional(),
+  relationshipChanges: z.array(z.string()).default([]),
+  learningDirections: z.array(z.string()).default([]),
+  valueEvolution: z.array(z.string()).default([]),
+  updatedAt: z.string().default(() => new Date().toISOString()),
+});
+
 const SelfAIProfileSchema: z.ZodType<SelfAIProfile> = z.object({
   type: z.literal("self"),
   strengths: z.array(z.string()).default([]),
   weaknesses: z.array(z.string()).default([]),
   growthAreas: z.array(z.string()).default([]),
   currentFocus: z.string().default(""),
+  understandingSummary: z.string().default(""),
+  growthThemes: z.array(z.string()).default([]),
+  reflectionSeeds: z.array(z.string()).default([]),
+  lifePattern: LifePatternSchema.default({
+    repeatedTopics: [],
+    goalChanges: [],
+    relationshipChanges: [],
+    learningDirections: [],
+    valueEvolution: [],
+    updatedAt: new Date().toISOString(),
+  }),
 });
 
 const SelfAIOutputSchema = z.object({
@@ -31,6 +53,17 @@ const SelfAIOutputSchema = z.object({
     weaknesses: [],
     growthAreas: [],
     currentFocus: "",
+    understandingSummary: "",
+    growthThemes: [],
+    reflectionSeeds: [],
+    lifePattern: {
+      repeatedTopics: [],
+      goalChanges: [],
+      relationshipChanges: [],
+      learningDirections: [],
+      valueEvolution: [],
+      updatedAt: new Date().toISOString(),
+    },
   }),
   insights: z
     .array(
@@ -76,6 +109,18 @@ function buildSelfPrompt(input: AIAnalysisInput, language: Language): string {
         weaknesses: ["string"],
         growthAreas: ["string"],
         currentFocus: "string",
+        understandingSummary: "string: a warm, synthesized understanding of who this person is and what they are going through",
+        growthThemes: ["string: 3-5 long-term growth themes"],
+        reflectionSeeds: ["string: future reflection prompts"],
+        lifePattern: {
+          repeatedTopics: ["string"],
+          goalChanges: ["string"],
+          emotionalTrend: "string or empty",
+          relationshipChanges: ["string"],
+          learningDirections: ["string"],
+          valueEvolution: ["string"],
+          updatedAt: "ISO date string",
+        },
       },
       insights: [
         {
@@ -97,12 +142,17 @@ function buildSelfPrompt(input: AIAnalysisInput, language: Language): string {
     2
   );
 
-  return `你是一位自我认知智能分析引擎。请基于用户提供的原始素材，输出 ONLY 一个合法的 JSON 对象，严格匹配以下结构：
+  return `你是一位自我认知与成长分析引擎。请基于用户提供的原始素材，输出 ONLY 一个合法的 JSON 对象，严格匹配以下结构：
 ${shape}
 
 分析要求：
 1. 基础画像：提取名称（如用户昵称）、当前关注焦点，无法确认时留空，禁止编造。
-2. Self AI Profile：优势、短板、成长方向、当前关注焦点。
+2. Self AI Profile：
+   - strengths / weaknesses / growthAreas / currentFocus
+   - understandingSummary：用温暖、安静的语气，综合素材写出对“这个人当下是谁、正经历什么”的理解，禁止简单复述模板字段。
+   - growthThemes：识别 3-5 个长期成长主题（如成长、创造、关系、学习、健康）。
+   - reflectionSeeds：生成 3-5 个未来可以不断发展的 Reflection 主题。
+   - lifePattern：从素材中提取重复关注的话题、目标变化、情绪趋势、关系变化、学习方向、价值观演变。
 3. AI Insights：关于自我状态、情绪模式、习惯、价值观、目标一致性等方面的洞察。每个洞察必须包含 category、title、description、confidence（0-100）、evidence（直接引用素材来源）。
 4. AI Suggestions：基于洞察给出可执行的成长/调整建议，包含 title、description、priority（low/medium/high）。
 5. Memories：从素材中提取的关键事件/观察记录，作为初始记忆。
@@ -111,7 +161,9 @@ ${shape}
 
 规则：
 - 不要编造证据，数据不足时 confidence 设为 0。
-- 保持客观，不做医疗或心理诊断。
+- 如果某个推断只是你的理解，请明确说明“这可能只是我的一种理解”。
+- 保持客观、谦逊、温暖，不做医疗或心理诊断。
+- 禁止使用“你应该”。
 - ${langHint}
 - ${imageHint}
 
@@ -186,7 +238,7 @@ function SelfAIProfileEditor({
   const { t } = useTranslation();
 
   const updateList = (
-    key: "strengths" | "weaknesses" | "growthAreas",
+    key: "strengths" | "weaknesses" | "growthAreas" | "growthThemes" | "reflectionSeeds",
     value: string
   ) => {
     onChange({
@@ -195,6 +247,13 @@ function SelfAIProfileEditor({
         .split(",")
         .map((s) => s.trim())
         .filter(Boolean),
+    });
+  };
+
+  const updateLifePattern = (patch: Partial<LifePattern>) => {
+    onChange({
+      ...profile,
+      lifePattern: { ...profile.lifePattern, ...patch, updatedAt: new Date().toISOString() },
     });
   };
 
@@ -231,10 +290,63 @@ function SelfAIProfileEditor({
         <textarea
           value={profile.currentFocus}
           onChange={(e) => onChange({ ...profile, currentFocus: e.target.value })}
-          rows={3}
+          rows={2}
           className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-accent focus:ring-2 focus:ring-accent"
         />
       </Field>
+      <Field label={t("selfUnderstanding")}>
+        <textarea
+          value={profile.understandingSummary}
+          onChange={(e) => onChange({ ...profile, understandingSummary: e.target.value })}
+          rows={4}
+          className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-accent focus:ring-2 focus:ring-accent"
+        />
+      </Field>
+      <Field label={t("selfGrowthThemes")}>
+        <input
+          type="text"
+          value={profile.growthThemes.join(", ")}
+          onChange={(e) => updateList("growthThemes", e.target.value)}
+          placeholder={t("selfGrowthThemesPlaceholder")}
+          className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-accent focus:ring-2 focus:ring-accent"
+        />
+      </Field>
+      <Field label={t("selfReflectionSeeds")}>
+        <input
+          type="text"
+          value={profile.reflectionSeeds.join(", ")}
+          onChange={(e) => updateList("reflectionSeeds", e.target.value)}
+          placeholder={t("selfReflectionSeedsPlaceholder")}
+          className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-accent focus:ring-2 focus:ring-accent"
+        />
+      </Field>
+      <div className="space-y-3 rounded-lg bg-muted/50 p-3">
+        <p className="text-xs font-medium text-muted-foreground">{t("selfLifePattern")}</p>
+        <Field label={t("lifePatternRepeatedTopics")}>
+          <input
+            type="text"
+            value={profile.lifePattern.repeatedTopics.join(", ")}
+            onChange={(e) => updateLifePattern({ repeatedTopics: e.target.value.split(",").map((s) => s.trim()).filter(Boolean) })}
+            className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-accent focus:ring-2 focus:ring-accent"
+          />
+        </Field>
+        <Field label={t("lifePatternLearningDirections")}>
+          <input
+            type="text"
+            value={profile.lifePattern.learningDirections.join(", ")}
+            onChange={(e) => updateLifePattern({ learningDirections: e.target.value.split(",").map((s) => s.trim()).filter(Boolean) })}
+            className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-accent focus:ring-2 focus:ring-accent"
+          />
+        </Field>
+        <Field label={t("lifePatternEmotionalTrend")}>
+          <input
+            type="text"
+            value={profile.lifePattern.emotionalTrend ?? ""}
+            onChange={(e) => updateLifePattern({ emotionalTrend: e.target.value })}
+            className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-accent focus:ring-2 focus:ring-accent"
+          />
+        </Field>
+      </div>
     </div>
   );
 }

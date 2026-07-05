@@ -85,6 +85,8 @@ export interface AIAnalysisRunResult<T = unknown> {
   fallback: boolean;
   /** Raw provider output retained for debugging and history. */
   rawOutput?: string;
+  /** ID of the persisted AI analysis history entry, if any. */
+  historyEntryId?: string;
 }
 
 export interface AIUsageLog {

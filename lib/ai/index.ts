@@ -355,7 +355,10 @@ class AIService {
       });
 
       if (options.saveHistory !== false) {
-        await this.saveHistoryEntry(type, input, result);
+        const historyEntryId = await this.saveHistoryEntry(type, input, result);
+        if (historyEntryId) {
+          (result as AIAnalysisRunResult<AIAnalysisResult>).historyEntryId = historyEntryId;
+        }
       }
     } else {
       addAILog({
@@ -606,7 +609,7 @@ class AIService {
     type: LifeObjectType,
     input: AIAnalysisInput,
     result: AIAnalysisRunResult
-  ): Promise<void> {
+  ): Promise<string | undefined> {
     try {
       const data = result.data as AIAnalysisResult | undefined;
       const entry = createAIAnalysisHistoryEntryInput({
@@ -624,10 +627,12 @@ class AIService {
         memoriesSnapshot: data?.memories,
       });
 
-      await addAIAnalysisHistory(entry);
+      const saved = await addAIAnalysisHistory(entry);
+      return saved.id;
     } catch (err) {
       // History persistence is best-effort; never fail the analysis because of it.
       console.error("[AIService] Failed to save analysis history:", err);
+      return undefined;
     }
   }
 }

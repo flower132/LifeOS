@@ -7,6 +7,7 @@ import { useNoteStore } from "@/stores/noteStore";
 import { useObjectStore } from "@/stores/objectStore";
 import { useTranslation } from "@/lib/useTranslation";
 import { NoteSourceType, NoteAttachment } from "@/lib/types";
+import { triggerBackgroundObjectUpdate } from "@/lib/ai/objectIntelligence/update";
 
 interface NoteFormProps {
   initialObjectId?: string;
@@ -149,7 +150,9 @@ export function NoteForm({ initialObjectId }: NoteFormProps) {
       });
 
       const targetObject = objects.find((o) => o.id === selectedObjectId);
-      if (targetObject?.type === "person") {
+      if (targetObject?.type === "self") {
+        void triggerBackgroundObjectUpdate(targetObject, created);
+      } else if (targetObject?.type === "person") {
         const shouldUpdate = confirm(
           t("confirmUpdatePersonAfterNote") ??
             "Note saved. Update this person's AI understanding with the new material?"
@@ -282,6 +285,12 @@ export function NoteForm({ initialObjectId }: NoteFormProps) {
         <p className="text-xs text-muted-foreground">
           {t("noteWillFeedPersonAI") ??
             "This note can be used to update the person's AI understanding after saving."}
+        </p>
+      )}
+      {selectedObject?.type === "self" && (
+        <p className="text-xs text-muted-foreground">
+          {t("noteWillFeedSelfAI") ??
+            "This note will gently update your Self understanding in the background."}
         </p>
       )}
 
