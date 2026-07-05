@@ -187,7 +187,7 @@ export class SupabaseAdapter implements StorageAdapter {
     setupAuthListener();
   }
 
-  private async init() {
+  async init() {
     if (this._initPromise) return this._initPromise;
     this._initPromise = (async () => {
       const uid = await getUid();
@@ -196,6 +196,11 @@ export class SupabaseAdapter implements StorageAdapter {
       this.cache._loaded = true;
     })();
     return this._initPromise;
+  }
+
+  async refresh() {
+    this._initPromise = null;
+    return this.init();
   }
 
   private async pullAll() {
@@ -487,8 +492,16 @@ export class SupabaseAdapter implements StorageAdapter {
       memories: o.memories || [],
       tag_ids: o.tag_ids || [], created_at: o.created_at, updated_at: o.updated_at,
     }));
-    await client.from("objects").delete().eq("user_id", uid);
-    if (rows.length > 0) await client.from("objects").insert(rows);
+    const currentIds = new Set(this.cache.objects.map((o) => o.id));
+    const nextIds = new Set(objects.map((o) => o.id));
+    const idsToDelete = Array.from(currentIds).filter((id) => !nextIds.has(id));
+    if (idsToDelete.length > 0) {
+      await client.from("objects").delete().in("id", idsToDelete).eq("user_id", uid);
+    }
+    if (rows.length > 0) {
+      const { error } = await client.from("objects").upsert(rows, { onConflict: "id" });
+      if (error) throw error;
+    }
     this.cache.objects = objects;
   }
 
@@ -534,8 +547,16 @@ export class SupabaseAdapter implements StorageAdapter {
       id: n.id, user_id: uid, object_id: n.object_id,
       content: n.content || "", source_type: n.sourceType || "text", attachments: n.attachments || [], created_at: n.created_at,
     }));
-    await client.from("notes").delete().eq("user_id", uid);
-    if (rows.length > 0) await client.from("notes").insert(rows);
+    const currentIds = new Set(this.cache.notes.map((n) => n.id));
+    const nextIds = new Set(notes.map((n) => n.id));
+    const idsToDelete = Array.from(currentIds).filter((id) => !nextIds.has(id));
+    if (idsToDelete.length > 0) {
+      await client.from("notes").delete().in("id", idsToDelete).eq("user_id", uid);
+    }
+    if (rows.length > 0) {
+      const { error } = await client.from("notes").upsert(rows, { onConflict: "id" });
+      if (error) throw error;
+    }
     this.cache.notes = notes;
   }
 
@@ -588,8 +609,16 @@ export class SupabaseAdapter implements StorageAdapter {
       type: r.type, strength: r.strength ?? null, note: r.note || null,
       created_at: r.created_at,
     }));
-    await client.from("relations").delete().eq("user_id", uid);
-    if (rows.length > 0) await client.from("relations").insert(rows);
+    const currentIds = new Set(this.cache.relations.map((r) => r.id));
+    const nextIds = new Set(relations.map((r) => r.id));
+    const idsToDelete = Array.from(currentIds).filter((id) => !nextIds.has(id));
+    if (idsToDelete.length > 0) {
+      await client.from("relations").delete().in("id", idsToDelete).eq("user_id", uid);
+    }
+    if (rows.length > 0) {
+      const { error } = await client.from("relations").upsert(rows, { onConflict: "id" });
+      if (error) throw error;
+    }
     this.cache.relations = relations;
   }
 
@@ -648,8 +677,16 @@ export class SupabaseAdapter implements StorageAdapter {
       id: t.id, user_id: uid, name: t.name, color: t.color || null,
       created_at: t.createdAt, usage_count: t.usageCount,
     }));
-    await client.from("tags").delete().eq("user_id", uid);
-    if (rows.length > 0) await client.from("tags").insert(rows);
+    const currentIds = new Set(this.cache.tags.map((t) => t.id));
+    const nextIds = new Set(tags.map((t) => t.id));
+    const idsToDelete = Array.from(currentIds).filter((id) => !nextIds.has(id));
+    if (idsToDelete.length > 0) {
+      await client.from("tags").delete().in("id", idsToDelete).eq("user_id", uid);
+    }
+    if (rows.length > 0) {
+      const { error } = await client.from("tags").upsert(rows, { onConflict: "id" });
+      if (error) throw error;
+    }
     this.cache.tags = tags;
   }
 
@@ -721,8 +758,16 @@ export class SupabaseAdapter implements StorageAdapter {
       template_version: t.templateVersion, created_at: t.createdAt, updated_at: t.updatedAt,
       usage_count: t.usageCount, last_used_at: t.lastUsedAt || null,
     }));
-    await client.from("templates").delete().eq("user_id", uid);
-    if (rows.length > 0) await client.from("templates").insert(rows);
+    const currentIds = new Set(this.cache.templates.map((t) => t.id));
+    const nextIds = new Set(templates.map((t) => t.id));
+    const idsToDelete = Array.from(currentIds).filter((id) => !nextIds.has(id));
+    if (idsToDelete.length > 0) {
+      await client.from("templates").delete().in("id", idsToDelete).eq("user_id", uid);
+    }
+    if (rows.length > 0) {
+      const { error } = await client.from("templates").upsert(rows, { onConflict: "id" });
+      if (error) throw error;
+    }
     this.cache.templates = templates;
   }
 
@@ -753,6 +798,100 @@ export class SupabaseAdapter implements StorageAdapter {
   async getSetting(key: string): Promise<unknown> {
     await this.init();
     return this.cache.settings[key];
+  }
+
+  async getRemoteSummary(): Promise<{
+    objects: number;
+    notes: number;
+    relations: number;
+    tags: number;
+    templates: number;
+    settings: number;
+    aiAnalysisHistory: number;
+    hasData: boolean;
+  }> {
+    await this.init();
+    const uid = await getUid();
+    if (!uid) {
+      return {
+        objects: 0,
+        notes: 0,
+        relations: 0,
+        tags: 0,
+        templates: 0,
+        settings: 0,
+        aiAnalysisHistory: 0,
+        hasData: false,
+      };
+    }
+    const client = getSupabase();
+    const counts = await Promise.all([
+      client.from("objects").select("id", { count: "exact", head: true }).eq("user_id", uid),
+      client.from("notes").select("id", { count: "exact", head: true }).eq("user_id", uid),
+      client.from("relations").select("id", { count: "exact", head: true }).eq("user_id", uid),
+      client.from("tags").select("id", { count: "exact", head: true }).eq("user_id", uid),
+      client.from("templates").select("id", { count: "exact", head: true }).eq("user_id", uid),
+      client.from("settings").select("key", { count: "exact", head: true }).eq("user_id", uid),
+      client.from("ai_analysis_history").select("id", { count: "exact", head: true }).eq("user_id", uid),
+    ]);
+    const [objects, notes, relations, tags, templates, settings, aiAnalysisHistory] = counts.map(
+      (c) => c.count ?? 0
+    );
+    const hasData =
+      objects > 0 ||
+      notes > 0 ||
+      relations > 0 ||
+      tags > 0 ||
+      templates > 0 ||
+      settings > 0 ||
+      aiAnalysisHistory > 0;
+    return {
+      objects,
+      notes,
+      relations,
+      tags,
+      templates,
+      settings,
+      aiAnalysisHistory,
+      hasData,
+    };
+  }
+
+  // ---------- AI Analysis History ----------
+  async setAIAnalysisHistory(entries: AIAnalysisHistoryEntry[]): Promise<void> {
+    await this.init();
+    const uid = await getUid();
+    if (!uid) throw new Error("Not authenticated");
+    const client = getSupabase();
+    const rows = entries.map((e) => ({
+      id: e.id,
+      user_id: uid,
+      object_type: e.objectType,
+      object_id: e.objectId || null,
+      created_at: e.createdAt,
+      raw_text_input: e.rawTextInput,
+      image_count: e.imageCount,
+      image_thumbnails: e.imageThumbnails,
+      provider: e.provider,
+      model: e.model,
+      duration_ms: e.durationMs,
+      raw_output: e.rawOutput,
+      profile_snapshot: e.profileSnapshot || null,
+      insights_snapshot: e.insightsSnapshot || [],
+      suggestions_snapshot: e.suggestionsSnapshot || [],
+      memories_snapshot: e.memoriesSnapshot || [],
+    }));
+    const currentIds = new Set(this.cache.aiAnalysisHistory.map((h) => h.id));
+    const nextIds = new Set(entries.map((e) => e.id));
+    const idsToDelete = Array.from(currentIds).filter((id) => !nextIds.has(id));
+    if (idsToDelete.length > 0) {
+      await client.from("ai_analysis_history").delete().in("id", idsToDelete).eq("user_id", uid);
+    }
+    if (rows.length > 0) {
+      const { error } = await client.from("ai_analysis_history").upsert(rows, { onConflict: "id" });
+      if (error) throw error;
+    }
+    this.cache.aiAnalysisHistory = entries;
   }
 
   // ---------- AI Analysis History ----------

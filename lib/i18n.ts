@@ -680,6 +680,35 @@ const translations: Record<Language, Record<string, string>> = {
     // Quick Capture
     quickCaptureTitle: "Quick capture",
     noteContentPlaceholder: "What happened? What are you thinking?",
+
+    // Account / Sync
+    accountTitle: "Account",
+    accountSyncStatus: "Sync status",
+    accountLastSync: "Last sync",
+    accountSyncNow: "Sync now",
+    accountExportData: "Export data",
+    accountSignOut: "Sign out",
+    accountLoginPrompt: "You are in local mode. Sign in to sync across devices.",
+    accountLoginOrRegister: "Sign in or register",
+    syncStatusSyncing: "Syncing…",
+    syncStatusSynced: "Synced",
+    syncStatusPending: "Pending",
+    syncStatusError: "Sync failed",
+    syncStatusOffline: "Offline",
+
+    // Migration
+    migrationWelcomeBack: "Welcome back",
+    migrationDetectedLocalData: "We detected data in your browser:",
+    migrationSyncToAccount: "Sync to account",
+    migrationKeepLocal: "Keep local for now",
+    migrationStarted: "Your LifeOS has started syncing.",
+    migrationFutureData: "All data will be saved to your account from now on.",
+    migrationConflictTitle: "Two sets of data found",
+    migrationConflictDescription: "Please choose how to handle them.",
+    migrationMergeRecommended: "Merge (recommended)",
+    migrationMergeDescription: "Keep all different items; for the same item, keep the newer one.",
+    migrationUseAccountData: "Use account data",
+    migrationUseLocalData: "Use local data",
   },
   zh: {
     appName: "LifeOS",
@@ -1338,6 +1367,35 @@ const translations: Record<Language, Record<string, string>> = {
     // Quick Capture
     quickCaptureTitle: "快速记录",
     noteContentPlaceholder: "发生了什么？你在想什么？",
+
+    // Account / Sync
+    accountTitle: "账号",
+    accountSyncStatus: "同步状态",
+    accountLastSync: "最后同步",
+    accountSyncNow: "立即同步",
+    accountExportData: "导出数据",
+    accountSignOut: "退出登录",
+    accountLoginPrompt: "你当前处于本地模式，登录账号即可多设备同步。",
+    accountLoginOrRegister: "登录或注册",
+    syncStatusSyncing: "同步中…",
+    syncStatusSynced: "已同步",
+    syncStatusPending: "等待同步",
+    syncStatusError: "同步失败",
+    syncStatusOffline: "离线",
+
+    // Migration
+    migrationWelcomeBack: "欢迎回来",
+    migrationDetectedLocalData: "检测到你的浏览器中已有数据：",
+    migrationSyncToAccount: "同步到账号",
+    migrationKeepLocal: "暂时保留本地",
+    migrationStarted: "你的 LifeOS 已开始同步。",
+    migrationFutureData: "以后所有数据都会保存到账号。",
+    migrationConflictTitle: "发现两份数据",
+    migrationConflictDescription: "请选择如何处理。",
+    migrationMergeRecommended: "合并（推荐）",
+    migrationMergeDescription: "UUID 不同全部保留；UUID 相同以更新时间新的为准。",
+    migrationUseAccountData: "使用账号数据",
+    migrationUseLocalData: "使用本地数据",
   },
 };
 

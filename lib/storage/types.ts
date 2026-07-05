@@ -106,6 +106,7 @@ export interface StorageAdapter {
   updateAIAnalysisHistoryObjectId(historyId: string, objectId: string): Promise<void>;
   deleteAIAnalysisHistory(id: string): Promise<void>;
   clearAIAnalysisHistory(): Promise<void>;
+  setAIAnalysisHistory(entries: AIAnalysisHistoryEntry[]): Promise<void>;
 }
 
 export interface StorageConfig {

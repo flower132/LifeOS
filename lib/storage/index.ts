@@ -1,5 +1,5 @@
 import { LocalStorageAdapter, STORAGE_VERSION } from "./localStorageAdapter";
-import { SupabaseAdapter } from "./supabaseAdapter";
+import { HybridStorageAdapter } from "./hybridAdapter";
 import type { StorageAdapter } from "./types";
 import { getSupabase, resetSupabase } from "@/lib/supabaseClient";
 
@@ -20,7 +20,7 @@ export function getMode(): Mode {
   return readMode();
 }
 
-function isLoggedIn(): boolean {
+export function isLoggedIn(): boolean {
   if (typeof window === "undefined") return false;
   try {
     const stored = localStorage.getItem("lifeos-supabase-auth");
@@ -33,13 +33,13 @@ function isLoggedIn(): boolean {
 }
 
 // ---- adapter instances ---------------------------------------------------
-let _syncAdapter: SupabaseAdapter | null = null;
+let _hybridAdapter: HybridStorageAdapter | null = null;
 
-function getSyncAdapter(): SupabaseAdapter {
-  if (!_syncAdapter) {
-    _syncAdapter = new SupabaseAdapter();
+function getHybridAdapter(): HybridStorageAdapter {
+  if (!_hybridAdapter) {
+    _hybridAdapter = new HybridStorageAdapter();
   }
-  return _syncAdapter;
+  return _hybridAdapter;
 }
 
 const localAdapter = new LocalStorageAdapter();
@@ -47,7 +47,7 @@ const localAdapter = new LocalStorageAdapter();
 function getActiveAdapter(): StorageAdapter {
   const mode = readMode();
   if (mode === "sync" && isLoggedIn()) {
-    return getSyncAdapter() as unknown as StorageAdapter;
+    return getHybridAdapter() as unknown as StorageAdapter;
   }
   return localAdapter as unknown as StorageAdapter;
 }
@@ -63,7 +63,7 @@ const STORAGE_METHODS: (keyof StorageAdapter)[] = [
   "getSettings", "setSettings",
   "getAIAnalysisHistory", "getAIAnalysisHistoryByObjectId", "getAIAnalysisHistoryByType",
   "getAIAnalysisHistoryEntryById", "createAIAnalysisHistory", "updateAIAnalysisHistoryObjectId",
-  "deleteAIAnalysisHistory", "clearAIAnalysisHistory",
+  "deleteAIAnalysisHistory", "clearAIAnalysisHistory", "setAIAnalysisHistory",
 ];
 
 const storageProxy = {} as StorageAdapter;
@@ -84,7 +84,7 @@ export async function signOut(): Promise<void> {
     // ignore if supabase is not configured
   }
   localStorage.removeItem("lifeos-supabase-auth");
-  _syncAdapter = null;
+  _hybridAdapter = null;
   resetSupabase();
 }
 

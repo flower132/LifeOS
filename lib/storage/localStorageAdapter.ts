@@ -1090,6 +1090,11 @@ export class LocalStorageAdapter implements StorageAdapter {
     maybeBackup(KEYS.aiAnalysisHistory);
     window.localStorage.removeItem(KEYS.aiAnalysisHistory);
   }
+
+  async setAIAnalysisHistory(entries: AIAnalysisHistoryEntry[]): Promise<void> {
+    const valid = entries.filter((e) => isValidAIAnalysisHistoryEntry(e));
+    safeSetItem(KEYS.aiAnalysisHistory, valid);
+  }
 }
 
 export const localStorageAdapter = new LocalStorageAdapter();

@@ -2,7 +2,6 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ClientProviders } from "@/components/ClientProviders";
-import { AppShell } from "@/components/layout/AppShell";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 const geistSans = Geist({
@@ -50,9 +49,7 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col" suppressHydrationWarning>
         <ErrorBoundary>
-          <ClientProviders>
-            <AppShell>{children}</AppShell>
-          </ClientProviders>
+          <ClientProviders>{children}</ClientProviders>
         </ErrorBoundary>
       </body>
     </html>

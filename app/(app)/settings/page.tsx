@@ -35,7 +35,7 @@ import {
   formatStorageUsage,
   clearAllData,
 } from "@/lib/export";
-import AuthButton from "@/components/AuthButton";
+import { AccountCard } from "@/components/settings/AccountCard";
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const pkg = require("@/package.json");
@@ -229,9 +229,9 @@ export default function SettingsPage() {
           </div>
         )}
 
-        {/* Sync Mode */}
-        <SectionCard icon={Database} title="同步 / Sync">
-          <AuthButton />
+        {/* Account & Sync */}
+        <SectionCard icon={Database} title="账号与同步">
+          <AccountCard />
         </SectionCard>
 
         {/* General */}

@@ -4,6 +4,7 @@ import { useLayoutEffect, useEffect, useState } from "react";
 import { useSettingsStore } from "@/stores/settingsStore";
 import { hydrateStores } from "@/stores";
 import { storage } from "@/lib/storage";
+import { syncService } from "@/lib/sync/SyncService";
 import { DevTools } from "./DevTools";
 
 function getEffectiveThemeColor(
@@ -79,6 +80,12 @@ export function ClientProviders({ children }: { children: React.ReactNode }) {
         await hydrateStores();
       } catch (err) {
         console.error("[LifeOS] Store hydration failed:", err);
+      }
+
+      try {
+        syncService.init();
+      } catch (err) {
+        console.error("[LifeOS] Sync service init failed:", err);
       }
 
       if (cancelled) return;
