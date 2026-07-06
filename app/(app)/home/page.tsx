@@ -10,6 +10,7 @@ import { NoteCard } from "@/components/note/NoteCard";
 import { TodayFocusCard } from "./TodayFocusCard";
 import { SelfSummaryCard } from "./SelfSummaryCard";
 import { useTranslation } from "@/lib/useTranslation";
+import { UserAvatar } from "@/components/user/UserAvatar";
 
 export default function HomePage() {
   const { objects, loaded: objectsLoaded } = useObjectStore();
@@ -35,13 +36,16 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-background px-6 py-5">
-        <div className="mx-auto max-w-5xl">
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-            {t("homeTitle")}
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {t("homeSubtitle")}
-          </p>
+        <div className="mx-auto flex max-w-5xl items-start justify-between">
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+              {t("homeTitle")}
+            </h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {t("homeSubtitle")}
+            </p>
+          </div>
+          <UserAvatar size="md" href="/settings/account" />
         </div>
       </header>
 

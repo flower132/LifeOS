@@ -311,6 +311,14 @@ export function syncWithStrategy(strategy: ConflictStrategy): Promise<void> {
 }
 
 export function updateUserProfile(profile: Partial<UserProfile>): Promise<void> {
+  const currentProfile = useSyncStore.getState().profile;
+
+  // Optimistically update the local store first so the UI reflects changes
+  // immediately without waiting for the Supabase round-trip.
+  if (currentProfile) {
+    useSyncStore.getState().setProfile({ ...currentProfile, ...profile });
+  }
+
   return getSupabase()
     .auth.updateUser({
       data: {

@@ -1,12 +1,17 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { AIInputWizard } from "@/components/ai/AIInputWizard";
 import { AIReviewPanel } from "@/components/ai/AIReviewPanel";
 import { ObjectTypeConfirmation } from "@/components/ai/ObjectTypeConfirmation";
+import { PageHeader } from "@/components/navigation/PageHeader";
+import { NavigationStepper } from "@/components/navigation/NavigationStepper";
+import { StepTransition } from "@/components/navigation/StepTransition";
+import { ConfirmDialog } from "@/components/navigation/ConfirmDialog";
+import { BackButton } from "@/components/navigation/BackButton";
+import { useStepController } from "@/hooks/useStepController";
 import { aiService } from "@/lib/ai";
 import { AIAnalysisInput, AIAnalysisResult } from "@/lib/ai/objectIntelligence/types";
 import { AIAnalysisRunResult } from "@/lib/ai/types";
@@ -17,6 +22,12 @@ import { updateAIAnalysisHistoryObjectId } from "@/lib/ai/objectIntelligence/his
 import { isAIProfileSupported } from "@/lib/ai/objectIntelligence/profiles";
 import { selectProviderForAnalysis } from "@/lib/ai/objectIntelligence/fallback";
 import { LifeObjectType, LIFE_OBJECT_TYPES } from "@/lib/types";
+import { isNonEmptyString } from "@/lib/navigation/dirtyCheck";
+
+const steps = [
+  { key: "input", label: "输入素材" },
+  { key: "review", label: "审阅结果" },
+];
 
 type CreateObjectAIStep = "input" | "review";
 
@@ -31,7 +42,7 @@ export default function CreateObjectAIPage() {
     ? (rawType as LifeObjectType)
     : "person";
 
-  const [step, setStep] = useState<CreateObjectAIStep>("input");
+  const [showConfirm, setShowConfirm] = useState(false);
   const [lastInput, setLastInput] = useState<AIAnalysisInput>({ textInput: "", images: [] });
   const [result, setResult] = useState<AIAnalysisResult | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -43,6 +54,41 @@ export default function CreateObjectAIPage() {
     durationMs?: number;
   } | null>(null);
   const [lastRunResult, setLastRunResult] = useState<AIAnalysisRunResult<AIAnalysisResult> | null>(null);
+
+  const stepController = useStepController({
+    steps,
+    isDirty: () =>
+      isNonEmptyString(lastInput.textInput) ||
+      lastInput.images.length > 0 ||
+      result !== null,
+  });
+
+  const step = stepController.currentStep.key as CreateObjectAIStep;
+
+  const handleTitleClick = () => {
+    if (stepController.isHome) return;
+    if (stepController.isDirty?.()) {
+      setShowConfirm(true);
+    } else {
+      stepController.reset();
+    }
+  };
+
+  const resetFlow = useCallback(() => {
+    setLastInput({ textInput: "", images: [] });
+    setResult(null);
+    setError(null);
+    setIsAnalyzing(false);
+    setIsCreating(false);
+    setAnalysisMeta(null);
+    setLastRunResult(null);
+  }, []);
+
+  const handleConfirmDiscard = useCallback(() => {
+    setShowConfirm(false);
+    resetFlow();
+    stepController.reset();
+  }, [resetFlow, stepController]);
 
   const handleAnalyze = useCallback(
     async (textInput: string, images: AIAnalysisInput["images"]) => {
@@ -74,22 +120,22 @@ export default function CreateObjectAIPage() {
         );
         setLastRunResult(runResult);
         setResult(runResult.data);
-        setStep("review");
+        stepController.next();
       } catch (err) {
         setError(err instanceof Error ? err.message : t("aiAnalysisFailed"));
       } finally {
         setIsAnalyzing(false);
       }
     },
-    [objectType, t]
+    [objectType, stepController, t]
   );
 
   const handleReanalyze = useCallback(() => {
-    setStep("input");
+    stepController.goBack();
     setError(null);
     setAnalysisMeta(null);
     setLastRunResult(null);
-  }, []);
+  }, [stepController]);
 
   const handleConfirm = useCallback(
     async (finalResult: AIAnalysisResult) => {
@@ -133,13 +179,9 @@ export default function CreateObjectAIPage() {
       <div className="min-h-screen bg-background px-6 py-10">
         <div className="mx-auto max-w-3xl text-center">
           <h1 className="text-xl font-semibold text-foreground">{t("aiTypeNotSupported")}</h1>
-          <Link
-            href="/create-object"
-            className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-accent"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            {t("backToCreateObject")}
-          </Link>
+          <div className="mt-4 flex justify-center">
+            <BackButton href="/create-object" label={t("backToCreateObject")} />
+          </div>
         </div>
       </div>
     );
@@ -149,27 +191,25 @@ export default function CreateObjectAIPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-background px-6 py-5">
-        <div className="mx-auto max-w-3xl">
-          <Link
-            href="/create-object"
-            className="mb-2 inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground"
-          >
-            <ArrowLeft className="h-3.5 w-3.5" />
-            {t("backToCreateObject")}
-          </Link>
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-            {step === "input"
-              ? t("createObjectAITitle", { type: typeLabel })
-              : t("reviewObjectAITitle", { type: typeLabel })}
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {step === "input"
-              ? t(`createObjectAISubtitle_${objectType}`)
-              : t(`reviewObjectAISubtitle_${objectType}`)}
-          </p>
-        </div>
-      </header>
+      <PageHeader
+        backHref="/create-object"
+        backLabel={t("backToCreateObject")}
+        title={t("createObjectAITitle", { type: typeLabel })}
+        subtitle={
+          step === "input"
+            ? t(`createObjectAISubtitle_${objectType}`)
+            : t(`reviewObjectAISubtitle_${objectType}`)
+        }
+        titleGoesHome
+        onTitleClick={handleTitleClick}
+        stepper={
+          <NavigationStepper
+            steps={steps}
+            currentStepIndex={stepController.currentStepIndex}
+          />
+        }
+        maxWidth="3xl"
+      />
 
       <div className="mx-auto max-w-3xl px-6 py-8">
         {error && (
@@ -178,54 +218,69 @@ export default function CreateObjectAIPage() {
           </div>
         )}
 
-        {step === "input" ? (
-          <div className="space-y-6">
-            <ObjectTypeConfirmation type={objectType} />
-            <AIInputWizard
-              defaultText={lastInput.textInput}
-              onAnalyze={handleAnalyze}
-              isAnalyzing={isAnalyzing}
-            />
+        <StepTransition
+          stepKey={step}
+          direction={stepController.direction}
+        >
+          {step === "input" ? (
+            <div className="space-y-6">
+              <ObjectTypeConfirmation type={objectType} />
+              <AIInputWizard
+                defaultText={lastInput.textInput}
+                onAnalyze={handleAnalyze}
+                isAnalyzing={isAnalyzing}
+              />
 
-            {(isAnalyzing || analysisMeta) && (
-              <div className="rounded-lg border border-accent/20 bg-accent/5 px-4 py-3 text-sm text-foreground">
-                {isAnalyzing ? (
-                  <div className="flex items-center gap-2">
-                    <Loader2 className="h-4 w-4 animate-spin text-accent" />
-                    <span>
-                      {t("aiAnalyzingWithProvider", {
-                        provider: analysisMeta?.provider ?? "",
-                        model: analysisMeta?.model ?? "",
-                      })}
-                    </span>
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-between text-muted-foreground">
-                    <span>
-                      {t("aiAnalysisCompleted")}: {analysisMeta?.provider} / {analysisMeta?.model}
-                    </span>
-                    {analysisMeta?.durationMs && (
-                      <span>{analysisMeta.durationMs}ms</span>
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        ) : result ? (
-          <AIReviewPanel
-            result={result}
-            onChange={setResult}
-            onConfirm={handleConfirm}
-            onReanalyze={handleReanalyze}
-            isCreating={isCreating}
-          />
-        ) : (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="h-6 w-6 animate-spin text-accent" />
-          </div>
-        )}
+              {(isAnalyzing || analysisMeta) && (
+                <div className="rounded-lg border border-accent/20 bg-accent/5 px-4 py-3 text-sm text-foreground">
+                  {isAnalyzing ? (
+                    <div className="flex items-center gap-2">
+                      <Loader2 className="h-4 w-4 animate-spin text-accent" />
+                      <span>
+                        {t("aiAnalyzingWithProvider", {
+                          provider: analysisMeta?.provider ?? "",
+                          model: analysisMeta?.model ?? "",
+                        })}
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-between text-muted-foreground">
+                      <span>
+                        {t("aiAnalysisCompleted")}: {analysisMeta?.provider} / {analysisMeta?.model}
+                      </span>
+                      {analysisMeta?.durationMs && (
+                        <span>{analysisMeta.durationMs}ms</span>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          ) : result ? (
+            <AIReviewPanel
+              result={result}
+              onChange={setResult}
+              onConfirm={handleConfirm}
+              onReanalyze={handleReanalyze}
+              isCreating={isCreating}
+            />
+          ) : (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-6 w-6 animate-spin text-accent" />
+            </div>
+          )}
+        </StepTransition>
       </div>
+
+      <ConfirmDialog
+        open={showConfirm}
+        title={t("confirmDiscardTitle")}
+        message={t("confirmDiscardMessage")}
+        confirmLabel={t("discardAndReturn")}
+        cancelLabel={t("continueEditing")}
+        onConfirm={handleConfirmDiscard}
+        onCancel={() => setShowConfirm(false)}
+      />
     </div>
   );
 }

@@ -1,9 +1,7 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
-import Link from "next/link";
 import {
-  ArrowLeft,
   Settings,
   Monitor,
   Database,
@@ -36,6 +34,8 @@ import {
   clearAllData,
 } from "@/lib/export";
 import { AccountCard } from "@/components/settings/AccountCard";
+import { PageHeader } from "@/components/navigation/PageHeader";
+import { UserAvatar } from "@/components/user/UserAvatar";
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const pkg = require("@/package.json");
@@ -201,26 +201,14 @@ export default function SettingsPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-background px-6 py-5">
-        <div className="mx-auto max-w-2xl">
-          <Link
-            href="/home"
-            className="mb-2 inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground"
-          >
-            <ArrowLeft className="h-3.5 w-3.5" />
-            {t("backToHome")}
-          </Link>
-          <div className="flex items-center gap-3">
-            <Settings className="h-6 w-6 text-foreground" />
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-              {t("settingsTitle")}
-            </h1>
-          </div>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {t("settingsSubtitle")}
-          </p>
-        </div>
-      </header>
+      <PageHeader
+        backHref="/home"
+        backLabel={t("backToHome")}
+        title={t("settingsTitle")}
+        subtitle={t("settingsSubtitle")}
+        icon={<Settings className="h-6 w-6 text-foreground" />}
+        actions={<UserAvatar size="md" href="/settings/account" />}
+      />
 
       <div className="mx-auto max-w-2xl space-y-6 px-6 py-8">
         {error && (

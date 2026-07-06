@@ -29,7 +29,7 @@ function buildProfileFromUser(user: {
 
 export function useAuthActions() {
   const router = useRouter();
-  const [user, setUser] = useState<UserProfile | null>(null);
+  const user = useSyncStore((s) => s.profile);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
@@ -39,9 +39,8 @@ export function useAuthActions() {
       .auth.getUser()
       .then(({ data }) => {
         if (data.user) {
-          const profile = buildProfileFromUser(data.user);
-          setUser(profile);
-          useSyncStore.getState().setProfile(profile);
+          const newProfile = buildProfileFromUser(data.user);
+          useSyncStore.getState().setProfile(newProfile);
         }
       })
       .catch(() => {
@@ -51,11 +50,9 @@ export function useAuthActions() {
     const { data: listener } = getSupabase().auth.onAuthStateChange(
       (_event, session) => {
         if (session?.user) {
-          const profile = buildProfileFromUser(session.user);
-          setUser(profile);
-          useSyncStore.getState().setProfile(profile);
+          const newProfile = buildProfileFromUser(session.user);
+          useSyncStore.getState().setProfile(newProfile);
         } else {
-          setUser(null);
           useSyncStore.getState().setProfile(null);
         }
       }
@@ -133,7 +130,6 @@ export function useAuthActions() {
 
   const signOut = useCallback(async () => {
     await storageSignOut();
-    setUser(null);
     setError(null);
     setSuccessMsg(null);
     useSyncStore.getState().setProfile(null);
@@ -144,12 +140,7 @@ export function useAuthActions() {
   const updateProfile = useCallback(
     async (updates: Partial<UserProfile>) => {
       await updateUserProfile(updates);
-      const { data } = await getSupabase().auth.getUser();
-      if (data.user) {
-        const profile = buildProfileFromUser(data.user);
-        setUser(profile);
-        useSyncStore.getState().setProfile(profile);
-      }
+      // updateUserProfile already updates syncStore.profile via Supabase response.
     },
     []
   );

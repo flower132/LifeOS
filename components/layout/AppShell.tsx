@@ -12,10 +12,13 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/lib/useTranslation";
+import { UserAvatar, UserAvatarFallback } from "@/components/user/UserAvatar";
+import { useSyncStore } from "@/stores/syncStore";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { t } = useTranslation();
+  const profile = useSyncStore((s) => s.profile);
 
   // Sidebar / bottom nav order is driven by these arrays.
   // Desktop sidebar shows Templates; mobile bottom nav has limited space and does not.
@@ -73,8 +76,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           href="/settings"
           className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-muted"
         >
-          <Settings className="h-4 w-4" />
-          {t("navSettings")}
+          {profile ? <UserAvatar size="sm" /> : <UserAvatarFallback size="sm" />}
+          <span className="flex-1">{t("navSettings")}</span>
         </Link>
       </aside>
 

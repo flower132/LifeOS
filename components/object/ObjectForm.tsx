@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   LifeObjectType,
@@ -21,6 +21,7 @@ interface ObjectFormProps {
   templateName?: string;
   type?: LifeObjectType;
   lockType?: boolean;
+  onDirtyChange?: (dirty: boolean) => void;
 }
 
 export function ObjectForm({
@@ -29,6 +30,7 @@ export function ObjectForm({
   templateName,
   type: initialType = "person",
   lockType = false,
+  onDirtyChange,
 }: ObjectFormProps) {
   const router = useRouter();
   const addObject = useObjectStore((s) => s.addObject);
@@ -44,6 +46,15 @@ export function ObjectForm({
   const [error, setError] = useState<string | null>(null);
 
   const canSubmit = !submitting && name.trim().length > 0;
+
+  useEffect(() => {
+    const dirty =
+      name.trim().length > 0 ||
+      description.trim().length > 0 ||
+      Object.keys(properties).length > 0 ||
+      tagIds.length > 0;
+    onDirtyChange?.(dirty);
+  }, [name, description, properties, tagIds, onDirtyChange]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

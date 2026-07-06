@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { ChevronRight, User } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { SyncStatusBadge } from "./SyncStatusBadge";
 import { useSyncStore } from "@/stores/syncStore";
+import { UserAvatar, UserAvatarFallback } from "@/components/user/UserAvatar";
 
 export function AccountCard() {
   const profile = useSyncStore((s) => s.profile);
@@ -19,9 +20,11 @@ export function AccountCard() {
       className="group flex items-center justify-between rounded-xl border border-border bg-card p-4 shadow-sm transition-all hover:border-accent/20 hover:shadow-md"
     >
       <div className="flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent/10 text-accent">
-          <User className="h-5 w-5" />
-        </div>
+        {profile ? (
+          <UserAvatar size="md" />
+        ) : (
+          <UserAvatarFallback size="md" />
+        )}
         <div className="space-y-0.5">
           <p className="text-sm font-medium text-foreground">{displayText}</p>
           <p className="text-xs text-muted-foreground">{subText}</p>

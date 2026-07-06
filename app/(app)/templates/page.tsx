@@ -1,9 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import Link from "next/link";
 import {
-  ArrowLeft,
   PlusCircle,
   Search,
   X,
@@ -11,6 +9,7 @@ import {
 } from "lucide-react";
 import { useTemplateStore } from "@/stores/templateStore";
 import { useTranslation } from "@/lib/useTranslation";
+import { PageHeader } from "@/components/navigation/PageHeader";
 import { Template, TemplateCategory, TEMPLATE_CATEGORIES } from "@/lib/types";
 import { storage } from "@/lib/storage";
 import { TemplateList } from "@/components/template/TemplateList";
@@ -114,41 +113,27 @@ export default function TemplatesPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-background px-6 py-5">
-        <div className="mx-auto max-w-5xl">
-          <Link
-            href="/home"
-            className="mb-2 inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground"
+      <PageHeader
+        backHref="/home"
+        backLabel={t("backToHome")}
+        title={t("templatesTitle")}
+        subtitle={t("templatesSubtitle")}
+        icon={<LayoutTemplate className="h-6 w-6 text-foreground" />}
+        actions={
+          <button
+            type="button"
+            onClick={() => {
+              setEditingTemplate(null);
+              setShowForm(true);
+            }}
+            className="inline-flex items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:bg-accent/90"
           >
-            <ArrowLeft className="h-3.5 w-3.5" />
-            {t("backToHome")}
-          </Link>
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <div className="flex items-center gap-3">
-                <LayoutTemplate className="h-6 w-6 text-foreground" />
-                <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-                  {t("templatesTitle")}
-                </h1>
-              </div>
-              <p className="mt-1 text-sm text-muted-foreground">
-                {t("templatesSubtitle")}
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => {
-                setEditingTemplate(null);
-                setShowForm(true);
-              }}
-              className="inline-flex items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:bg-accent/90"
-            >
-              <PlusCircle className="h-4 w-4" />
-              {t("newTemplate")}
-            </button>
-          </div>
-        </div>
-      </header>
+            <PlusCircle className="h-4 w-4" />
+            {t("newTemplate")}
+          </button>
+        }
+        maxWidth="5xl"
+      />
 
       <div className="mx-auto max-w-5xl space-y-8 px-6 py-8">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">

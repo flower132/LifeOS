@@ -2,10 +2,14 @@
 
 import { useState, useEffect } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
-import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
 import { AIInputWizard } from "@/components/ai/AIInputWizard";
 import { AIReviewPanel } from "@/components/ai/AIReviewPanel";
+import { PageHeader } from "@/components/navigation/PageHeader";
+import { NavigationStepper } from "@/components/navigation/NavigationStepper";
+import { StepTransition } from "@/components/navigation/StepTransition";
+import { ConfirmDialog } from "@/components/navigation/ConfirmDialog";
+import { BackButton } from "@/components/navigation/BackButton";
+import { useStepController } from "@/hooks/useStepController";
 import { useObjectStore } from "@/stores/objectStore";
 import { useNoteStore } from "@/stores/noteStore";
 import { useTranslation } from "@/lib/useTranslation";
@@ -20,6 +24,12 @@ import {
   createAIAnalysisHistoryEntryInput,
 } from "@/lib/ai/objectIntelligence/history";
 import { LifeObject } from "@/lib/types";
+import { isNonEmptyString } from "@/lib/navigation/dirtyCheck";
+
+const steps = [
+  { key: "input", label: "输入素材" },
+  { key: "review", label: "审阅结果" },
+];
 
 type UpdatePhase = "input" | "review";
 
@@ -65,12 +75,24 @@ export default function ObjectUpdateAIPage() {
       base64Data: a.base64Data,
     })) ?? [];
 
-  const [phase, setPhase] = useState<UpdatePhase>("input");
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [textInput, setTextInput] = useState(defaultText);
+  const [inputImages, setInputImages] = useState<AIImageInput[]>(defaultImages);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [reviewResult, setReviewResult] = useState<AIAnalysisResult | null>(null);
   const [baseUpdates, setBaseUpdates] = useState<Partial<LifeObject> | null>(null);
   const [lastRunMeta, setLastRunMeta] = useState<RunMeta | null>(null);
+
+  const stepController = useStepController({
+    steps,
+    isDirty: () =>
+      isNonEmptyString(textInput) ||
+      inputImages.length > 0 ||
+      reviewResult !== null,
+  });
+
+  const phase = stepController.currentStep.key as UpdatePhase;
 
   const object = objects.find((o) => o.id === id);
   const notes = object ? getNotesByObjectId(object.id) : [];
@@ -91,13 +113,9 @@ export default function ObjectUpdateAIPage() {
       <div className="min-h-screen bg-background px-6 py-10">
         <div className="mx-auto max-w-4xl text-center">
           <h1 className="text-xl font-semibold text-foreground">{t("objectNotFound")}</h1>
-          <Link
-            href="/objects"
-            className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-accent"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            {t("backToObjects")}
-          </Link>
+          <div className="mt-4 flex justify-center">
+            <BackButton href="/objects" label={t("backToObjects")} />
+          </div>
         </div>
       </div>
     );
@@ -110,13 +128,9 @@ export default function ObjectUpdateAIPage() {
           <h1 className="text-xl font-semibold text-foreground">
             {t("aiTypeNotSupported")}
           </h1>
-          <Link
-            href={`/objects/${id}`}
-            className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-accent"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            {t("backToObject")}
-          </Link>
+          <div className="mt-4 flex justify-center">
+            <BackButton href={`/objects/${id}`} label={t("backToObject")} />
+          </div>
         </div>
       </div>
     );
@@ -125,6 +139,8 @@ export default function ObjectUpdateAIPage() {
   const handleAnalyze = async (text: string, images: AIImageInput[]) => {
     setIsAnalyzing(true);
     setError(null);
+    setTextInput(text);
+    setInputImages(images);
 
     try {
       if (object.type === "person") {
@@ -151,7 +167,7 @@ export default function ObjectUpdateAIPage() {
           durationMs: result.durationMs,
           rawOutput: result.rawOutput,
         });
-        setPhase("review");
+        stepController.next();
         return;
       }
 
@@ -178,7 +194,7 @@ export default function ObjectUpdateAIPage() {
         durationMs: result.durationMs,
         rawOutput: result.rawOutput,
       });
-      setPhase("review");
+      stepController.next();
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -227,33 +243,54 @@ export default function ObjectUpdateAIPage() {
 
   const typeLabel = t(object.type);
 
+  const handleTitleClick = () => {
+    if (stepController.isHome) return;
+    if (stepController.isDirty?.()) {
+      setShowConfirm(true);
+    } else {
+      stepController.reset();
+    }
+  };
+
+  const resetFlow = () => {
+    setTextInput(defaultText);
+    setInputImages(defaultImages);
+    setReviewResult(null);
+    setBaseUpdates(null);
+    setLastRunMeta(null);
+    setError(null);
+    setIsAnalyzing(false);
+  };
+
+  const handleConfirmDiscard = () => {
+    setShowConfirm(false);
+    resetFlow();
+    stepController.reset();
+  };
+
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-background px-6 py-5">
-        <div className="mx-auto flex max-w-4xl items-center justify-between">
-          <div className="space-y-1">
-            <Link
-              href={`/objects/${id}`}
-              className="mb-2 inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground"
-            >
-              <ArrowLeft className="h-3.5 w-3.5" />
-              {t("backToObject")}
-            </Link>
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-              {phase === "input"
-                ? t("updateObjectAITitle", { type: typeLabel })
-                : t("reviewObjectAITitle", { type: typeLabel })}
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              {phase === "input"
-                ? t(`updateObjectAISubtitle_${object.type}`) ??
-                  t("updatePersonAISubtitle")
-                : t(`reviewObjectAISubtitle_${object.type}`) ??
-                  t("reviewPersonAISubtitle")}
-            </p>
-          </div>
-        </div>
-      </header>
+      <PageHeader
+        backHref={`/objects/${id}`}
+        backLabel={t("backToObject")}
+        title={t("updateObjectAITitle", { type: typeLabel })}
+        subtitle={
+          phase === "input"
+            ? t(`updateObjectAISubtitle_${object.type}`) ??
+              t("updatePersonAISubtitle")
+            : t(`reviewObjectAISubtitle_${object.type}`) ??
+              t("reviewPersonAISubtitle")
+        }
+        titleGoesHome
+        onTitleClick={handleTitleClick}
+        stepper={
+          <NavigationStepper
+            steps={steps}
+            currentStepIndex={stepController.currentStepIndex}
+          />
+        }
+        maxWidth="4xl"
+      />
 
       <div className="mx-auto max-w-4xl px-6 py-8">
         {error && (
@@ -262,30 +299,48 @@ export default function ObjectUpdateAIPage() {
           </div>
         )}
 
-        {phase === "input" && (
-          <AIInputWizard
-            defaultText={defaultText}
-            defaultImages={defaultImages}
-            onAnalyze={handleAnalyze}
-            isAnalyzing={isAnalyzing}
-          />
-        )}
-
-        {phase === "review" && reviewResult && (
-          <div className="space-y-6">
-            <div className="rounded-lg border border-accent/20 bg-accent/5 px-4 py-3 text-sm text-foreground">
-              {t("reviewPersonAIHint") ??
-                "Review the updated profile below. Items reflect both existing and new understanding."}
-            </div>
-            <AIReviewPanel
-              result={reviewResult}
-              onChange={setReviewResult}
-              onConfirm={handleConfirm}
-              onReanalyze={() => setPhase("input")}
+        <StepTransition
+          stepKey={phase}
+          direction={stepController.direction}
+        >
+          {phase === "input" && (
+            <AIInputWizard
+              defaultText={defaultText}
+              defaultImages={defaultImages}
+              onAnalyze={handleAnalyze}
+              isAnalyzing={isAnalyzing}
             />
-          </div>
-        )}
+          )}
+
+          {phase === "review" && reviewResult && (
+            <div className="space-y-6">
+              <div className="rounded-lg border border-accent/20 bg-accent/5 px-4 py-3 text-sm text-foreground">
+                {t("reviewPersonAIHint") ??
+                  "Review the updated profile below. Items reflect both existing and new understanding."}
+              </div>
+              <AIReviewPanel
+                result={reviewResult}
+                onChange={setReviewResult}
+                onConfirm={handleConfirm}
+                onReanalyze={() => {
+                  stepController.goBack();
+                  setReviewResult(null);
+                }}
+              />
+            </div>
+          )}
+        </StepTransition>
       </div>
+
+      <ConfirmDialog
+        open={showConfirm}
+        title={t("confirmDiscardTitle")}
+        message={t("confirmDiscardMessage")}
+        confirmLabel={t("discardAndReturn")}
+        cancelLabel={t("continueEditing")}
+        onConfirm={handleConfirmDiscard}
+        onCancel={() => setShowConfirm(false)}
+      />
     </div>
   );
 }

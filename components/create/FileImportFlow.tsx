@@ -9,6 +9,11 @@ import { DraftObjectList } from "./DraftObjectList";
 import { useTranslation } from "@/lib/useTranslation";
 import { useObjectStore } from "@/stores/objectStore";
 import { useLastCreationStore } from "@/stores/lastCreationStore";
+import { PageHeader } from "@/components/navigation/PageHeader";
+import { NavigationStepper } from "@/components/navigation/NavigationStepper";
+import { StepTransition } from "@/components/navigation/StepTransition";
+import { ConfirmDialog } from "@/components/navigation/ConfirmDialog";
+import { useStepController } from "@/hooks/useStepController";
 import { parseImportFile, ImportParseError } from "@/lib/create/importParser";
 import { classifyImportRecords } from "@/lib/ai/objectIntelligence/importClassifier";
 import { CreationDraft, findDuplicateByName } from "@/lib/create/draftUtils";
@@ -17,6 +22,11 @@ import {
   buildDraftsFromRecords,
   updateDraftsDefaultType,
 } from "@/lib/create/importDraftBuilder";
+
+const steps = [
+  { key: "upload", label: "选择文件" },
+  { key: "review", label: "审阅结果" },
+];
 
 export function FileImportFlow() {
   const { t } = useTranslation();
@@ -32,6 +42,40 @@ export function FileImportFlow() {
   const [drafts, setDrafts] = useState<CreationDraft[]>([]);
   const [mode, setMode] = useState<"single-column" | "name-type" | "auto" | null>(null);
   const [defaultType, setDefaultType] = useState<LifeObjectType>("person");
+  const [showConfirm, setShowConfirm] = useState(false);
+
+  const stepController = useStepController({
+    steps,
+    isDirty: () => file !== null || drafts.length > 0,
+  });
+
+  const isLoading = isParsing || isClassifying;
+
+  const resetFlow = useCallback(() => {
+    setFile(null);
+    setDrafts([]);
+    setMode(null);
+    setError(null);
+    setIsParsing(false);
+    setIsClassifying(false);
+    setIsCreating(false);
+  }, []);
+
+  const handleTitleClick = () => {
+    if (stepController.isHome) return;
+    if (stepController.isDirty?.()) {
+      setShowConfirm(true);
+    } else {
+      resetFlow();
+      stepController.reset();
+    }
+  };
+
+  const handleConfirmDiscard = () => {
+    setShowConfirm(false);
+    resetFlow();
+    stepController.reset();
+  };
 
   const checkDuplicates = useCallback(
     (nextDrafts: CreationDraft[]): CreationDraft[] => {
@@ -81,6 +125,7 @@ export function FileImportFlow() {
           setMode(buildResult.mode);
           setDrafts(checkDuplicates(buildResult.drafts));
         }
+        stepController.next();
       } catch (err) {
         const parseError = err as ImportParseError;
         const errorKeyMap: Record<string, string> = {
@@ -96,7 +141,7 @@ export function FileImportFlow() {
         setIsParsing(false);
       }
     },
-    [t, checkDuplicates]
+    [t, stepController, checkDuplicates]
   );
 
   const handleDefaultTypeChange = useCallback(
@@ -142,7 +187,8 @@ export function FileImportFlow() {
     setDrafts([]);
     setMode(null);
     setError(null);
-  }, []);
+    stepController.goBack();
+  }, [stepController]);
 
   const stats = useMemo(() => {
     const counts: Record<LifeObjectType, number> = {} as Record<LifeObjectType, number>;
@@ -155,108 +201,143 @@ export function FileImportFlow() {
 
   const selectedCount = drafts.filter((d) => d.selected).length;
 
-  const isLoading = isParsing || isClassifying;
+  const isReview = stepController.currentStepIndex === 1;
 
   return (
-    <div className="space-y-6">
-      {error && (
-        <div className="rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-          {error}
-        </div>
-      )}
-
-      {!file ? (
-        <FilePicker onFileSelect={handleFileSelect} disabled={isLoading} />
-      ) : (
-        <SelectedFile
-          file={file}
-          onClear={handleClear}
-          disabled={isLoading || isCreating}
-        />
-      )}
-
-      {isLoading && (
-        <div className="space-y-3 rounded-xl border border-border bg-card p-5">
-          <div className="h-4 w-1/3 animate-pulse rounded bg-muted" />
-          <div className="h-4 w-2/3 animate-pulse rounded bg-muted" />
-          <div className="h-4 w-1/2 animate-pulse rounded bg-muted" />
-        </div>
-      )}
-
-      {mode === "single-column" && !isLoading && (
-        <div className="rounded-xl border border-border bg-card p-4">
-          <label className="text-sm font-medium text-foreground">
-            {t("createSpaceFileImportDefaultType")}
-          </label>
-          <select
-            value={defaultType}
-            onChange={(e) =>
-              handleDefaultTypeChange(e.target.value as LifeObjectType)
-            }
-            className="mt-2 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-accent focus:ring-2 focus:ring-accent"
-          >
-            {LIFE_OBJECT_TYPES.map((type) => (
-              <option key={type} value={type}>
-                {t(type)}
-              </option>
-            ))}
-          </select>
-        </div>
-      )}
-
-      {drafts.length > 0 && !isLoading && (
-        <div className="space-y-5">
-          <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-            <span>{t("createSpaceFileImportStats")}:</span>
-            {LIFE_OBJECT_TYPES.filter((type) => stats[type] > 0).map((type) => (
-              <span
-                key={type}
-                className="rounded-full bg-muted px-2 py-0.5"
-              >
-                {t(type)}: {stats[type]}
-              </span>
-            ))}
-          </div>
-
-          <DraftObjectList
-            drafts={drafts}
-            onChange={(next) => setDrafts(checkDuplicates(next))}
+    <div className="min-h-screen bg-background">
+      <PageHeader
+        backHref="/create-object"
+        backLabel={t("createSpaceBackToHub")}
+        title={t("createSpaceFileImportUploadTitle")}
+        subtitle={t("createSpaceFileImportUploadSubtitle")}
+        titleGoesHome
+        onTitleClick={handleTitleClick}
+        stepper={
+          <NavigationStepper
+            steps={steps}
+            currentStepIndex={stepController.currentStepIndex}
           />
+        }
+        maxWidth="3xl"
+      />
 
-          <div className="flex flex-col gap-3 pt-2 sm:flex-row sm:items-center sm:justify-between">
-            <button
-              type="button"
-              onClick={handleClear}
-              disabled={isCreating}
-              className="text-sm font-medium text-muted-foreground hover:text-foreground disabled:opacity-50"
-            >
-              <ArrowLeft className="mr-1 inline h-3.5 w-3.5" />
-              {t("createSpaceBackToHub")}
-            </button>
-
-            <button
-              type="button"
-              onClick={handleCreate}
-              disabled={selectedCount === 0 || isCreating}
-              className="inline-flex items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:bg-accent/90 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {isCreating ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  {t("creating")}
-                </>
-              ) : (
-                <>
-                  <Sparkles className="h-4 w-4" />
-                  {t("createSpaceCreateSelected", {
-                    count: String(selectedCount),
-                  })}
-                </>
-              )}
-            </button>
+      <div className="mx-auto max-w-3xl px-6 py-8">
+        {error && (
+          <div className="mb-6 rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+            {error}
           </div>
-        </div>
-      )}
+        )}
+
+        <StepTransition
+          stepKey={stepController.currentStep.key}
+          direction={stepController.direction}
+        >
+          {!isReview ? (
+            <div className="space-y-6">
+              {isLoading ? (
+                <div className="space-y-3 rounded-xl border border-border bg-card p-5">
+                  <div className="h-4 w-1/3 animate-pulse rounded bg-muted" />
+                  <div className="h-4 w-2/3 animate-pulse rounded bg-muted" />
+                  <div className="h-4 w-1/2 animate-pulse rounded bg-muted" />
+                </div>
+              ) : (
+                <FilePicker onFileSelect={handleFileSelect} disabled={isLoading} />
+              )}
+            </div>
+          ) : (
+            <div className="space-y-6">
+              <SelectedFile
+                file={file!}
+                onClear={handleClear}
+                disabled={isLoading || isCreating}
+              />
+
+              {mode === "single-column" && (
+                <div className="rounded-xl border border-border bg-card p-4">
+                  <label className="text-sm font-medium text-foreground">
+                    {t("createSpaceFileImportDefaultType")}
+                  </label>
+                  <select
+                    value={defaultType}
+                    onChange={(e) =>
+                      handleDefaultTypeChange(e.target.value as LifeObjectType)
+                    }
+                    className="mt-2 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-accent focus:ring-2 focus:ring-accent"
+                  >
+                    {LIFE_OBJECT_TYPES.map((type) => (
+                      <option key={type} value={type}>
+                        {t(type)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              <div className="space-y-5">
+                <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                  <span>{t("createSpaceFileImportStats")}:</span>
+                  {LIFE_OBJECT_TYPES.filter((type) => stats[type] > 0).map((type) => (
+                    <span
+                      key={type}
+                      className="rounded-full bg-muted px-2 py-0.5"
+                    >
+                      {t(type)}: {stats[type]}
+                    </span>
+                  ))}
+                </div>
+
+                <DraftObjectList
+                  drafts={drafts}
+                  onChange={(next) => setDrafts(checkDuplicates(next))}
+                />
+
+                <div className="flex flex-col gap-3 pt-2 sm:flex-row sm:items-center sm:justify-between">
+                  <button
+                    type="button"
+                    onClick={handleClear}
+                    disabled={isCreating}
+                    className="text-sm font-medium text-muted-foreground hover:text-foreground disabled:opacity-50"
+                  >
+                    <ArrowLeft className="mr-1 inline h-3.5 w-3.5" />
+                    {t("createSpaceBackToHub")}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleCreate}
+                    disabled={selectedCount === 0 || isCreating}
+                    className="inline-flex items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:bg-accent/90 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {isCreating ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        {t("creating")}
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="h-4 w-4" />
+                        {t("createSpaceCreateSelected", {
+                          count: String(selectedCount),
+                        })}
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </StepTransition>
+      </div>
+
+      <ConfirmDialog
+        open={showConfirm}
+        title={t("confirmDiscardTitle")}
+        message={t("confirmDiscardMessage")}
+        confirmLabel={t("discardAndReturn")}
+        cancelLabel={t("continueEditing")}
+        onConfirm={handleConfirmDiscard}
+        onCancel={() => setShowConfirm(false)}
+      />
     </div>
   );
 }

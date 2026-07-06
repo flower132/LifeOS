@@ -677,6 +677,13 @@ const translations: Record<Language, Record<string, string>> = {
     propertyValue: "Property Value",
     noProperties: "No properties yet. Click Edit to add.",
 
+    // Navigation / Step flow
+    confirmDiscardTitle: "Discard current creation?",
+    confirmDiscardMessage: "You have unsaved changes.",
+    continueEditing: "Continue editing",
+    discardAndReturn: "Discard and return",
+    stepN: "Step {n}",
+
     // Quick Capture
     quickCaptureTitle: "Quick capture",
     noteContentPlaceholder: "What happened? What are you thinking?",
@@ -1363,6 +1370,13 @@ const translations: Record<Language, Record<string, string>> = {
     propertyName: "属性名",
     propertyValue: "属性值",
     noProperties: "暂无属性，点击编辑添加。",
+
+    // Navigation / Step flow
+    confirmDiscardTitle: "放弃当前创建？",
+    confirmDiscardMessage: "你填写的内容还没有保存。",
+    continueEditing: "继续编辑",
+    discardAndReturn: "放弃并返回",
+    stepN: "第 {n} 步",
 
     // Quick Capture
     quickCaptureTitle: "快速记录",

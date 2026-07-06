@@ -1,10 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
-  ArrowLeft,
   Loader2,
   RefreshCw,
   Download,
@@ -18,6 +16,8 @@ import {
 } from "lucide-react";
 import { ProfileEditor } from "@/components/settings/ProfileEditor";
 import { SyncStatusBadge } from "@/components/settings/SyncStatusBadge";
+import { PageHeader } from "@/components/navigation/PageHeader";
+import { UserAvatar, UserAvatarFallback } from "@/components/user/UserAvatar";
 import { useAuthActions } from "@/lib/auth/useAuthActions";
 import { syncService } from "@/lib/sync/SyncService";
 import { useSyncStore } from "@/stores/syncStore";
@@ -124,16 +124,29 @@ export default function AccountPage() {
   const isGuest = !user;
 
   return (
-    <div className="min-h-screen bg-background pb-24 pt-6">
+    <div className="min-h-screen bg-background pb-24">
+      <PageHeader
+        backHref="/settings"
+        title="账号"
+        showBackButton
+        className="mb-6"
+      />
+
       <div className="mx-auto max-w-2xl px-4">
-        <div className="mb-8 flex items-center gap-3">
-          <Link
-            href="/settings"
-            className="rounded-xl p-2 text-muted-foreground transition-colors hover:bg-muted"
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </Link>
-          <h1 className="text-xl font-semibold text-foreground">账号</h1>
+        <div className="mb-8 flex items-center gap-4">
+          {isGuest ? (
+            <UserAvatarFallback size="lg" />
+          ) : (
+            <UserAvatar size="lg" />
+          )}
+          <div className="min-w-0">
+            <p className="text-lg font-semibold text-foreground">
+              {isGuest ? "本地模式" : user?.displayName || user?.email || "账号"}
+            </p>
+            {!isGuest && user?.email && (
+              <p className="text-sm text-muted-foreground">{user.email}</p>
+            )}
+          </div>
         </div>
 
         <div className="space-y-5">

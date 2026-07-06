@@ -2,10 +2,11 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Compass } from "lucide-react";
+import { Compass } from "lucide-react";
 import { useObjectStore } from "@/stores/objectStore";
 import { useNoteStore } from "@/stores/noteStore";
 import { useRelationStore } from "@/stores/relationStore";
+import { PageHeader } from "@/components/navigation/PageHeader";
 import { AdvisorInput } from "@/components/advisor/AdvisorInput";
 import { AdvisorOutput } from "@/components/advisor/AdvisorOutput";
 import { useTranslation } from "@/lib/useTranslation";
@@ -81,30 +82,17 @@ export function AdvisorClient({ objectId }: AdvisorClientProps) {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-background px-6 py-5">
-        <div className="mx-auto max-w-3xl">
-          <Link
-            href={object ? `/objects/${object.id}` : "/home"}
-            className="mb-2 inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground"
-          >
-            <ArrowLeft className="h-3.5 w-3.5" />
-            {object ? t("backToObject") : t("backToHome")}
-          </Link>
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted">
-              <Compass className="h-5 w-5 text-foreground" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-                {t("advisorTitle")}
-              </h1>
-              <p className="mt-1 text-sm text-muted-foreground">
-                {t("advisorSubtitle")}
-              </p>
-            </div>
+      <PageHeader
+        backHref={object ? `/objects/${object.id}` : "/home"}
+        backLabel={object ? t("backToObject") : t("backToHome")}
+        title={t("advisorTitle")}
+        subtitle={t("advisorSubtitle")}
+        icon={
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted">
+            <Compass className="h-5 w-5 text-foreground" />
           </div>
-        </div>
-      </header>
+        }
+      />
 
       <div className="mx-auto max-w-3xl space-y-6 px-6 py-8">
         {!isReady ? (

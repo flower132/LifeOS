@@ -9,6 +9,12 @@ import { AIImageUploader } from "./AIImageUploader";
 import { DraftObjectList } from "./DraftObjectList";
 import { useTranslation } from "@/lib/useTranslation";
 import { useSettingsStore } from "@/stores/settingsStore";
+import { PageHeader } from "@/components/navigation/PageHeader";
+import { NavigationStepper } from "@/components/navigation/NavigationStepper";
+import { StepTransition } from "@/components/navigation/StepTransition";
+import { ConfirmDialog } from "@/components/navigation/ConfirmDialog";
+import { useStepController } from "@/hooks/useStepController";
+import { isNonEmptyString } from "@/lib/navigation/dirtyCheck";
 import {
   CreationDraft,
   createDraftId,
@@ -17,6 +23,11 @@ import {
 import { createObjectsFromDrafts, enrichDraft } from "@/lib/create/createObjects";
 import { useLastCreationStore } from "@/stores/lastCreationStore";
 import { useObjectStore } from "@/stores/objectStore";
+
+const steps = [
+  { key: "input", label: "输入素材" },
+  { key: "review", label: "审阅结果" },
+];
 
 export function AICreateFlow() {
   const { t } = useTranslation();
@@ -32,9 +43,42 @@ export function AICreateFlow() {
   const [isEnriching, setIsEnriching] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showConfirm, setShowConfirm] = useState(false);
 
-  const hasDrafts = drafts.length > 0;
+  const stepController = useStepController({
+    steps,
+    isDirty: () =>
+      isNonEmptyString(text) || images.length > 0 || drafts.length > 0,
+  });
+
+  const hasDrafts = stepController.currentStepIndex === 1;
   const selectedDrafts = useMemo(() => drafts.filter((d) => d.selected), [drafts]);
+
+  const resetFlow = useCallback(() => {
+    setText("");
+    setImages([]);
+    setDrafts([]);
+    setError(null);
+    setIsExtracting(false);
+    setIsEnriching(false);
+    setIsCreating(false);
+  }, []);
+
+  const handleTitleClick = () => {
+    if (stepController.isHome) return;
+    if (stepController.isDirty?.()) {
+      setShowConfirm(true);
+    } else {
+      resetFlow();
+      stepController.reset();
+    }
+  };
+
+  const handleConfirmDiscard = () => {
+    setShowConfirm(false);
+    resetFlow();
+    stepController.reset();
+  };
 
   const checkDuplicates = useCallback(
     (nextDrafts: CreationDraft[]): CreationDraft[] => {
@@ -75,12 +119,13 @@ export function AICreateFlow() {
       }));
 
       setDrafts(checkDuplicates(initialDrafts));
+      stepController.next();
     } catch (err) {
       setError(err instanceof Error ? err.message : t("aiAnalysisFailed"));
     } finally {
       setIsExtracting(false);
     }
-  }, [text, images, language, t, checkDuplicates]);
+  }, [text, images, language, stepController, t, checkDuplicates]);
 
   const handleEnrich = useCallback(async () => {
     if (selectedDrafts.length === 0) return;
@@ -132,15 +177,36 @@ export function AICreateFlow() {
   }, [drafts, selectedDrafts.length, t, router, setLastCreation]);
 
   return (
-    <div className="space-y-6">
-      {error && (
-        <div className="rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-          {error}
-        </div>
-      )}
+    <div className="min-h-screen bg-background">
+      <PageHeader
+        backHref="/create-object"
+        backLabel={t("createSpaceBackToHub")}
+        title={t("createSpaceAIRecommended")}
+        subtitle={t("createSpaceAIDescription")}
+        titleGoesHome
+        onTitleClick={handleTitleClick}
+        stepper={
+          <NavigationStepper
+            steps={steps}
+            currentStepIndex={stepController.currentStepIndex}
+          />
+        }
+        maxWidth="3xl"
+      />
 
-      {!hasDrafts ? (
-        <div className="space-y-5">
+      <div className="mx-auto max-w-3xl px-6 py-8">
+        {error && (
+          <div className="mb-6 rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+            {error}
+          </div>
+        )}
+
+        <StepTransition
+          stepKey={stepController.currentStep.key}
+          direction={stepController.direction}
+        >
+          {!hasDrafts ? (
+            <div className="space-y-5">
           <div className="space-y-2">
             <label className="text-sm font-medium text-foreground">
               {t("aiInputTextLabel")}
@@ -199,7 +265,10 @@ export function AICreateFlow() {
           <div className="flex flex-col gap-3 pt-2 sm:flex-row sm:items-center sm:justify-between">
             <button
               type="button"
-              onClick={() => setDrafts([])}
+              onClick={() => {
+                setDrafts([]);
+                stepController.goBack();
+              }}
               disabled={isCreating || isEnriching}
               className="text-sm font-medium text-muted-foreground hover:text-foreground disabled:opacity-50"
             >
@@ -253,6 +322,18 @@ export function AICreateFlow() {
           </div>
         </div>
       )}
+      </StepTransition>
+      </div>
+
+      <ConfirmDialog
+        open={showConfirm}
+        title={t("confirmDiscardTitle")}
+        message={t("confirmDiscardMessage")}
+        confirmLabel={t("discardAndReturn")}
+        cancelLabel={t("continueEditing")}
+        onConfirm={handleConfirmDiscard}
+        onCancel={() => setShowConfirm(false)}
+      />
     </div>
   );
 }

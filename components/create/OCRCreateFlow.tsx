@@ -17,6 +17,16 @@ import {
 import { createObjectsFromDrafts } from "@/lib/create/createObjects";
 import { useLastCreationStore } from "@/stores/lastCreationStore";
 import { useObjectStore } from "@/stores/objectStore";
+import { PageHeader } from "@/components/navigation/PageHeader";
+import { NavigationStepper } from "@/components/navigation/NavigationStepper";
+import { StepTransition } from "@/components/navigation/StepTransition";
+import { ConfirmDialog } from "@/components/navigation/ConfirmDialog";
+import { useStepController } from "@/hooks/useStepController";
+
+const steps = [
+  { key: "upload", label: "上传截图" },
+  { key: "review", label: "审阅结果" },
+];
 
 export function OCRCreateFlow() {
   const { t } = useTranslation();
@@ -30,9 +40,39 @@ export function OCRCreateFlow() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showConfirm, setShowConfirm] = useState(false);
 
-  const hasDrafts = drafts.length > 0;
+  const stepController = useStepController({
+    steps,
+    isDirty: () => images.length > 0 || drafts.length > 0,
+  });
+
+  const hasDrafts = stepController.currentStepIndex === 1;
   const selectedCount = drafts.filter((d) => d.selected).length;
+
+  const resetFlow = useCallback(() => {
+    setImages([]);
+    setDrafts([]);
+    setError(null);
+    setIsAnalyzing(false);
+    setIsCreating(false);
+  }, []);
+
+  const handleTitleClick = () => {
+    if (stepController.isHome) return;
+    if (stepController.isDirty?.()) {
+      setShowConfirm(true);
+    } else {
+      resetFlow();
+      stepController.reset();
+    }
+  };
+
+  const handleConfirmDiscard = () => {
+    setShowConfirm(false);
+    resetFlow();
+    stepController.reset();
+  };
 
   const checkDuplicates = useCallback(
     (nextDrafts: CreationDraft[]): CreationDraft[] => {
@@ -68,12 +108,13 @@ export function OCRCreateFlow() {
         selected: true,
       }));
       setDrafts(checkDuplicates(initialDrafts));
+      stepController.next();
     } catch (err) {
       setError(err instanceof Error ? err.message : t("aiAnalysisFailed"));
     } finally {
       setIsAnalyzing(false);
     }
-  }, [images, language, t, checkDuplicates]);
+  }, [images, language, stepController, t, checkDuplicates]);
 
   const handleCreate = useCallback(async () => {
     setError(null);
@@ -104,90 +145,126 @@ export function OCRCreateFlow() {
   }, [drafts, t, router, setLastCreation]);
 
   return (
-    <div className="space-y-6">
-      {error && (
-        <div className="rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-          {error}
-        </div>
-      )}
-
-      {!hasDrafts ? (
-        <div className="space-y-5">
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-foreground">
-              {t("createSpaceOCRUpload")}
-            </label>
-            <AIImageUploader
-              images={images}
-              onChange={setImages}
-              disabled={isAnalyzing}
-            />
-          </div>
-
-          <button
-            type="button"
-            onClick={handleAnalyze}
-            disabled={images.length === 0 || isAnalyzing}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground hover:bg-accent/90 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {isAnalyzing ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                {t("createSpaceOCRAnalyzing")}
-              </>
-            ) : (
-              <>
-                <ScanLine className="h-4 w-4" />
-                {t("aiAnalyze")}
-              </>
-            )}
-          </button>
-        </div>
-      ) : (
-        <div className="space-y-6">
-          <div className="rounded-lg border border-accent/20 bg-accent/5 px-4 py-3 text-sm text-foreground">
-            {t("createSpaceOCRExtracted", { count: String(drafts.length) })}
-          </div>
-
-          <DraftObjectList
-            drafts={drafts}
-            onChange={(next) => setDrafts(checkDuplicates(next))}
+    <div className="min-h-screen bg-background">
+      <PageHeader
+        backHref="/create-object"
+        backLabel={t("createSpaceBackToHub")}
+        title={t("createSpaceOCR")}
+        subtitle={t("createSpaceOCRDescription")}
+        titleGoesHome
+        onTitleClick={handleTitleClick}
+        stepper={
+          <NavigationStepper
+            steps={steps}
+            currentStepIndex={stepController.currentStepIndex}
           />
+        }
+        maxWidth="3xl"
+      />
 
-          <div className="flex flex-col gap-3 pt-2 sm:flex-row sm:items-center sm:justify-between">
-            <button
-              type="button"
-              onClick={() => setDrafts([])}
-              disabled={isCreating}
-              className="text-sm font-medium text-muted-foreground hover:text-foreground disabled:opacity-50"
-            >
-              <ArrowLeft className="mr-1 inline h-3.5 w-3.5" />
-              {t("createSpaceBackToHub")}
-            </button>
-
-            <button
-              type="button"
-              onClick={handleCreate}
-              disabled={selectedCount === 0 || isCreating}
-              className="inline-flex items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:bg-accent/90 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {isCreating ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  {t("creating")}
-                </>
-              ) : (
-                <>
-                  <Sparkles className="h-4 w-4" />
-                  {t("createSpaceCreateSelected", {
-                    count: String(selectedCount),
-                  })}
-                </>
-              )}
-            </button>
+      <div className="mx-auto max-w-3xl px-6 py-8">
+        {error && (
+          <div className="mb-6 rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+            {error}
           </div>
-        </div>
-      )}
+        )}
+
+        <StepTransition
+          stepKey={stepController.currentStep.key}
+          direction={stepController.direction}
+        >
+          {!hasDrafts ? (
+            <div className="space-y-5">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground">
+                  {t("createSpaceOCRUpload")}
+                </label>
+                <AIImageUploader
+                  images={images}
+                  onChange={setImages}
+                  disabled={isAnalyzing}
+                />
+              </div>
+
+              <button
+                type="button"
+                onClick={handleAnalyze}
+                disabled={images.length === 0 || isAnalyzing}
+                className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground hover:bg-accent/90 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {isAnalyzing ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    {t("createSpaceOCRAnalyzing")}
+                  </>
+                ) : (
+                  <>
+                    <ScanLine className="h-4 w-4" />
+                    {t("aiAnalyze")}
+                  </>
+                )}
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              <div className="rounded-lg border border-accent/20 bg-accent/5 px-4 py-3 text-sm text-foreground">
+                {t("createSpaceOCRExtracted", { count: String(drafts.length) })}
+              </div>
+
+              <DraftObjectList
+                drafts={drafts}
+                onChange={(next) => setDrafts(checkDuplicates(next))}
+              />
+
+              <div className="flex flex-col gap-3 pt-2 sm:flex-row sm:items-center sm:justify-between">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDrafts([]);
+                    stepController.goBack();
+                  }}
+                  disabled={isCreating}
+                  className="text-sm font-medium text-muted-foreground hover:text-foreground disabled:opacity-50"
+                >
+                  <ArrowLeft className="mr-1 inline h-3.5 w-3.5" />
+                  {t("createSpaceBackToHub")}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleCreate}
+                  disabled={selectedCount === 0 || isCreating}
+                  className="inline-flex items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:bg-accent/90 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {isCreating ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      {t("creating")}
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="h-4 w-4" />
+                      {t("createSpaceCreateSelected", {
+                        count: String(selectedCount),
+                      })}
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          )}
+        </StepTransition>
+      </div>
+
+      <ConfirmDialog
+        open={showConfirm}
+        title={t("confirmDiscardTitle")}
+        message={t("confirmDiscardMessage")}
+        confirmLabel={t("discardAndReturn")}
+        cancelLabel={t("continueEditing")}
+        onConfirm={handleConfirmDiscard}
+        onCancel={() => setShowConfirm(false)}
+      />
     </div>
   );
 }
