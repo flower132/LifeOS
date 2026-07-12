@@ -9,6 +9,8 @@ import {
   ProjectAIProfile,
 } from "@/lib/types";
 import { AIAnalysisInput, AIProfileDefinition } from "../types";
+import { LabelValueCard } from "@/components/ui/LabelValueCard";
+import { Badge } from "@/components/ui/Badge";
 
 const ProjectAIProfileSchema: z.ZodType<ProjectAIProfile> = z.object({
   type: z.literal("project"),
@@ -250,6 +252,50 @@ function ProjectAIProfileEditor({
   );
 }
 
+function ProjectAIProfileReader({ profile }: { profile: ProjectAIProfile }) {
+  const { t } = useTranslation();
+
+  const riskClass =
+    profile.riskLevel === "high"
+      ? "bg-destructive/10 text-destructive"
+      : profile.riskLevel === "medium"
+      ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300"
+      : "bg-muted text-muted-foreground";
+
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <LabelValueCard label={t("aiProjectComplexity")}>
+          {profile.complexity} / 10
+        </LabelValueCard>
+        <LabelValueCard label={t("aiProjectRiskLevel")}>
+          <Badge className={riskClass}>
+            {t(`aiRiskLevel${profile.riskLevel.charAt(0).toUpperCase() + profile.riskLevel.slice(1)}`)}
+          </Badge>
+        </LabelValueCard>
+      </div>
+
+      <LabelValueCard label={t("aiProjectTimelineEstimate")}>
+        {profile.timelineEstimate || t("aiNotAvailable")}
+      </LabelValueCard>
+
+      <LabelValueCard label={t("aiProjectKeyStakeholders")}>
+        {profile.keyStakeholders.length > 0 ? (
+          <ul className="flex flex-wrap gap-2">
+            {profile.keyStakeholders.map((s, i) => (
+              <li key={i}>
+                <Badge variant="accent">{s}</Badge>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          t("aiNotAvailable")
+        )}
+      </LabelValueCard>
+    </div>
+  );
+}
+
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="space-y-2">
@@ -271,4 +317,5 @@ export const projectProfileDefinition: AIProfileDefinition<ProjectAIProfile> = {
   mapSuggestions: mapProjectSuggestions,
   mapMemories: mapProjectMemories,
   ProfileRenderer: ProjectAIProfileEditor,
+  ProfileReader: ProjectAIProfileReader,
 };

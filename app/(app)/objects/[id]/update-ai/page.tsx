@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { AIInputWizard } from "@/components/ai/AIInputWizard";
 import { AIReviewPanel } from "@/components/ai/AIReviewPanel";
-import { PageHeader } from "@/components/navigation/PageHeader";
+import { WorkspaceLayout } from "@/components/layout/WorkspaceLayout";
 import { NavigationStepper } from "@/components/navigation/NavigationStepper";
 import { StepTransition } from "@/components/navigation/StepTransition";
 import { ConfirmDialog } from "@/components/navigation/ConfirmDialog";
@@ -25,6 +25,7 @@ import {
 } from "@/lib/ai/objectIntelligence/history";
 import { LifeObject } from "@/lib/types";
 import { isNonEmptyString } from "@/lib/navigation/dirtyCheck";
+import { SkeletonBlock, SkeletonText } from "@/components/ui/Skeleton";
 
 const steps = [
   { key: "input", label: "输入素材" },
@@ -99,40 +100,45 @@ export default function ObjectUpdateAIPage() {
 
   if (!objectsLoaded) {
     return (
-      <div className="min-h-screen bg-background px-6 py-10">
-        <div className="mx-auto max-w-4xl space-y-6">
-          <div className="h-8 w-48 animate-pulse rounded bg-muted" />
-          <div className="h-64 animate-pulse rounded-xl bg-muted" />
-        </div>
-      </div>
+      <WorkspaceLayout
+        title={t("updateObjectAITitle", { type: "" })}
+        maxWidth="4xl"
+        loading
+        loadingSkeleton={
+          <div className="space-y-6">
+            <SkeletonText className="h-8 w-48" />
+            <SkeletonBlock className="h-64" />
+          </div>
+        }
+      />
     );
   }
 
   if (!object) {
     return (
-      <div className="min-h-screen bg-background px-6 py-10">
-        <div className="mx-auto max-w-4xl text-center">
-          <h1 className="text-xl font-semibold text-foreground">{t("objectNotFound")}</h1>
-          <div className="mt-4 flex justify-center">
-            <BackButton href="/objects" label={t("backToObjects")} />
-          </div>
+      <WorkspaceLayout
+        title={t("objectNotFound")}
+        maxWidth="4xl"
+        error={t("objectNotFound")}
+      >
+        <div className="flex justify-center">
+          <BackButton href="/objects" label={t("backToObjects")} />
         </div>
-      </div>
+      </WorkspaceLayout>
     );
   }
 
   if (!isAIProfileSupported(object.type)) {
     return (
-      <div className="min-h-screen bg-background px-6 py-10">
-        <div className="mx-auto max-w-4xl text-center">
-          <h1 className="text-xl font-semibold text-foreground">
-            {t("aiTypeNotSupported")}
-          </h1>
-          <div className="mt-4 flex justify-center">
-            <BackButton href={`/objects/${id}`} label={t("backToObject")} />
-          </div>
+      <WorkspaceLayout
+        title={t("aiTypeNotSupported")}
+        maxWidth="4xl"
+        error={t("aiTypeNotSupported")}
+      >
+        <div className="flex justify-center">
+          <BackButton href={`/objects/${id}`} label={t("backToObject")} />
         </div>
-      </div>
+      </WorkspaceLayout>
     );
   }
 
@@ -269,68 +275,60 @@ export default function ObjectUpdateAIPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <PageHeader
-        backHref={`/objects/${id}`}
-        backLabel={t("backToObject")}
-        title={t("updateObjectAITitle", { type: typeLabel })}
-        subtitle={
-          phase === "input"
-            ? t(`updateObjectAISubtitle_${object.type}`) ??
-              t("updatePersonAISubtitle")
-            : t(`reviewObjectAISubtitle_${object.type}`) ??
-              t("reviewPersonAISubtitle")
-        }
-        titleGoesHome
-        onTitleClick={handleTitleClick}
-        stepper={
-          <NavigationStepper
-            steps={steps}
-            currentStepIndex={stepController.currentStepIndex}
+    <WorkspaceLayout
+      backHref={`/objects/${id}`}
+      backLabel={t("backToObject")}
+      title={t("updateObjectAITitle", { type: typeLabel })}
+      subtitle={
+        phase === "input"
+          ? t(`updateObjectAISubtitle_${object.type}`) ??
+            t("updatePersonAISubtitle")
+          : t(`reviewObjectAISubtitle_${object.type}`) ??
+            t("reviewPersonAISubtitle")
+      }
+      titleGoesHome
+      onTitleClick={handleTitleClick}
+      stepper={
+        <NavigationStepper
+          steps={steps}
+          currentStepIndex={stepController.currentStepIndex}
+        />
+      }
+      maxWidth="4xl"
+      error={error ?? undefined}
+      onRetry={() => void handleAnalyze(textInput, inputImages)}
+    >
+      <StepTransition
+        stepKey={phase}
+        direction={stepController.direction}
+      >
+        {phase === "input" && (
+          <AIInputWizard
+            defaultText={defaultText}
+            defaultImages={defaultImages}
+            onAnalyze={handleAnalyze}
+            isAnalyzing={isAnalyzing}
           />
-        }
-        maxWidth="4xl"
-      />
-
-      <div className="mx-auto max-w-4xl px-6 py-8">
-        {error && (
-          <div className="mb-6 rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-            {error}
-          </div>
         )}
 
-        <StepTransition
-          stepKey={phase}
-          direction={stepController.direction}
-        >
-          {phase === "input" && (
-            <AIInputWizard
-              defaultText={defaultText}
-              defaultImages={defaultImages}
-              onAnalyze={handleAnalyze}
-              isAnalyzing={isAnalyzing}
-            />
-          )}
-
-          {phase === "review" && reviewResult && (
-            <div className="space-y-6">
-              <div className="rounded-lg border border-accent/20 bg-accent/5 px-4 py-3 text-sm text-foreground">
-                {t("reviewPersonAIHint") ??
-                  "Review the updated profile below. Items reflect both existing and new understanding."}
-              </div>
-              <AIReviewPanel
-                result={reviewResult}
-                onChange={setReviewResult}
-                onConfirm={handleConfirm}
-                onReanalyze={() => {
-                  stepController.goBack();
-                  setReviewResult(null);
-                }}
-              />
+        {phase === "review" && reviewResult && (
+          <div className="space-y-6">
+            <div className="rounded-lg border border-accent/20 bg-accent/5 px-4 py-3 text-sm text-foreground">
+              {t("reviewPersonAIHint") ??
+                "Review the updated profile below. Items reflect both existing and new understanding."}
             </div>
-          )}
-        </StepTransition>
-      </div>
+            <AIReviewPanel
+              result={reviewResult}
+              onChange={setReviewResult}
+              onConfirm={handleConfirm}
+              onReanalyze={() => {
+                stepController.goBack();
+                setReviewResult(null);
+              }}
+            />
+          </div>
+        )}
+      </StepTransition>
 
       <ConfirmDialog
         open={showConfirm}
@@ -341,6 +339,6 @@ export default function ObjectUpdateAIPage() {
         onConfirm={handleConfirmDiscard}
         onCancel={() => setShowConfirm(false)}
       />
-    </div>
+    </WorkspaceLayout>
   );
 }

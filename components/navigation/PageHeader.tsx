@@ -45,9 +45,9 @@ export function PageHeader({
   const titleContent = (
     <span
       className={cn(
-        "text-2xl font-semibold tracking-tight text-foreground",
+        "text-h1 text-primary",
         titleGoesHome || onTitleClick
-          ? "cursor-pointer transition-colors hover:text-accent"
+          ? "cursor-pointer transition-colors duration-fast ease-out hover:text-accent"
           : "cursor-default"
       )}
       onClick={onTitleClick}
@@ -69,7 +69,7 @@ export function PageHeader({
   );
 
   return (
-    <header className={cn("border-b border-border bg-background px-6 py-5", className)}>
+    <header className={cn("bg-background px-4 py-4 md:px-6 lg:px-8", className)}>
       <div
         className={cn(
           "mx-auto",
@@ -79,7 +79,7 @@ export function PageHeader({
       >
         <div className="min-w-0 flex-1 space-y-1">
           {showBackButton && (backHref || onBack) && (
-            <div className="-ml-2.5">
+            <div>
               <BackButton href={backHref} onClick={onBack} label={backLabel} />
             </div>
           )}
@@ -90,14 +90,14 @@ export function PageHeader({
           </div>
 
           {subtitle && (
-            <p className="text-sm text-muted-foreground">{subtitle}</p>
+            <p className="text-body-small text-secondary">{subtitle}</p>
           )}
 
           {stepper && <div className="pt-3">{stepper}</div>}
         </div>
 
         {actions && (
-          <div className="flex shrink-0 items-center gap-2 pt-1">{actions}</div>
+          <div className="flex shrink-0 items-center gap-2">{actions}</div>
         )}
       </div>
     </header>

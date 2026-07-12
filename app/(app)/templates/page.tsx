@@ -9,11 +9,12 @@ import {
 } from "lucide-react";
 import { useTemplateStore } from "@/stores/templateStore";
 import { useTranslation } from "@/lib/useTranslation";
-import { PageHeader } from "@/components/navigation/PageHeader";
+import { WorkspaceLayout } from "@/components/layout/WorkspaceLayout";
 import { Template, TemplateCategory, TEMPLATE_CATEGORIES } from "@/lib/types";
 import { storage } from "@/lib/storage";
 import { TemplateList } from "@/components/template/TemplateList";
 import { TemplateForm } from "@/components/template/TemplateForm";
+import { SkeletonBlock, SkeletonText } from "@/components/ui/Skeleton";
 
 export default function TemplatesPage() {
   const { t } = useTranslation();
@@ -101,41 +102,44 @@ export default function TemplatesPage() {
 
   if (!loaded) {
     return (
-      <div className="min-h-screen bg-background px-6 py-10">
-        <div className="mx-auto max-w-5xl space-y-6">
-          <div className="h-8 w-48 animate-pulse rounded bg-muted" />
-          <div className="h-32 animate-pulse rounded-xl bg-muted" />
-          <div className="h-32 animate-pulse rounded-xl bg-muted" />
-        </div>
-      </div>
+      <WorkspaceLayout
+        title={t("templatesTitle")}
+        maxWidth="5xl"
+        loading
+        loadingSkeleton={
+          <div className="space-y-6">
+            <SkeletonText className="h-8 w-48" />
+            <SkeletonBlock className="h-32" />
+            <SkeletonBlock className="h-32" />
+          </div>
+        }
+      />
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <PageHeader
-        backHref="/home"
-        backLabel={t("backToHome")}
-        title={t("templatesTitle")}
-        subtitle={t("templatesSubtitle")}
-        icon={<LayoutTemplate className="h-6 w-6 text-foreground" />}
-        actions={
-          <button
-            type="button"
-            onClick={() => {
-              setEditingTemplate(null);
-              setShowForm(true);
-            }}
-            className="inline-flex items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:bg-accent/90"
-          >
-            <PlusCircle className="h-4 w-4" />
-            {t("newTemplate")}
-          </button>
-        }
-        maxWidth="5xl"
-      />
-
-      <div className="mx-auto max-w-5xl space-y-8 px-6 py-8">
+    <WorkspaceLayout
+      backHref="/home"
+      backLabel={t("backToHome")}
+      title={t("templatesTitle")}
+      subtitle={t("templatesSubtitle")}
+      icon={<LayoutTemplate className="h-6 w-6 text-foreground" />}
+      actions={
+        <button
+          type="button"
+          onClick={() => {
+            setEditingTemplate(null);
+            setShowForm(true);
+          }}
+          className="inline-flex items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:bg-accent/90"
+        >
+          <PlusCircle className="h-4 w-4" />
+          {t("newTemplate")}
+        </button>
+      }
+      maxWidth="5xl"
+    >
+      <div className="space-y-8">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -238,6 +242,6 @@ export default function TemplatesPage() {
           </div>
         </div>
       )}
-    </div>
+    </WorkspaceLayout>
   );
 }

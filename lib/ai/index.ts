@@ -1,16 +1,11 @@
 import {
   AIAnalysisRunResult,
   AIErrorCode,
-  AIProvider,
   AIProviderConfig,
   AITestResult,
-  PersonInsight,
-  SelfInsight,
-  EventGoalInsight,
 } from "./types";
 import { useSettingsStore } from "@/stores/settingsStore";
 import { registry } from "./registry";
-import { propertiesToPromptContext } from "@/lib/objectProperties";
 import {
   addAILog,
   detectMixedContent,
@@ -29,22 +24,14 @@ import {
   addAIAnalysisHistory,
   createAIAnalysisHistoryEntryInput,
 } from "./objectIntelligence/history";
-import { LifeObject, Note, Relation, LifeObjectType } from "@/lib/types";
+import { LifeObjectType } from "@/lib/types";
 import { Language } from "@/lib/i18n";
-import {
-  normalizeEventGoalInsight,
-  normalizePersonInsight,
-  normalizeSelfInsight,
-} from "./normalize";
 
 export { getAILogs, clearAILogs } from "./logs";
 export type {
   AIAnalysisRunResult,
   AITestResult,
   AIInsightResult,
-  PersonInsight,
-  SelfInsight,
-  EventGoalInsight,
 } from "./types";
 
 function getLanguage(): Language {
@@ -63,135 +50,6 @@ function getCurrentConfig(): AIProviderConfig {
     baseUrl: state.aiBaseUrl,
     model: state.aiModel,
   };
-}
-
-function notesToText(notes: Note[]): string {
-  return notes
-    .map(
-      (note, index) =>
-        `Record ${index + 1} (${new Date(
-          note.created_at
-        ).toLocaleDateString()}):\n${note.content}`
-    )
-    .join("\n---\n");
-}
-
-function relationsToText(
-  currentObjectId: string,
-  relations: Relation[],
-  getObjectName: (id: string) => string
-): string {
-  return relations
-    .map((relation) => {
-      const otherId =
-        relation.source_object_id === currentObjectId
-          ? relation.target_object_id
-          : relation.source_object_id;
-      const targetName = getObjectName(otherId);
-      return `- ${relation.type} with ${targetName}${
-        relation.strength !== undefined
-          ? ` (strength ${Math.round(relation.strength * 100)}%)`
-          : ""
-      }${relation.note ? `: ${relation.note}` : ""}`;
-    })
-    .join("\n");
-}
-
-function parseJsonResponse(text: string): unknown {
-  const trimmed = text.trim();
-  if (!trimmed) throw new Error("Empty response");
-  try {
-    return JSON.parse(trimmed);
-  } catch (err) {
-    throw new Error(
-      `JSON parse error: ${err instanceof Error ? err.message : String(err)}`
-    );
-  }
-}
-
-function buildPrompt(
-  objectName: string,
-  objectDescription: string | undefined,
-  propertiesContext: string | undefined,
-  notesText: string,
-  relationsText: string | undefined,
-  shape: string,
-  language: Language
-): string {
-  const langHint =
-    language === "zh"
-      ? "Respond in Chinese (Simplified)."
-      : "Respond in English.";
-
-  return `You are a structured understanding engine for a personal life OS. Based ONLY on the user data provided, generate a JSON object matching this exact shape:
-${shape}
-Rules:
-- Do not invent facts not present in the data.
-- If data is insufficient, say so explicitly in fields.
-- Keep each string concise (1-2 sentences).
-- Prefer the structured Object Properties below over the free-form Description when they conflict.
-- ${langHint}
-
-Object name: ${objectName}
-${propertiesContext ? `Object Properties:\n${propertiesContext}\n` : ""}Description: ${objectDescription || "None"}
-
-Notes:
-${notesText || "None"}
-${relationsText !== undefined ? `\nRelations:\n${relationsText || "None"}` : ""}`;
-}
-
-async function runWithLogging(
-  prompt: string,
-  forceMock = false
-): Promise<{
-  text: string;
-  durationMs: number;
-  provider: AIProviderConfig["provider"];
-  model: string;
-}> {
-  const start = performance.now();
-  const selected = forceMock
-    ? {
-        provider: registry.create("mock", {
-          provider: "mock",
-          apiKey: "",
-          baseUrl: "",
-          model: "mock",
-        }) as AIProvider,
-        config: {
-          provider: "mock" as const,
-          apiKey: "",
-          baseUrl: "",
-          model: "mock",
-        },
-      }
-    : {
-        provider: registry.create(getCurrentConfig().provider, getCurrentConfig()),
-        config: getCurrentConfig(),
-      };
-
-  try {
-    const text = await selected.provider.generate(prompt);
-    const durationMs = Math.round(performance.now() - start);
-    return {
-      text,
-      durationMs,
-      provider: selected.config.provider,
-      model: selected.config.model,
-    };
-  } catch (err) {
-    const durationMs = Math.round(performance.now() - start);
-    const { message, code } = formatErrorForUser(err, selected.config.baseUrl);
-    addAILog({
-      provider: selected.config.provider,
-      model: selected.config.model,
-      durationMs,
-      status: "error",
-      error: message,
-      errorCode: code,
-    });
-    throw new Error(message);
-  }
 }
 
 /**
@@ -372,222 +230,6 @@ class AIService {
     }
 
     return result;
-  }
-
-  // ── Deprecated object-type-specific methods ───────────────────────────────
-  // These methods are kept temporarily for backward compatibility with the
-  // existing UI cards. They will be removed in Phase 2 once components switch
-  // to the type-agnostic analyzeObject API.
-
-  /** @deprecated Use analyzeObject with the person profile instead. */
-  async generatePersonProfile(
-    object: LifeObject,
-    notes: Note[],
-    relations: Relation[],
-    getObjectName: (id: string) => string,
-    options: { forceMock?: boolean } = {}
-  ): Promise<import("./types").AIInsightResult<PersonInsight>> {
-    if (!options.forceMock && !this.shouldRunLegacy()) {
-      return {
-        success: false,
-        error: "AI is disabled",
-        errorCode: "unknown",
-        provider: "mock",
-        model: "mock",
-        durationMs: 0,
-      };
-    }
-
-    const shape = JSON.stringify(
-      {
-        traits: ["string"],
-        relationship_status: "string",
-        notes: "string",
-      },
-      null,
-      2
-    );
-
-    const prompt = buildPrompt(
-      object.name,
-      object.description,
-      propertiesToPromptContext(object.type, object.properties),
-      notesToText(notes),
-      relationsToText(object.id, relations, getObjectName),
-      shape,
-      getLanguage()
-    );
-
-    const start = performance.now();
-    const config = options.forceMock
-      ? { provider: "mock" as const, apiKey: "", baseUrl: "", model: "mock" }
-      : getCurrentConfig();
-
-    try {
-      const { text, durationMs } = await runWithLogging(prompt, options.forceMock);
-      const parsed = parseJsonResponse(text);
-      const data = normalizePersonInsight(parsed);
-      return this.makeLegacyResult(data, config.provider, config.model, durationMs, options.forceMock);
-    } catch (err) {
-      const durationMs = Math.round(performance.now() - start);
-      return this.makeLegacyErrorResult(err, config.provider, config.model, config.baseUrl, durationMs);
-    }
-  }
-
-  /** @deprecated Use analyzeObject with the self profile instead. */
-  async generateSelfState(
-    object: LifeObject,
-    notes: Note[],
-    relations: Relation[],
-    getObjectName: (id: string) => string,
-    options: { forceMock?: boolean } = {}
-  ): Promise<import("./types").AIInsightResult<SelfInsight>> {
-    if (!options.forceMock && !this.shouldRunLegacy()) {
-      return {
-        success: false,
-        error: "AI is disabled",
-        errorCode: "unknown",
-        provider: "mock",
-        model: "mock",
-        durationMs: 0,
-      };
-    }
-
-    const shape = JSON.stringify(
-      {
-        focus_areas: ["string"],
-        strengths: ["string"],
-        weaknesses: ["string"],
-        summary: "string",
-      },
-      null,
-      2
-    );
-
-    const prompt = buildPrompt(
-      object.name,
-      object.description,
-      propertiesToPromptContext(object.type, object.properties),
-      notesToText(notes),
-      relationsToText(object.id, relations, getObjectName),
-      shape,
-      getLanguage()
-    );
-
-    const start = performance.now();
-    const config = options.forceMock
-      ? { provider: "mock" as const, apiKey: "", baseUrl: "", model: "mock" }
-      : getCurrentConfig();
-
-    try {
-      const { text, durationMs } = await runWithLogging(prompt, options.forceMock);
-      const parsed = parseJsonResponse(text);
-      const data = normalizeSelfInsight(parsed);
-      return this.makeLegacyResult(data, config.provider, config.model, durationMs, options.forceMock);
-    } catch (err) {
-      const durationMs = Math.round(performance.now() - start);
-      return this.makeLegacyErrorResult(err, config.provider, config.model, config.baseUrl, durationMs);
-    }
-  }
-
-  /** @deprecated Use analyzeObject with the event/goal profile instead. */
-  async generateEventInsight(
-    object: LifeObject,
-    notes: Note[],
-    options: { forceMock?: boolean } = {}
-  ): Promise<import("./types").AIInsightResult<EventGoalInsight>> {
-    if (!options.forceMock && !this.shouldRunLegacy()) {
-      return {
-        success: false,
-        error: "AI is disabled",
-        errorCode: "unknown",
-        provider: "mock",
-        model: "mock",
-        durationMs: 0,
-      };
-    }
-
-    const shape = JSON.stringify(
-      {
-        summary: "string",
-        progress_insight: "string",
-        blockers: ["string"],
-      },
-      null,
-      2
-    );
-
-    const prompt = buildPrompt(
-      object.name,
-      object.description,
-      propertiesToPromptContext(object.type, object.properties),
-      notesToText(notes),
-      undefined,
-      shape,
-      getLanguage()
-    );
-
-    const start = performance.now();
-    const config = options.forceMock
-      ? { provider: "mock" as const, apiKey: "", baseUrl: "", model: "mock" }
-      : getCurrentConfig();
-
-    try {
-      const { text, durationMs } = await runWithLogging(prompt, options.forceMock);
-      const parsed = parseJsonResponse(text);
-      const data = normalizeEventGoalInsight(parsed);
-      return this.makeLegacyResult(data, config.provider, config.model, durationMs, options.forceMock);
-    } catch (err) {
-      const durationMs = Math.round(performance.now() - start);
-      return this.makeLegacyErrorResult(err, config.provider, config.model, config.baseUrl, durationMs);
-    }
-  }
-
-  private shouldRunLegacy(): boolean {
-    if (typeof window === "undefined") return false;
-    return useSettingsStore.getState().aiEnabled;
-  }
-
-  private makeLegacyResult<T>(
-    data: T,
-    provider: AIProviderConfig["provider"],
-    model: string,
-    durationMs: number,
-    fallback = false
-  ): import("./types").AIInsightResult<T> {
-    addAILog({
-      provider,
-      model,
-      durationMs,
-      status: "success",
-    });
-    return { success: true, data, provider, model, durationMs, fallback };
-  }
-
-  private makeLegacyErrorResult<T>(
-    error: unknown,
-    provider: AIProviderConfig["provider"],
-    model: string,
-    baseUrl: string,
-    durationMs: number
-  ): import("./types").AIInsightResult<T> {
-    const { message, code } = formatErrorForUser(error, baseUrl);
-    addAILog({
-      provider,
-      model,
-      durationMs,
-      status: "error",
-      error: message,
-      errorCode: code,
-    });
-    return {
-      success: false,
-      error: message,
-      errorCode: code,
-      provider,
-      model,
-      durationMs,
-    };
   }
 
   private createMockSelection() {

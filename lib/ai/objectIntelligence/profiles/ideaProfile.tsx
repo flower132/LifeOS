@@ -9,6 +9,8 @@ import {
   ObjectProperties,
 } from "@/lib/types";
 import { AIAnalysisInput, AIProfileDefinition } from "../types";
+import { LabelValueCard } from "@/components/ui/LabelValueCard";
+import { Badge } from "@/components/ui/Badge";
 
 const IdeaAIProfileSchema: z.ZodType<IdeaAIProfile> = z.object({
   type: z.literal("idea"),
@@ -242,6 +244,34 @@ function IdeaAIProfileEditor({
   );
 }
 
+function IdeaAIProfileReader({ profile }: { profile: IdeaAIProfile }) {
+  const { t } = useTranslation();
+
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <LabelValueCard label={t("aiIdeaNovelty")}>{profile.novelty}%</LabelValueCard>
+        <LabelValueCard label={t("aiIdeaFeasibility")}>{profile.feasibility}%</LabelValueCard>
+        <LabelValueCard label={t("aiIdeaMarketPotential")}>{profile.marketPotential}%</LabelValueCard>
+      </div>
+
+      <LabelValueCard label={t("aiIdeaRelatedDomains")}>
+        {profile.relatedDomains.length > 0 ? (
+          <ul className="flex flex-wrap gap-2">
+            {profile.relatedDomains.map((domain, i) => (
+              <li key={i}>
+                <Badge variant="accent">{domain}</Badge>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          t("aiNotAvailable")
+        )}
+      </LabelValueCard>
+    </div>
+  );
+}
+
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="space-y-2">
@@ -263,4 +293,5 @@ export const ideaProfileDefinition: AIProfileDefinition<IdeaAIProfile> = {
   mapSuggestions: mapIdeaSuggestions,
   mapMemories: mapIdeaMemories,
   ProfileRenderer: IdeaAIProfileEditor,
+  ProfileReader: IdeaAIProfileReader,
 };

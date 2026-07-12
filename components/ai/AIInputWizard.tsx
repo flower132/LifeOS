@@ -1,9 +1,11 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { Upload, X, Loader2, Sparkles } from "lucide-react";
+import { Upload, X, Sparkles } from "lucide-react";
 import { AIImageInput } from "@/lib/ai/types";
 import { useTranslation } from "@/lib/useTranslation";
+import { Spinner } from "@/components/ui/Spinner";
+import { ErrorState } from "@/components/ui/ErrorState";
 
 export interface AIInputWizardProps {
   defaultText?: string;
@@ -97,9 +99,7 @@ export function AIInputWizard({
   return (
     <div className="space-y-5">
       {error && (
-        <div className="rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-          {error}
-        </div>
+        <ErrorState description={error} />
       )}
 
       <div className="space-y-2">
@@ -177,7 +177,7 @@ export function AIInputWizard({
       >
         {isAnalyzing ? (
           <>
-            <Loader2 className="h-4 w-4 animate-spin" />
+            <Spinner size="sm" />
             {t("aiAnalyzing")}
           </>
         ) : (

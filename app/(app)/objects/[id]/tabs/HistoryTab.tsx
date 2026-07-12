@@ -5,6 +5,9 @@ import { LifeObject, AIAnalysisHistoryEntry } from "@/lib/types";
 import { useTranslation } from "@/lib/useTranslation";
 import { getAIAnalysisHistoryByObjectId } from "@/lib/ai/objectIntelligence/history";
 import { formatDateTime } from "@/lib/utils";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { SkeletonBlock } from "@/components/ui/Skeleton";
+import { Card } from "@/components/ui/Card";
 
 interface HistoryTabProps {
   object: LifeObject;
@@ -32,17 +35,15 @@ export function HistoryTab({ object }: HistoryTabProps) {
   if (loading) {
     return (
       <div className="space-y-4">
-        <div className="h-24 animate-pulse rounded-xl bg-muted" />
-        <div className="h-24 animate-pulse rounded-xl bg-muted" />
+        <SkeletonBlock className="h-24" />
+        <SkeletonBlock className="h-24" />
       </div>
     );
   }
 
   if (history.length === 0) {
     return (
-      <div className="rounded-xl border border-border bg-card p-6 text-center text-sm text-muted-foreground">
-        {t("aiHistoryEmpty") ?? "No AI analysis history yet."}
-      </div>
+      <EmptyState description={t("aiHistoryEmpty")} />
     );
   }
 

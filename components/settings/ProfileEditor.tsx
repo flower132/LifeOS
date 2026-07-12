@@ -4,10 +4,12 @@ import { useState } from "react";
 import { Pencil, Check, X } from "lucide-react";
 import { useAuthActions } from "@/lib/auth/useAuthActions";
 import { useSyncStore } from "@/stores/syncStore";
+import { useTranslation } from "@/lib/useTranslation";
 
 const EMOJI_OPTIONS = ["😀", "🧠", "💡", "🌱", "✨", "🌙", "🔥", "❄️", "🌊", "🪐"];
 
 export function ProfileEditor() {
+  const { t } = useTranslation();
   const profile = useSyncStore((s) => s.profile);
   const { updateProfile } = useAuthActions();
   const [isEditing, setIsEditing] = useState(false);
@@ -59,7 +61,7 @@ export function ProfileEditor() {
               onClick={() => setAvatarEmoji("")}
               className="h-6 w-6 rounded bg-muted text-xs text-muted-foreground hover:bg-muted/80"
             >
-              无
+              {t("profileEditorRemoveAvatar")}
             </button>
           </div>
         )}
@@ -72,7 +74,7 @@ export function ProfileEditor() {
               type="text"
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
-              placeholder="昵称"
+              placeholder={t("profileEditorNicknamePlaceholder")}
               className="flex-1 rounded-xl border border-input bg-background px-3 py-2 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
             />
             <button

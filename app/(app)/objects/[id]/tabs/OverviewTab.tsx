@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { StickyNote, Link as LinkIcon, Info, Sparkles } from "lucide-react";
-import { LifeObject, Note, Relation, Tag, SelfAIProfile } from "@/lib/types";
+import { LifeObject, Note, Relation, Tag } from "@/lib/types";
 import { ObjectPropertiesForm } from "@/components/object/ObjectPropertiesForm";
 import { TagBadge } from "@/components/tag/TagBadge";
 import { TagSelect } from "@/components/tag/TagSelect";
@@ -11,6 +11,7 @@ import { RelationForm } from "@/components/relation/RelationForm";
 import { NoteTimeline } from "@/components/note/NoteTimeline";
 import { useTranslation } from "@/lib/useTranslation";
 import { ObjectProperties } from "@/lib/types";
+import { AIProfileView } from "@/components/ai/cards";
 
 interface OverviewTabProps {
   object: LifeObject;
@@ -57,7 +58,7 @@ export function OverviewTab({
               {t("aiUnderstanding")}
             </h2>
           </div>
-          <SelfSummaryCard profile={object.aiProfile as SelfAIProfile} />
+          <AIProfileView profile={object.aiProfile} />
         </section>
       )}
 
@@ -110,31 +111,6 @@ export function OverviewTab({
         </div>
         <NoteTimeline notes={notes} />
       </section>
-    </div>
-  );
-}
-
-function SelfSummaryCard({ profile }: { profile: SelfAIProfile }) {
-  const { t } = useTranslation();
-
-  return (
-    <div className="rounded-xl border border-border bg-card p-4 space-y-4">
-      <div className="space-y-1">
-        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-          {t("selfCurrentFocus")}
-        </p>
-        <p className="text-sm leading-relaxed text-foreground">
-          {profile.currentFocus || t("aiNotAvailable")}
-        </p>
-      </div>
-      <div className="space-y-1">
-        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-          {t("selfUnderstanding")}
-        </p>
-        <p className="text-sm leading-relaxed text-foreground">
-          {profile.understandingSummary || t("aiNotAvailable")}
-        </p>
-      </div>
     </div>
   );
 }

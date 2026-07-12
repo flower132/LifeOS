@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { CreateHub } from "@/components/create/CreateHub";
 import { CreationSuccessBanner } from "@/components/create/CreationSuccessBanner";
-import { PageHeader } from "@/components/navigation/PageHeader";
+import { WorkspaceLayout } from "@/components/layout/WorkspaceLayout";
 import { useTranslation } from "@/lib/useTranslation";
 
 export default function CreateObjectPage() {
@@ -26,17 +26,15 @@ export default function CreateObjectPage() {
   }, [searchParams, router]);
 
   return (
-    <div className="min-h-screen bg-background">
-      <PageHeader
-        title={t("createSpaceHubTitle")}
-        subtitle={t("createSpaceHubSubtitle")}
-        showBackButton={false}
-      />
-
-      <div className="mx-auto max-w-2xl space-y-6 px-6 py-8">
+    <WorkspaceLayout
+      title={t("createSpaceHubTitle")}
+      subtitle={t("createSpaceHubSubtitle")}
+      showBackButton={false}
+    >
+      <div className="space-y-6">
         <CreationSuccessBanner />
         <CreateHub />
       </div>
-    </div>
+    </WorkspaceLayout>
   );
 }

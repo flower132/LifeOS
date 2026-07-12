@@ -5,6 +5,7 @@ import { RELATION_TYPES } from "@/lib/types";
 import { useObjectStore } from "@/stores/objectStore";
 import { useRelationStore } from "@/stores/relationStore";
 import { useTranslation } from "@/lib/useTranslation";
+import { ErrorState } from "@/components/ui/ErrorState";
 
 interface RelationFormProps {
   sourceObjectId: string;
@@ -37,8 +38,8 @@ export function RelationForm({ sourceObjectId, onCreated }: RelationFormProps) {
 
   const canSubmit = targetObjectId.length > 0 && candidates.length > 0 && !submitting;
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (e?: React.FormEvent) => {
+    e?.preventDefault();
     if (!canSubmit) return;
 
     setError(null);
@@ -66,9 +67,7 @@ export function RelationForm({ sourceObjectId, onCreated }: RelationFormProps) {
   return (
     <form onSubmit={handleSubmit} className="space-y-4 rounded-xl border border-border bg-muted p-4">
       {error && (
-        <div className="rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-          {error}
-        </div>
+        <ErrorState description={error} onRetry={handleSubmit} />
       )}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="space-y-1">

@@ -16,12 +16,15 @@ import { ObjectDeleteDialog } from "@/components/object/manage/ObjectDeleteDialo
 import { ObjectUndoBanner } from "@/components/object/manage/ObjectUndoBanner";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/lib/useTranslation";
+import { SkeletonBlock } from "@/components/ui/Skeleton";
 
 const filterTabs: ("all" | LifeObjectType)[] = ["all", ...LIFE_OBJECT_TYPES];
 
 type SortBy = "updated" | "created" | "name" | "type";
 
 const SORT_OPTIONS: SortBy[] = ["updated", "created", "name", "type"];
+
+import { WorkspaceLayout } from "@/components/layout/WorkspaceLayout";
 
 export default function ObjectsPage() {
   const { objects, loaded } = useObjectStore();
@@ -130,50 +133,43 @@ export default function ObjectsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-32">
-      <header className="border-b border-border bg-background px-6 py-5">
-        <div className="mx-auto max-w-5xl">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-                {t("objectsTitle")}
-              </h1>
-              <p className="mt-1 text-sm text-muted-foreground">
-                {t("objectsSubtitle")}
-              </p>
-            </div>
-            {isManaging ? (
-              <button
-                type="button"
-                onClick={handleExitManage}
-                className="inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-              >
-                <X className="h-4 w-4" />
-                {t("cancel")}
-              </button>
-            ) : (
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={handleEnterManage}
-                  className="rounded-lg px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                >
-                  {t("manage")}
-                </button>
-                <Link
-                  href="/create-object"
-                  className="inline-flex items-center gap-1.5 rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:bg-accent/90"
-                >
-                  <PlusCircle className="h-4 w-4" />
-                  {t("newObject")}
-                </Link>
-              </div>
-            )}
+    <WorkspaceLayout
+      showBackButton={false}
+      title={t("objectsTitle")}
+      subtitle={t("objectsSubtitle")}
+      actions={
+        isManaging ? (
+          <button
+            type="button"
+            onClick={handleExitManage}
+            className="inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          >
+            <X className="h-4 w-4" />
+            {t("cancel")}
+          </button>
+        ) : (
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleEnterManage}
+              className="rounded-lg px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            >
+              {t("manage")}
+            </button>
+            <Link
+              href="/create-object"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:bg-accent/90"
+            >
+              <PlusCircle className="h-4 w-4" />
+              {t("newObject")}
+            </Link>
           </div>
-        </div>
-      </header>
-
-      <div className="mx-auto max-w-5xl space-y-6 px-6 py-6">
+        )
+      }
+      maxWidth="5xl"
+      className="pb-32"
+    >
+      <div className="space-y-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex flex-wrap gap-1">
             {filterTabs.map((tab) => (
@@ -226,7 +222,7 @@ export default function ObjectsPage() {
         {!loaded ? (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="h-32 animate-pulse rounded-xl bg-muted" />
+              <SkeletonBlock key={i} className="h-32" />
             ))}
           </div>
         ) : (
@@ -259,6 +255,15 @@ export default function ObjectsPage() {
                       filter === "all"
                         ? t("noObjectsFound")
                         : t("noObjectsFound")
+                    }
+                    emptyAction={
+                      <Link
+                        href="/create-object"
+                        className="inline-flex items-center gap-1.5 rounded-md bg-accent px-4 py-3 text-button font-medium text-accent-foreground transition-colors duration-fast ease-out hover:bg-accent/90"
+                      >
+                        <PlusCircle className="h-4 w-4" />
+                        {t("newObject")}
+                      </Link>
                     }
                     mode={isManaging ? "manage" : "view"}
                     selectedIds={selectedIds}
@@ -293,6 +298,6 @@ export default function ObjectsPage() {
       </div>
 
       <ObjectUndoBanner onUndo={handleUndo} />
-    </div>
+    </WorkspaceLayout>
   );
 }

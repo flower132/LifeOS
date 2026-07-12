@@ -3,7 +3,6 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  Loader2,
   RefreshCw,
   Download,
   LogOut,
@@ -14,9 +13,10 @@ import {
   LayoutTemplate,
   Brain,
 } from "lucide-react";
+import { Spinner } from "@/components/ui/Spinner";
 import { ProfileEditor } from "@/components/settings/ProfileEditor";
 import { SyncStatusBadge } from "@/components/settings/SyncStatusBadge";
-import { PageHeader } from "@/components/navigation/PageHeader";
+import { WorkspaceLayout } from "@/components/layout/WorkspaceLayout";
 import { UserAvatar, UserAvatarFallback } from "@/components/user/UserAvatar";
 import { useAuthActions } from "@/lib/auth/useAuthActions";
 import { syncService } from "@/lib/sync/SyncService";
@@ -27,6 +27,7 @@ import { useRelationStore } from "@/stores/relationStore";
 import { useTagStore } from "@/stores/tagStore";
 import { useTemplateStore } from "@/stores/templateStore";
 import { exportAllData } from "@/lib/export";
+import { useTranslation } from "@/lib/useTranslation";
 
 function SectionCard({
   children,
@@ -66,6 +67,7 @@ function StatItem({
 
 export default function AccountPage() {
   const router = useRouter();
+  const { t } = useTranslation();
   const { user, signOut } = useAuthActions();
   const syncStatus = useSyncStore();
   const objectCount = useObjectStore((s) => s.objects.length);
@@ -124,15 +126,13 @@ export default function AccountPage() {
   const isGuest = !user;
 
   return (
-    <div className="min-h-screen bg-background pb-24">
-      <PageHeader
-        backHref="/settings"
-        title="账号"
-        showBackButton
-        className="mb-6"
-      />
-
-      <div className="mx-auto max-w-2xl px-4">
+    <WorkspaceLayout
+      backHref="/settings"
+      backLabel={t("backToSettings") ?? "Back"}
+      title={t("accountTitle") ?? t("accountCardTitle")}
+      className="pb-24"
+    >
+      <div className="space-y-6">
         <div className="mb-8 flex items-center gap-4">
           {isGuest ? (
             <UserAvatarFallback size="lg" />
@@ -141,7 +141,7 @@ export default function AccountPage() {
           )}
           <div className="min-w-0">
             <p className="text-lg font-semibold text-foreground">
-              {isGuest ? "本地模式" : user?.displayName || user?.email || "账号"}
+              {isGuest ? t("accountLocalMode") : user?.displayName || user?.email || t("accountCardTitle")}
             </p>
             {!isGuest && user?.email && (
               <p className="text-sm text-muted-foreground">{user.email}</p>
@@ -153,13 +153,13 @@ export default function AccountPage() {
           <SectionCard>
             {isGuest ? (
               <div className="space-y-3">
-                <p className="text-sm text-muted-foreground">你当前处于本地模式，数据仅保存在本设备。登录账号即可多设备同步。</p>
+                <p className="text-sm text-muted-foreground">{t("accountLocalModeDescription")}</p>
                 <button
                   type="button"
                   onClick={() => router.push("/login")}
                   className="w-full rounded-xl bg-accent px-4 py-2.5 text-sm font-semibold text-accent-foreground shadow-sm hover:bg-accent/90"
                 >
-                  登录或注册
+                  {t("accountLoginOrRegister")}
                 </button>
               </div>
             ) : (
@@ -170,7 +170,7 @@ export default function AccountPage() {
           {!isGuest && (
             <SectionCard className="space-y-4">
               <div className="flex items-center justify-between">
-                <h2 className="text-sm font-medium text-foreground">同步状态</h2>
+                <h2 className="text-sm font-medium text-foreground">{t("accountSyncStatus")}</h2>
                 <SyncStatusBadge />
               </div>
 
@@ -186,13 +186,13 @@ export default function AccountPage() {
               >
                 {isSyncingNow ? (
                   <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    同步中…
+                    <Spinner size="sm" />
+                    {t("syncStatusSyncing")}
                   </>
                 ) : (
                   <>
                     <RefreshCw className="h-4 w-4" />
-                    立即同步
+                    {t("accountSyncNow")}
                   </>
                 )}
               </button>
@@ -200,14 +200,14 @@ export default function AccountPage() {
           )}
 
           <SectionCard>
-            <h2 className="mb-4 text-sm font-medium text-foreground">数据</h2>
+            <h2 className="mb-4 text-sm font-medium text-foreground">{t("accountData")}</h2>
             <div className="grid grid-cols-2 gap-4">
-              <StatItem icon={Boxes} label="Objects" value={stats.objects} />
-              <StatItem icon={Brain} label="Memories" value={stats.memories} />
-              <StatItem icon={StickyNote} label="Notes" value={stats.notes} />
-              <StatItem icon={Users} label="Relations" value={stats.relations} />
-              <StatItem icon={Tags} label="Tags" value={stats.tags} />
-              <StatItem icon={LayoutTemplate} label="Templates" value={stats.templates} />
+              <StatItem icon={Boxes} label={t("objectsTitle")} value={stats.objects} />
+              <StatItem icon={Brain} label={t("detailTab_memories")} value={stats.memories} />
+              <StatItem icon={StickyNote} label={t("statNotes")} value={stats.notes} />
+              <StatItem icon={Users} label={t("relations")} value={stats.relations} />
+              <StatItem icon={Tags} label={t("tags")} value={stats.tags} />
+              <StatItem icon={LayoutTemplate} label={t("templatesTitle")} value={stats.templates} />
             </div>
           </SectionCard>
 
@@ -219,7 +219,7 @@ export default function AccountPage() {
               className="flex w-full items-center justify-center gap-2 rounded-xl border border-input bg-background px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-muted disabled:opacity-50"
             >
               <Download className="h-4 w-4" />
-              {isExporting ? "导出中…" : "导出数据"}
+              {isExporting ? t("accountExporting") : t("accountExportData")}
             </button>
 
             {!isGuest && (
@@ -229,12 +229,12 @@ export default function AccountPage() {
                 className="flex w-full items-center justify-center gap-2 rounded-xl border border-destructive/20 bg-destructive/10 px-4 py-2.5 text-sm font-medium text-destructive transition-colors hover:bg-destructive/20"
               >
                 <LogOut className="h-4 w-4" />
-                退出登录
+                {t("accountSignOut")}
               </button>
             )}
           </SectionCard>
         </div>
       </div>
-    </div>
+    </WorkspaceLayout>
   );
 }

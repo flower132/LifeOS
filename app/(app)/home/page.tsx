@@ -11,6 +11,10 @@ import { TodayFocusCard } from "./TodayFocusCard";
 import { SelfSummaryCard } from "./SelfSummaryCard";
 import { useTranslation } from "@/lib/useTranslation";
 import { UserAvatar } from "@/components/user/UserAvatar";
+import { WorkspaceLayout } from "@/components/layout/WorkspaceLayout";
+
+import { EmptyState } from "@/components/ui/EmptyState";
+import { SkeletonBlock } from "@/components/ui/Skeleton";
 
 export default function HomePage() {
   const { objects, loaded: objectsLoaded } = useObjectStore();
@@ -34,22 +38,14 @@ export default function HomePage() {
     .slice(0, 6);
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-background px-6 py-5">
-        <div className="mx-auto flex max-w-5xl items-start justify-between">
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-              {t("homeTitle")}
-            </h1>
-            <p className="mt-1 text-sm text-muted-foreground">
-              {t("homeSubtitle")}
-            </p>
-          </div>
-          <UserAvatar size="md" href="/settings/account" />
-        </div>
-      </header>
-
-      <div className="mx-auto max-w-5xl space-y-8 px-6 py-6">
+    <WorkspaceLayout
+      showBackButton={false}
+      title={t("homeTitle")}
+      subtitle={t("homeSubtitle")}
+      actions={<UserAvatar size="md" href="/settings/account" />}
+      maxWidth="5xl"
+    >
+      <div className="space-y-8">
         <QuickCapture />
 
         <SelfSummaryCard />
@@ -76,10 +72,7 @@ export default function HomePage() {
           {!objectsLoaded ? (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {Array.from({ length: 3 }).map((_, i) => (
-                <div
-                  key={i}
-                  className="h-32 animate-pulse rounded-xl bg-muted"
-                />
+                <SkeletonBlock key={i} className="h-32" />
               ))}
             </div>
           ) : recentObjects.length > 0 ? (
@@ -89,16 +82,19 @@ export default function HomePage() {
               ))}
             </div>
           ) : (
-            <div className="rounded-xl border border-dashed border-border bg-muted p-8 text-center">
-              <p className="text-sm text-muted-foreground">{t("noObjectsYet")}</p>
-              <Link
-                href="/create-object"
-                className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-accent hover:text-accent/90"
-              >
-                <PlusCircle className="h-3.5 w-3.5" />
-                {t("createObject")}
-              </Link>
-            </div>
+            <EmptyState
+              icon={<Users className="h-6 w-6" />}
+              description={t("noObjectsYet")}
+              action={
+                <Link
+                  href="/create-object"
+                  className="inline-flex items-center gap-1.5 rounded-md bg-accent px-4 py-3 text-button font-medium text-accent-foreground transition-colors duration-fast ease-out hover:bg-accent/90"
+                >
+                  <PlusCircle className="h-4 w-4" />
+                  {t("createObject")}
+                </Link>
+              }
+            />
           )}
         </section>
 
@@ -121,10 +117,7 @@ export default function HomePage() {
           {!notesLoaded ? (
             <div className="space-y-4">
               {Array.from({ length: 3 }).map((_, i) => (
-                <div
-                  key={i}
-                  className="h-24 animate-pulse rounded-xl bg-muted"
-                />
+                <SkeletonBlock key={i} className="h-24" />
               ))}
             </div>
           ) : recentNotes.length > 0 ? (
@@ -134,12 +127,13 @@ export default function HomePage() {
               ))}
             </div>
           ) : (
-            <div className="rounded-xl border border-dashed border-border bg-muted p-8 text-center">
-              <p className="text-sm text-muted-foreground">{t("noNotesYet")}</p>
-            </div>
+            <EmptyState
+              icon={<StickyNote className="h-6 w-6" />}
+              description={t("noNotesYet")}
+            />
           )}
         </section>
       </div>
-    </div>
+    </WorkspaceLayout>
   );
 }

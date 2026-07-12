@@ -3,6 +3,7 @@
 import { AdvisorResult } from "@/lib/ai/advisor/types";
 import { EvidenceList } from "./EvidenceList";
 import { useTranslation } from "@/lib/useTranslation";
+import { Card } from "@/components/ui/Card";
 
 interface AdvisorOutputProps {
   result: AdvisorResult;
@@ -23,11 +24,11 @@ export function AdvisorOutput({ result }: AdvisorOutputProps) {
       {sections.map(({ key, title }) => {
         const section = result[key];
         return (
-          <section
+          <Card
             key={key}
-            className="rounded-xl border border-border bg-card p-5"
+            className="space-y-2"
           >
-            <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+            <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
               {title}
             </h3>
             <div className="space-y-2">
@@ -43,7 +44,7 @@ export function AdvisorOutput({ result }: AdvisorOutputProps) {
               )}
             </div>
             <EvidenceList evidence={section.evidence} />
-          </section>
+          </Card>
         );
       })}
     </div>

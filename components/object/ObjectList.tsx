@@ -1,10 +1,12 @@
 import { LifeObject } from "@/lib/types";
 import { ObjectCard } from "./ObjectCard";
 import { VirtualObjectGrid } from "./VirtualObjectGrid";
+import { EmptyState } from "@/components/ui/EmptyState";
 
 interface ObjectListProps {
   objects: LifeObject[];
   emptyMessage?: string;
+  emptyAction?: React.ReactNode;
   mode?: "view" | "manage";
   selectedIds?: Set<string>;
   lockedIds?: Set<string>;
@@ -15,6 +17,7 @@ interface ObjectListProps {
 export function ObjectList({
   objects,
   emptyMessage = "No objects yet.",
+  emptyAction,
   mode = "view",
   selectedIds,
   lockedIds,
@@ -23,9 +26,10 @@ export function ObjectList({
 }: ObjectListProps) {
   if (objects.length === 0) {
     return (
-      <div className="rounded-xl border border-dashed border-border bg-muted p-8 text-center">
-        <p className="text-sm text-muted-foreground">{emptyMessage}</p>
-      </div>
+      <EmptyState
+        description={emptyMessage}
+        action={emptyAction}
+      />
     );
   }
 

@@ -1,5 +1,6 @@
 import { Template } from "@/lib/types";
 import { TemplateCard } from "./TemplateCard";
+import { EmptyState } from "@/components/ui/EmptyState";
 
 interface TemplateListProps {
   templates: Template[];
@@ -28,9 +29,7 @@ export function TemplateList({
         {title}
       </h2>
       {templates.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-border bg-muted p-8 text-center">
-          <p className="text-sm text-muted-foreground">{emptyText}</p>
-        </div>
+        <EmptyState title={emptyText} />
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {templates.map((template) => (

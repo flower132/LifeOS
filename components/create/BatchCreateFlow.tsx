@@ -2,7 +2,8 @@
 
 import { useState, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Sparkles, Loader2, ArrowLeft } from "lucide-react";
+import { Plus, Sparkles, ArrowLeft } from "lucide-react";
+import { Spinner } from "@/components/ui/Spinner";
 import { LifeObjectType, LIFE_OBJECT_TYPES } from "@/lib/types";
 import { DraftObjectList } from "./DraftObjectList";
 import { useTranslation } from "@/lib/useTranslation";
@@ -15,7 +16,7 @@ import {
 import { createObjectsFromDrafts } from "@/lib/create/createObjects";
 import { useLastCreationStore } from "@/stores/lastCreationStore";
 import { useObjectStore } from "@/stores/objectStore";
-import { PageHeader } from "@/components/navigation/PageHeader";
+import { WorkspaceLayout } from "@/components/layout/WorkspaceLayout";
 import { NavigationStepper } from "@/components/navigation/NavigationStepper";
 import { StepTransition } from "@/components/navigation/StepTransition";
 import { ConfirmDialog } from "@/components/navigation/ConfirmDialog";
@@ -132,34 +133,27 @@ export function BatchCreateFlow() {
   const isReview = stepController.currentStepIndex === 1;
 
   return (
-    <div className="min-h-screen bg-background">
-      <PageHeader
-        backHref="/create-object"
-        backLabel={t("createSpaceBackToHub")}
-        title={t("createSpaceBatch")}
-        subtitle={t("createSpaceBatchDescription")}
-        titleGoesHome
-        onTitleClick={handleTitleClick}
-        stepper={
-          <NavigationStepper
-            steps={steps}
-            currentStepIndex={stepController.currentStepIndex}
-          />
-        }
-        maxWidth="3xl"
-      />
-
-      <div className="mx-auto max-w-3xl px-6 py-8">
-        {error && (
-          <div className="mb-6 rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-            {error}
-          </div>
-        )}
-
-        <StepTransition
-          stepKey={stepController.currentStep.key}
-          direction={stepController.direction}
-        >
+    <WorkspaceLayout
+      backHref="/create-object"
+      backLabel={t("createSpaceBackToHub")}
+      title={t("createSpaceBatch")}
+      subtitle={t("createSpaceBatchDescription")}
+      titleGoesHome
+      onTitleClick={handleTitleClick}
+      stepper={
+        <NavigationStepper
+          steps={steps}
+          currentStepIndex={stepController.currentStepIndex}
+        />
+      }
+      maxWidth="3xl"
+      error={error ?? undefined}
+      onRetry={handleCreate}
+    >
+      <StepTransition
+        stepKey={stepController.currentStep.key}
+        direction={stepController.direction}
+      >
           {!isReview ? (
             <div className="space-y-5">
               <div className="space-y-2">
@@ -241,7 +235,7 @@ export function BatchCreateFlow() {
                 >
                   {isCreating ? (
                     <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <Spinner size="sm" />
                       {t("creating")}
                     </>
                   ) : (
@@ -257,7 +251,6 @@ export function BatchCreateFlow() {
             </div>
           )}
         </StepTransition>
-      </div>
 
       <ConfirmDialog
         open={showConfirm}
@@ -268,6 +261,6 @@ export function BatchCreateFlow() {
         onConfirm={handleConfirmDiscard}
         onCancel={() => setShowConfirm(false)}
       />
-    </div>
+    </WorkspaceLayout>
   );
 }

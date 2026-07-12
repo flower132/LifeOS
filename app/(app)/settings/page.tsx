@@ -34,11 +34,13 @@ import {
   clearAllData,
 } from "@/lib/export";
 import { AccountCard } from "@/components/settings/AccountCard";
-import { PageHeader } from "@/components/navigation/PageHeader";
+import { WorkspaceLayout } from "@/components/layout/WorkspaceLayout";
 import { UserAvatar } from "@/components/user/UserAvatar";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { ErrorState } from "@/components/ui/ErrorState";
+import { SkeletonBlock, SkeletonText } from "@/components/ui/Skeleton";
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const pkg = require("@/package.json");
+import pkg from "@/package.json";
 
 export default function SettingsPage() {
   const { t } = useTranslation();
@@ -148,7 +150,6 @@ export default function SettingsPage() {
       await hydrateStores();
       window.location.reload();
     } catch (err) {
-      console.error("Failed to import data:", err);
       setImportError(
         err instanceof Error ? err.message : t("failedToImportData")
       );
@@ -190,35 +191,33 @@ export default function SettingsPage() {
 
   if (!loaded) {
     return (
-      <div className="min-h-screen bg-background px-6 py-10">
-        <div className="mx-auto max-w-2xl space-y-6">
-          <div className="h-8 w-48 animate-pulse rounded bg-muted" />
-          <div className="h-32 animate-pulse rounded-xl bg-muted" />
-        </div>
-      </div>
+      <WorkspaceLayout
+        title={t("settingsTitle")}
+        loading
+        loadingSkeleton={
+          <div className="space-y-6">
+            <SkeletonText className="h-8 w-48" />
+            <SkeletonBlock className="h-32" />
+          </div>
+        }
+      />
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <PageHeader
-        backHref="/home"
-        backLabel={t("backToHome")}
-        title={t("settingsTitle")}
-        subtitle={t("settingsSubtitle")}
-        icon={<Settings className="h-6 w-6 text-foreground" />}
-        actions={<UserAvatar size="md" href="/settings/account" />}
-      />
-
-      <div className="mx-auto max-w-2xl space-y-6 px-6 py-8">
-        {error && (
-          <div className="rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-            {error}
-          </div>
-        )}
+    <WorkspaceLayout
+      backHref="/home"
+      backLabel={t("backToHome")}
+      title={t("settingsTitle")}
+      subtitle={t("settingsSubtitle")}
+      icon={<Settings className="h-6 w-6 text-foreground" />}
+      actions={<UserAvatar size="md" href="/settings/account" />}
+      error={error ?? undefined}
+    >
+      <div className="space-y-6">
 
         {/* Account & Sync */}
-        <SectionCard icon={Database} title="账号与同步">
+        <SectionCard icon={Database} title={t("settingsAccountAndSync")}>
           <AccountCard />
         </SectionCard>
 
@@ -362,9 +361,11 @@ export default function SettingsPage() {
           </div>
 
           {importError && (
-            <div className="mb-4 rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-              {importError}
-            </div>
+            <ErrorState
+              description={importError}
+              onRetry={handleImportClick}
+              retryLabel={t("importJson")}
+            />
           )}
 
           <input
@@ -604,7 +605,7 @@ export default function SettingsPage() {
             <div className="flex items-center justify-between">
               <span className="text-muted-foreground">{t("aiEnabled")}</span>
               <span className="font-medium text-foreground">
-                {aiEnabled ? "On" : "Off"}
+                {aiEnabled ? t("toggleOn") : t("toggleOff")}
               </span>
             </div>
             <div className="flex items-center justify-between">
@@ -612,7 +613,7 @@ export default function SettingsPage() {
                 {t("aiPrivacyMode")}
               </span>
               <span className="font-medium text-foreground">
-                {aiPrivacyMode ? "On" : "Off"}
+                {aiPrivacyMode ? t("toggleOn") : t("toggleOff")}
               </span>
             </div>
           </div>
@@ -639,7 +640,7 @@ export default function SettingsPage() {
             </div>
 
             {logs.length === 0 ? (
-              <p className="text-sm text-muted-foreground">{t("noLogsYet")}</p>
+              <EmptyState description={t("noLogsYet")} />
             ) : (
               <div className="max-h-64 space-y-2 overflow-auto pr-1">
                 {logs.map((log) => (
@@ -705,7 +706,7 @@ export default function SettingsPage() {
           </div>
         </SectionCard>
       </div>
-    </div>
+    </WorkspaceLayout>
   );
 }
 

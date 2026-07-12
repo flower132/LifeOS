@@ -4,15 +4,19 @@ import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import { SyncStatusBadge } from "./SyncStatusBadge";
 import { useSyncStore } from "@/stores/syncStore";
+import { useTranslation } from "@/lib/useTranslation";
 import { UserAvatar, UserAvatarFallback } from "@/components/user/UserAvatar";
 
 export function AccountCard() {
+  const { t } = useTranslation();
   const profile = useSyncStore((s) => s.profile);
 
   const displayText = profile
     ? profile.displayName || profile.email
-    : "账号与同步";
-  const subText = profile ? "管理账号、同步状态与数据" : "登录以同步你的数据";
+    : t("accountCardTitle");
+  const subText = profile
+    ? t("accountCardSubtitle")
+    : t("accountCardLoginPrompt");
 
   return (
     <Link

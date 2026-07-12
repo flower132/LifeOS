@@ -18,7 +18,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   language: "en",
   theme: "light",
   themeColor: "light",
-  accentColor: "blue",
+  accentColor: "purple",
   dateFormat: "YYYY-MM-DD",
   timeFormat: "24h",
   aiEnabled: true,
@@ -68,7 +68,7 @@ function coerceThemeColor(value: string): AppSettings["themeColor"] {
 
 function coerceAccentColor(value: string): AccentColor {
   if (value === "green" || value === "purple" || value === "orange") return value;
-  return "blue";
+  return "purple";
 }
 
 function coerceDateFormat(value: string): DateFormat {

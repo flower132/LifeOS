@@ -3,7 +3,8 @@
 import { LifeObject, ObjectAISuggestion } from "@/lib/types";
 import { useTranslation } from "@/lib/useTranslation";
 import { useObjectStore } from "@/stores/objectStore";
-import { Check, X, RotateCcw } from "lucide-react";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { AISuggestionCard } from "@/components/ai/cards";
 
 interface AISuggestionsTabProps {
   object: LifeObject;
@@ -20,10 +21,7 @@ export function AISuggestionsTab({ object }: AISuggestionsTabProps) {
     (s) => s.status === "dismissed"
   );
 
-  const updateSuggestionStatus = (
-    id: string,
-    status: ObjectAISuggestion["status"]
-  ) => {
+  const updateStatus = (id: string, status: ObjectAISuggestion["status"]) => {
     const next = suggestions.map((s) =>
       s.id === id
         ? {
@@ -39,9 +37,7 @@ export function AISuggestionsTab({ object }: AISuggestionsTabProps) {
 
   if (suggestions.length === 0) {
     return (
-      <div className="rounded-xl border border-border bg-card p-6 text-center text-sm text-muted-foreground">
-        {t("aiSuggestionsEmpty")}
-      </div>
+      <EmptyState description={t("aiSuggestionsEmpty")} />
     );
   }
 
@@ -51,19 +47,8 @@ export function AISuggestionsTab({ object }: AISuggestionsTabProps) {
         title={t("aiSuggestionsActive") ?? "Active"}
         suggestions={activeSuggestions}
         emptyText={t("aiNoActiveSuggestions") ?? "No active suggestions."}
-        actions={[
-          {
-            status: "done",
-            icon: Check,
-            label: t("markDone") ?? "Done",
-          },
-          {
-            status: "dismissed",
-            icon: X,
-            label: t("dismiss") ?? "Dismiss",
-          },
-        ]}
-        onAction={updateSuggestionStatus}
+        onDone={(id) => updateStatus(id, "done")}
+        onDismiss={(id) => updateStatus(id, "dismissed")}
       />
 
       {doneSuggestions.length > 0 && (
@@ -71,14 +56,7 @@ export function AISuggestionsTab({ object }: AISuggestionsTabProps) {
           title={t("aiSuggestionsDone") ?? "Done"}
           suggestions={doneSuggestions}
           emptyText=""
-          actions={[
-            {
-              status: "active",
-              icon: RotateCcw,
-              label: t("reactivate") ?? "Reactivate",
-            },
-          ]}
-          onAction={updateSuggestionStatus}
+          onReactivate={(id) => updateStatus(id, "active")}
           dimmed
         />
       )}
@@ -88,14 +66,7 @@ export function AISuggestionsTab({ object }: AISuggestionsTabProps) {
           title={t("aiSuggestionsDismissed") ?? "Dismissed"}
           suggestions={dismissedSuggestions}
           emptyText=""
-          actions={[
-            {
-              status: "active",
-              icon: RotateCcw,
-              label: t("reactivate") ?? "Reactivate",
-            },
-          ]}
-          onAction={updateSuggestionStatus}
+          onReactivate={(id) => updateStatus(id, "active")}
           dimmed
         />
       )}
@@ -107,8 +78,9 @@ interface SuggestionSectionProps {
   title: string;
   suggestions: ObjectAISuggestion[];
   emptyText: string;
-  actions: { status: ObjectAISuggestion["status"]; icon: React.ComponentType<{ className?: string }>; label: string }[];
-  onAction: (id: string, status: ObjectAISuggestion["status"]) => void;
+  onDone?: (id: string) => void;
+  onDismiss?: (id: string) => void;
+  onReactivate?: (id: string) => void;
   dimmed?: boolean;
 }
 
@@ -116,8 +88,9 @@ function SuggestionSection({
   title,
   suggestions,
   emptyText,
-  actions,
-  onAction,
+  onDone,
+  onDismiss,
+  onReactivate,
   dimmed,
 }: SuggestionSectionProps) {
   return (
@@ -132,85 +105,17 @@ function SuggestionSection({
       ) : (
         <div className="space-y-3">
           {suggestions.map((suggestion) => (
-            <SuggestionCard
+            <AISuggestionCard
               key={suggestion.id}
               suggestion={suggestion}
-              actions={actions}
-              onAction={onAction}
+              onDone={onDone}
+              onDismiss={onDismiss}
+              onReactivate={onReactivate}
               dimmed={dimmed}
             />
           ))}
         </div>
       )}
     </section>
-  );
-}
-
-interface SuggestionCardProps {
-  suggestion: ObjectAISuggestion;
-  actions: { status: ObjectAISuggestion["status"]; icon: React.ComponentType<{ className?: string }>; label: string }[];
-  onAction: (id: string, status: ObjectAISuggestion["status"]) => void;
-  dimmed?: boolean;
-}
-
-function SuggestionCard({
-  suggestion,
-  actions,
-  onAction,
-  dimmed,
-}: SuggestionCardProps) {
-  const { t } = useTranslation();
-
-  const priorityClass =
-    suggestion.priority === "high"
-      ? "bg-destructive/10 text-destructive"
-      : suggestion.priority === "medium"
-      ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300"
-      : "bg-muted text-muted-foreground";
-
-  const priorityLabel = t(
-    `aiPriority${suggestion.priority.charAt(0).toUpperCase() + suggestion.priority.slice(1)}`
-  );
-
-  return (
-    <div
-      className={`rounded-xl border border-border bg-card p-4 ${
-        dimmed ? "opacity-60" : ""
-      }`}
-    >
-      <div className="mb-2 flex items-center justify-between">
-        <span
-          className={`rounded-full px-2 py-0.5 text-xs font-medium ${priorityClass}`}
-        >
-          {priorityLabel}
-        </span>
-        <div className="flex items-center gap-1">
-          {actions.map((action) => {
-            const Icon = action.icon;
-            return (
-              <button
-                key={action.status}
-                type="button"
-                onClick={() => onAction(suggestion.id, action.status)}
-                className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent/10 hover:text-accent"
-                title={action.label}
-              >
-                <Icon className="h-4 w-4" />
-              </button>
-            );
-          })}
-        </div>
-      </div>
-      <h4 className="text-sm font-medium text-foreground">{suggestion.title}</h4>
-      <p className="mt-1 text-sm text-muted-foreground">
-        {suggestion.description}
-      </p>
-      {suggestion.completedAt && (
-        <p className="mt-2 text-xs text-muted-foreground">
-          {t("completedAt") ?? "Completed"}:{" "}
-          {new Date(suggestion.completedAt).toLocaleDateString()}
-        </p>
-      )}
-    </div>
   );
 }

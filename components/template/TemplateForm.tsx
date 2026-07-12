@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Template, TemplateCategory, TEMPLATE_CATEGORIES } from "@/lib/types";
 import { useTranslation } from "@/lib/useTranslation";
+import { ErrorState } from "@/components/ui/ErrorState";
 
 interface TemplateFormProps {
   initial?: Template;
@@ -30,8 +31,8 @@ export function TemplateForm({
   const [content, setContent] = useState(initial?.content ?? "");
   const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = (e?: React.FormEvent) => {
+    e?.preventDefault();
     const trimmedName = name.trim();
     if (!trimmedName) {
       setError(t("objectNameRequired"));
@@ -50,9 +51,7 @@ export function TemplateForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       {error && (
-        <div className="rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-          {error}
-        </div>
+        <ErrorState description={error} onRetry={handleSubmit} />
       )}
 
       <div className="space-y-2">

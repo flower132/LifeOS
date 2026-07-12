@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Sparkles, Loader2 } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import { useTranslation } from "@/lib/useTranslation";
+import { Spinner } from "@/components/ui/Spinner";
 
 interface AdvisorInputProps {
   onSubmit: (question: string) => void | Promise<void>;
@@ -43,7 +44,7 @@ export function AdvisorInput({ onSubmit, isLoading = false }: AdvisorInputProps)
       >
         {isLoading ? (
           <>
-            <Loader2 className="h-4 w-4 animate-spin" />
+            <Spinner size="sm" />
             {t("advisorGenerating")}
           </>
         ) : (

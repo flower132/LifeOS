@@ -2,9 +2,10 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, CheckCircle2 } from "lucide-react";
+import { CheckCircle2 } from "lucide-react";
 import { MigrationDialog } from "@/components/sync/MigrationDialog";
 import { ConflictResolutionDialog } from "@/components/sync/ConflictResolutionDialog";
+import { PageLoader } from "@/components/ui/PageLoader";
 import {
   checkMigration,
   migrateLocalToRemote,
@@ -95,25 +96,11 @@ export default function MigrationPage() {
   }, [router, handlePullRemote]);
 
   if (!result) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background px-4">
-        <div className="text-center">
-          <Loader2 className="mx-auto h-8 w-8 animate-spin text-accent" />
-          <p className="mt-4 text-sm text-muted-foreground">正在检测数据…</p>
-        </div>
-      </div>
-    );
+    return <PageLoader message="正在检测数据…" />;
   }
 
   if (isProcessing) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background px-4">
-        <div className="text-center">
-          <Loader2 className="mx-auto h-8 w-8 animate-spin text-accent" />
-          <p className="mt-4 text-sm text-muted-foreground">正在同步数据…</p>
-        </div>
-      </div>
-    );
+    return <PageLoader message="正在同步数据…" />;
   }
 
   if (isComplete) {
@@ -183,9 +170,5 @@ export default function MigrationPage() {
   }
 
   // Fallback: redirect home
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <Loader2 className="h-8 w-8 animate-spin text-accent" />
-    </div>
-  );
+  return <PageLoader />;
 }

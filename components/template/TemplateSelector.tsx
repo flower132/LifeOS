@@ -6,6 +6,8 @@ import { useTemplateStore } from "@/stores/templateStore";
 import { useTranslation } from "@/lib/useTranslation";
 import { TemplateCard } from "./TemplateCard";
 import { FileText } from "lucide-react";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { SkeletonText, SkeletonBlock } from "@/components/ui/Skeleton";
 
 type SelectorTab = "official" | "my" | "recent" | "blank";
 
@@ -72,13 +74,10 @@ export function TemplateSelector({ category, onSelect }: TemplateSelectorProps) 
   if (!loaded) {
     return (
       <div className="space-y-4">
-        <div className="h-8 w-48 animate-pulse rounded bg-muted" />
+        <SkeletonText className="h-8 w-48" />
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {Array.from({ length: 2 }).map((_, i) => (
-            <div
-              key={i}
-              className="h-32 animate-pulse rounded-xl bg-muted"
-            />
+            <SkeletonBlock key={i} className="h-32" />
           ))}
         </div>
       </div>
@@ -119,22 +118,28 @@ export function TemplateSelector({ category, onSelect }: TemplateSelectorProps) 
       )}
 
       {activeTab === "blank" ? (
-        <button
-          type="button"
-          onClick={() => onSelect(null)}
-          className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-border bg-muted p-8 text-sm font-medium text-foreground hover:bg-accent/5"
-        >
-          <FileText className="h-4 w-4" />
-          {t("blankTemplate")}
-        </button>
+        <EmptyState
+          icon={<FileText className="h-6 w-6" />}
+          description={t("blankTemplate")}
+          action={
+            <button
+              type="button"
+              onClick={() => onSelect(null)}
+              className="inline-flex items-center gap-1.5 rounded-md bg-accent px-4 py-3 text-button font-medium text-accent-foreground transition-colors duration-fast ease-out hover:bg-accent/90"
+            >
+              <FileText className="h-4 w-4" />
+              {t("blankTemplate")}
+            </button>
+          }
+        />
       ) : filtered.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-border bg-muted p-8 text-center">
-          <p className="text-sm text-muted-foreground">
-            {activeTab === "official" && t("noDefaultTemplates")}
-            {activeTab === "my" && t("noCustomTemplates")}
-            {activeTab === "recent" && t("noRecentTemplates")}
-          </p>
-        </div>
+        <EmptyState description={
+          activeTab === "official"
+            ? t("noDefaultTemplates")
+            : activeTab === "my"
+            ? t("noCustomTemplates")
+            : t("noRecentTemplates")
+        } />
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {filtered.map((template) => (

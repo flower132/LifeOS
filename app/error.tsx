@@ -3,6 +3,7 @@
 import { RotateCcw, Home } from "lucide-react";
 import Link from "next/link";
 import { useTranslation } from "@/lib/useTranslation";
+import { ErrorState } from "@/components/ui/ErrorState";
 
 export default function GlobalError({
   error,
@@ -20,9 +21,7 @@ export default function GlobalError({
         <p className="text-sm text-muted-foreground">{t("errorDescription")}</p>
         <p className="text-xs text-muted-foreground">{t("errorDataSafe")}</p>
         {error?.message && (
-          <div className="rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 text-left text-xs text-destructive">
-            {error.message}
-          </div>
+          <ErrorState description={error.message} />
         )}
         <div className="flex items-center justify-center gap-3 pt-2">
           <Link

@@ -4,6 +4,7 @@ import { useCallback, useState } from "react";
 import { Upload, X } from "lucide-react";
 import { AIImageInput } from "@/lib/ai/types";
 import { useTranslation } from "@/lib/useTranslation";
+import { ErrorState } from "@/components/ui/ErrorState";
 
 export interface AIImageUploaderProps {
   images: AIImageInput[];
@@ -85,9 +86,7 @@ export function AIImageUploader({
   return (
     <div className="space-y-3">
       {error && (
-        <div className="rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-          {error}
-        </div>
+        <ErrorState description={error} />
       )}
 
       <div className="flex flex-wrap gap-3">

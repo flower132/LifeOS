@@ -2,14 +2,15 @@
 
 import { useState, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { Sparkles, Loader2, ArrowLeft } from "lucide-react";
+import { Sparkles, ArrowLeft } from "lucide-react";
+import { Spinner } from "@/components/ui/Spinner";
 import { LifeObjectType, LIFE_OBJECT_TYPES } from "@/lib/types";
 import { FilePicker, SelectedFile } from "./FilePicker";
 import { DraftObjectList } from "./DraftObjectList";
 import { useTranslation } from "@/lib/useTranslation";
 import { useObjectStore } from "@/stores/objectStore";
 import { useLastCreationStore } from "@/stores/lastCreationStore";
-import { PageHeader } from "@/components/navigation/PageHeader";
+import { WorkspaceLayout } from "@/components/layout/WorkspaceLayout";
 import { NavigationStepper } from "@/components/navigation/NavigationStepper";
 import { StepTransition } from "@/components/navigation/StepTransition";
 import { ConfirmDialog } from "@/components/navigation/ConfirmDialog";
@@ -18,6 +19,7 @@ import { parseImportFile, ImportParseError } from "@/lib/create/importParser";
 import { classifyImportRecords } from "@/lib/ai/objectIntelligence/importClassifier";
 import { CreationDraft, findDuplicateByName } from "@/lib/create/draftUtils";
 import { createObjectsFromDrafts } from "@/lib/create/createObjects";
+import { SkeletonText } from "@/components/ui/Skeleton";
 import {
   buildDraftsFromRecords,
   updateDraftsDefaultType,
@@ -204,41 +206,34 @@ export function FileImportFlow() {
   const isReview = stepController.currentStepIndex === 1;
 
   return (
-    <div className="min-h-screen bg-background">
-      <PageHeader
-        backHref="/create-object"
-        backLabel={t("createSpaceBackToHub")}
-        title={t("createSpaceFileImportUploadTitle")}
-        subtitle={t("createSpaceFileImportUploadSubtitle")}
-        titleGoesHome
-        onTitleClick={handleTitleClick}
-        stepper={
-          <NavigationStepper
-            steps={steps}
-            currentStepIndex={stepController.currentStepIndex}
-          />
-        }
-        maxWidth="3xl"
-      />
-
-      <div className="mx-auto max-w-3xl px-6 py-8">
-        {error && (
-          <div className="mb-6 rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-            {error}
-          </div>
-        )}
-
-        <StepTransition
-          stepKey={stepController.currentStep.key}
-          direction={stepController.direction}
-        >
+    <WorkspaceLayout
+      backHref="/create-object"
+      backLabel={t("createSpaceBackToHub")}
+      title={t("createSpaceFileImportUploadTitle")}
+      subtitle={t("createSpaceFileImportUploadSubtitle")}
+      titleGoesHome
+      onTitleClick={handleTitleClick}
+      stepper={
+        <NavigationStepper
+          steps={steps}
+          currentStepIndex={stepController.currentStepIndex}
+        />
+      }
+      maxWidth="3xl"
+      error={error ?? undefined}
+      onRetry={file ? handleCreate : undefined}
+    >
+      <StepTransition
+        stepKey={stepController.currentStep.key}
+        direction={stepController.direction}
+      >
           {!isReview ? (
             <div className="space-y-6">
               {isLoading ? (
                 <div className="space-y-3 rounded-xl border border-border bg-card p-5">
-                  <div className="h-4 w-1/3 animate-pulse rounded bg-muted" />
-                  <div className="h-4 w-2/3 animate-pulse rounded bg-muted" />
-                  <div className="h-4 w-1/2 animate-pulse rounded bg-muted" />
+                  <SkeletonText className="w-1/3" />
+                  <SkeletonText className="w-2/3" />
+                  <SkeletonText className="w-1/2" />
                 </div>
               ) : (
                 <FilePicker onFileSelect={handleFileSelect} disabled={isLoading} />
@@ -310,7 +305,7 @@ export function FileImportFlow() {
                   >
                     {isCreating ? (
                       <>
-                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <Spinner size="sm" />
                         {t("creating")}
                       </>
                     ) : (
@@ -327,7 +322,6 @@ export function FileImportFlow() {
             </div>
           )}
         </StepTransition>
-      </div>
 
       <ConfirmDialog
         open={showConfirm}
@@ -338,6 +332,6 @@ export function FileImportFlow() {
         onConfirm={handleConfirmDiscard}
         onCancel={() => setShowConfirm(false)}
       />
-    </div>
+    </WorkspaceLayout>
   );
 }

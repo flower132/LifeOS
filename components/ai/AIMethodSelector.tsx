@@ -4,6 +4,7 @@ import { PenLine, Sparkles } from "lucide-react";
 import { LifeObjectType } from "@/lib/types";
 import { useTranslation } from "@/lib/useTranslation";
 import { ObjectTypeBadge } from "@/components/object/ObjectTypeBadge";
+import { Card } from "@/components/ui/Card";
 
 interface AIMethodSelectorProps {
   type: LifeObjectType;
@@ -16,12 +17,12 @@ export function AIMethodSelector({ type, onManual, onAI }: AIMethodSelectorProps
 
   return (
     <div className="space-y-6">
-      <div className="rounded-xl border border-border bg-card p-5 text-center">
+      <Card className="text-center">
         <p className="text-sm text-muted-foreground">{t("chooseType")}</p>
         <div className="mt-2 flex items-center justify-center gap-2">
           <ObjectTypeBadge type={type} />
         </div>
-      </div>
+      </Card>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <button

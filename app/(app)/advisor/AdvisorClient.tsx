@@ -6,10 +6,13 @@ import { Compass } from "lucide-react";
 import { useObjectStore } from "@/stores/objectStore";
 import { useNoteStore } from "@/stores/noteStore";
 import { useRelationStore } from "@/stores/relationStore";
-import { PageHeader } from "@/components/navigation/PageHeader";
+import { WorkspaceLayout } from "@/components/layout/WorkspaceLayout";
 import { AdvisorInput } from "@/components/advisor/AdvisorInput";
 import { AdvisorOutput } from "@/components/advisor/AdvisorOutput";
 import { useTranslation } from "@/lib/useTranslation";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { ErrorState } from "@/components/ui/ErrorState";
+import { SkeletonBlock } from "@/components/ui/Skeleton";
 import {
   AdvisorContext,
   AdvisorResult,
@@ -31,6 +34,7 @@ export function AdvisorClient({ objectId }: AdvisorClientProps) {
   const [result, setResult] = useState<AdvisorResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [lastQuestion, setLastQuestion] = useState("");
 
   const object = useMemo(() => {
     if (objectId) {
@@ -68,6 +72,7 @@ export function AdvisorClient({ objectId }: AdvisorClientProps) {
     if (!context) return;
     setError(null);
     setIsLoading(true);
+    setLastQuestion(question);
     try {
       const res = await advisorService.ask(context, question);
       setResult(res);
@@ -81,35 +86,37 @@ export function AdvisorClient({ objectId }: AdvisorClientProps) {
   const isReady = objectsLoaded && notesLoaded;
 
   return (
-    <div className="min-h-screen bg-background">
-      <PageHeader
-        backHref={object ? `/objects/${object.id}` : "/home"}
-        backLabel={object ? t("backToObject") : t("backToHome")}
-        title={t("advisorTitle")}
-        subtitle={t("advisorSubtitle")}
-        icon={
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted">
-            <Compass className="h-5 w-5 text-foreground" />
-          </div>
-        }
-      />
-
-      <div className="mx-auto max-w-3xl space-y-6 px-6 py-8">
+    <WorkspaceLayout
+      backHref={object ? `/objects/${object.id}` : "/home"}
+      backLabel={object ? t("backToObject") : t("backToHome")}
+      title={t("advisorTitle")}
+      subtitle={t("advisorSubtitle")}
+      icon={
+        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted">
+          <Compass className="h-5 w-5 text-foreground" />
+        </div>
+      }
+      maxWidth="3xl"
+    >
+      <div className="space-y-6">
         {!isReady ? (
           <div className="space-y-4">
-            <div className="h-24 animate-pulse rounded-xl bg-muted" />
-            <div className="h-32 animate-pulse rounded-xl bg-muted" />
+            <SkeletonBlock className="h-24" />
+            <SkeletonBlock className="h-32" />
           </div>
         ) : !object || !context ? (
-          <div className="rounded-xl border border-dashed border-border bg-card p-8 text-center">
-            <p className="text-sm text-muted-foreground">{t("advisorNoObject")}</p>
-            <Link
-              href="/create-object"
-              className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-accent hover:text-accent/90"
-            >
-              {t("createObject")}
-            </Link>
-          </div>
+          <EmptyState
+            icon={<Compass className="h-6 w-6" />}
+            description={t("advisorNoObject")}
+            action={
+              <Link
+                href="/create-object"
+                className="inline-flex items-center gap-1.5 rounded-md bg-accent px-4 py-3 text-button font-medium text-accent-foreground transition-colors duration-fast ease-out hover:bg-accent/90"
+              >
+                {t("createObject")}
+              </Link>
+            }
+          />
         ) : (
           <>
             <div className="flex items-center gap-3 rounded-xl border border-border bg-card p-4">
@@ -120,25 +127,25 @@ export function AdvisorClient({ objectId }: AdvisorClientProps) {
             </div>
 
             {error && (
-              <div className="rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-                {error}
-              </div>
+              <ErrorState
+                description={error}
+                onRetry={() => {
+                  if (!lastQuestion) return;
+                  void handleSubmit(lastQuestion);
+                }}
+              />
             )}
 
             <AdvisorInput onSubmit={handleSubmit} isLoading={isLoading} />
 
             {!result && !isLoading && (
-              <div className="rounded-xl border border-dashed border-border bg-card p-8 text-center">
-                <p className="text-sm text-muted-foreground">
-                  {t("advisorEmptyState")}
-                </p>
-              </div>
+              <EmptyState description={t("advisorEmptyState")} />
             )}
 
             {result && <AdvisorOutput result={result} />}
           </>
         )}
       </div>
-    </div>
+    </WorkspaceLayout>
   );
 }

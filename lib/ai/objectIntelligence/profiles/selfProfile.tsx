@@ -10,6 +10,9 @@ import {
   SelfAIProfile,
 } from "@/lib/types";
 import { AIAnalysisInput, AIProfileDefinition } from "../types";
+import { Card } from "@/components/ui/Card";
+import { LabelValueCard } from "@/components/ui/LabelValueCard";
+import { Badge } from "@/components/ui/Badge";
 
 const LifePatternSchema: z.ZodType<LifePattern> = z.object({
   repeatedTopics: z.array(z.string()).default([]),
@@ -351,6 +354,143 @@ function SelfAIProfileEditor({
   );
 }
 
+function SelfAIProfileReader({ profile }: { profile: SelfAIProfile }) {
+  const { t } = useTranslation();
+
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <LabelValueCard label={t("aiSelfStrengths")}>
+          {profile.strengths.length > 0 ? (
+            <ul className="flex flex-wrap gap-2">
+              {profile.strengths.map((item, i) => (
+                <li key={i}>
+                  <Badge variant="accent">{item}</Badge>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            t("aiNotAvailable")
+          )}
+        </LabelValueCard>
+        <LabelValueCard label={t("aiSelfWeaknesses")}>
+          {profile.weaknesses.length > 0 ? (
+            <ul className="flex flex-wrap gap-2">
+              {profile.weaknesses.map((item, i) => (
+                <li key={i}>
+                  <Badge variant="accent">{item}</Badge>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            t("aiNotAvailable")
+          )}
+        </LabelValueCard>
+        <LabelValueCard label={t("aiSelfGrowthAreas")}>
+          {profile.growthAreas.length > 0 ? (
+            <ul className="flex flex-wrap gap-2">
+              {profile.growthAreas.map((item, i) => (
+                <li key={i}>
+                  <Badge variant="accent">{item}</Badge>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            t("aiNotAvailable")
+          )}
+        </LabelValueCard>
+      </div>
+
+      <LabelValueCard label={t("aiSelfCurrentFocus")}>
+        {profile.currentFocus || t("aiNotAvailable")}
+      </LabelValueCard>
+
+      <LabelValueCard label={t("selfUnderstanding")}>
+        {profile.understandingSummary || t("aiNotAvailable")}
+      </LabelValueCard>
+
+      <LabelValueCard label={t("selfGrowthThemes")}>
+        {profile.growthThemes.length > 0 ? (
+          <ul className="flex flex-wrap gap-2">
+            {profile.growthThemes.map((theme, i) => (
+              <li
+                key={i}
+                className="rounded-full bg-accent/10 px-3 py-1 text-sm text-accent"
+              >
+                {theme}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          t("aiNotAvailable")
+        )}
+      </LabelValueCard>
+
+      <LabelValueCard label={t("selfReflectionSeeds")}>
+        {profile.reflectionSeeds.length > 0 ? (
+          <ul className="list-disc space-y-1 pl-4 text-sm text-foreground">
+            {profile.reflectionSeeds.map((seed, i) => (
+              <li key={i}>{seed}</li>
+            ))}
+          </ul>
+        ) : (
+          t("aiNotAvailable")
+        )}
+      </LabelValueCard>
+
+      <Card>
+        <h4 className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          {t("selfLifePattern")}
+        </h4>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <LifePatternMiniCard label={t("lifePatternRepeatedTopics")}>
+            {profile.lifePattern.repeatedTopics}
+          </LifePatternMiniCard>
+          <LifePatternMiniCard label={t("lifePatternGoalChanges")}>
+            {profile.lifePattern.goalChanges}
+          </LifePatternMiniCard>
+          <LifePatternMiniCard label={t("lifePatternEmotionalTrend")}>
+            {profile.lifePattern.emotionalTrend ? [profile.lifePattern.emotionalTrend] : []}
+          </LifePatternMiniCard>
+          <LifePatternMiniCard label={t("lifePatternRelationshipChanges")}>
+            {profile.lifePattern.relationshipChanges}
+          </LifePatternMiniCard>
+          <LifePatternMiniCard label={t("lifePatternLearningDirections")}>
+            {profile.lifePattern.learningDirections}
+          </LifePatternMiniCard>
+          <LifePatternMiniCard label={t("lifePatternValueEvolution")}>
+            {profile.lifePattern.valueEvolution}
+          </LifePatternMiniCard>
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+function LifePatternMiniCard({
+  label,
+  children,
+}: {
+  label: string;
+  children: string[];
+}) {
+  const { t } = useTranslation();
+  return (
+    <div className="space-y-1">
+      <p className="text-xs font-medium text-muted-foreground">{label}</p>
+      {children.length > 0 ? (
+        <ul className="list-disc space-y-0.5 pl-4 text-sm text-foreground">
+          {children.map((item, i) => (
+            <li key={i}>{item}</li>
+          ))}
+        </ul>
+      ) : (
+        <p className="text-sm text-muted-foreground">{t("aiNotAvailable")}</p>
+      )}
+    </div>
+  );
+}
+
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="space-y-2">
@@ -372,4 +512,5 @@ export const selfProfileDefinition: AIProfileDefinition<SelfAIProfile> = {
   mapSuggestions: mapSelfSuggestions,
   mapMemories: mapSelfMemories,
   ProfileRenderer: SelfAIProfileEditor,
+  ProfileReader: SelfAIProfileReader,
 };

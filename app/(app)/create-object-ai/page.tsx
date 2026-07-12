@@ -2,11 +2,11 @@
 
 import { useState, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Loader2 } from "lucide-react";
+import { Spinner } from "@/components/ui/Spinner";
 import { AIInputWizard } from "@/components/ai/AIInputWizard";
 import { AIReviewPanel } from "@/components/ai/AIReviewPanel";
 import { ObjectTypeConfirmation } from "@/components/ai/ObjectTypeConfirmation";
-import { PageHeader } from "@/components/navigation/PageHeader";
+import { WorkspaceLayout } from "@/components/layout/WorkspaceLayout";
 import { NavigationStepper } from "@/components/navigation/NavigationStepper";
 import { StepTransition } from "@/components/navigation/StepTransition";
 import { ConfirmDialog } from "@/components/navigation/ConfirmDialog";
@@ -176,101 +176,94 @@ export default function CreateObjectAIPage() {
 
   if (!isAIProfileSupported(objectType)) {
     return (
-      <div className="min-h-screen bg-background px-6 py-10">
-        <div className="mx-auto max-w-3xl text-center">
-          <h1 className="text-xl font-semibold text-foreground">{t("aiTypeNotSupported")}</h1>
-          <div className="mt-4 flex justify-center">
-            <BackButton href="/create-object" label={t("backToCreateObject")} />
-          </div>
+      <WorkspaceLayout
+        title={t("aiTypeNotSupported")}
+        maxWidth="3xl"
+        error={t("aiTypeNotSupported")}
+      >
+        <div className="flex justify-center">
+          <BackButton href="/create-object" label={t("backToCreateObject")} />
         </div>
-      </div>
+      </WorkspaceLayout>
     );
   }
 
   const typeLabel = t(objectType);
 
   return (
-    <div className="min-h-screen bg-background">
-      <PageHeader
-        backHref="/create-object"
-        backLabel={t("backToCreateObject")}
-        title={t("createObjectAITitle", { type: typeLabel })}
-        subtitle={
-          step === "input"
-            ? t(`createObjectAISubtitle_${objectType}`)
-            : t(`reviewObjectAISubtitle_${objectType}`)
-        }
-        titleGoesHome
-        onTitleClick={handleTitleClick}
-        stepper={
-          <NavigationStepper
-            steps={steps}
-            currentStepIndex={stepController.currentStepIndex}
-          />
-        }
-        maxWidth="3xl"
-      />
+    <WorkspaceLayout
+      backHref="/create-object"
+      backLabel={t("backToCreateObject")}
+      title={t("createObjectAITitle", { type: typeLabel })}
+      subtitle={
+        step === "input"
+          ? t(`createObjectAISubtitle_${objectType}`)
+          : t(`reviewObjectAISubtitle_${objectType}`)
+      }
+      titleGoesHome
+      onTitleClick={handleTitleClick}
+      stepper={
+        <NavigationStepper
+          steps={steps}
+          currentStepIndex={stepController.currentStepIndex}
+        />
+      }
+      maxWidth="3xl"
+      error={error ?? undefined}
+      onRetry={handleReanalyze}
+    >
+      <StepTransition
+        stepKey={step}
+        direction={stepController.direction}
+      >
+        {step === "input" ? (
+          <div className="space-y-6">
+            <ObjectTypeConfirmation type={objectType} />
+            <AIInputWizard
+              defaultText={lastInput.textInput}
+              onAnalyze={handleAnalyze}
+              isAnalyzing={isAnalyzing}
+            />
 
-      <div className="mx-auto max-w-3xl px-6 py-8">
-        {error && (
-          <div className="mb-6 rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-            {error}
+            {(isAnalyzing || analysisMeta) && (
+              <div className="rounded-lg border border-accent/20 bg-accent/5 px-4 py-3 text-sm text-foreground">
+                {isAnalyzing ? (
+                  <div className="flex items-center gap-2">
+                    <Spinner size="sm" />
+                    <span>
+                      {t("aiAnalyzingWithProvider", {
+                        provider: analysisMeta?.provider ?? "",
+                        model: analysisMeta?.model ?? "",
+                      })}
+                    </span>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-between text-muted-foreground">
+                    <span>
+                      {t("aiAnalysisCompleted")}: {analysisMeta?.provider} / {analysisMeta?.model}
+                    </span>
+                    {analysisMeta?.durationMs && (
+                      <span>{analysisMeta.durationMs}ms</span>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        ) : result ? (
+          <AIReviewPanel
+            result={result}
+            onChange={setResult}
+            onConfirm={handleConfirm}
+            onReanalyze={handleReanalyze}
+            isCreating={isCreating}
+          />
+        ) : (
+          <div className="flex items-center justify-center py-12">
+            <Spinner size="md" />
           </div>
         )}
-
-        <StepTransition
-          stepKey={step}
-          direction={stepController.direction}
-        >
-          {step === "input" ? (
-            <div className="space-y-6">
-              <ObjectTypeConfirmation type={objectType} />
-              <AIInputWizard
-                defaultText={lastInput.textInput}
-                onAnalyze={handleAnalyze}
-                isAnalyzing={isAnalyzing}
-              />
-
-              {(isAnalyzing || analysisMeta) && (
-                <div className="rounded-lg border border-accent/20 bg-accent/5 px-4 py-3 text-sm text-foreground">
-                  {isAnalyzing ? (
-                    <div className="flex items-center gap-2">
-                      <Loader2 className="h-4 w-4 animate-spin text-accent" />
-                      <span>
-                        {t("aiAnalyzingWithProvider", {
-                          provider: analysisMeta?.provider ?? "",
-                          model: analysisMeta?.model ?? "",
-                        })}
-                      </span>
-                    </div>
-                  ) : (
-                    <div className="flex items-center justify-between text-muted-foreground">
-                      <span>
-                        {t("aiAnalysisCompleted")}: {analysisMeta?.provider} / {analysisMeta?.model}
-                      </span>
-                      {analysisMeta?.durationMs && (
-                        <span>{analysisMeta.durationMs}ms</span>
-                      )}
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          ) : result ? (
-            <AIReviewPanel
-              result={result}
-              onChange={setResult}
-              onConfirm={handleConfirm}
-              onReanalyze={handleReanalyze}
-              isCreating={isCreating}
-            />
-          ) : (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-6 w-6 animate-spin text-accent" />
-            </div>
-          )}
-        </StepTransition>
-      </div>
+      </StepTransition>
 
       <ConfirmDialog
         open={showConfirm}
@@ -281,6 +274,6 @@ export default function CreateObjectAIPage() {
         onConfirm={handleConfirmDiscard}
         onCancel={() => setShowConfirm(false)}
       />
-    </div>
+    </WorkspaceLayout>
   );
 }

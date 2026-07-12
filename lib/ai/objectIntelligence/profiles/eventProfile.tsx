@@ -9,6 +9,8 @@ import {
   ObjectProperties,
 } from "@/lib/types";
 import { AIAnalysisInput, AIProfileDefinition } from "../types";
+import { LabelValueCard } from "@/components/ui/LabelValueCard";
+import { Badge } from "@/components/ui/Badge";
 
 const EventAIProfileSchema: z.ZodType<EventAIProfile> = z.object({
   type: z.literal("event"),
@@ -238,6 +240,44 @@ function EventAIProfileEditor({
   );
 }
 
+function EventAIProfileReader({ profile }: { profile: EventAIProfile }) {
+  const { t } = useTranslation();
+
+  const impactClass =
+    profile.impactLevel === "high"
+      ? "bg-destructive/10 text-destructive"
+      : profile.impactLevel === "medium"
+      ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300"
+      : "bg-muted text-muted-foreground";
+
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <LabelValueCard label={t("aiEventImpactLevel")}>
+          <Badge className={impactClass}>
+            {t(`aiImpactLevel${profile.impactLevel.charAt(0).toUpperCase() + profile.impactLevel.slice(1)}`)}
+          </Badge>
+        </LabelValueCard>
+        <LabelValueCard label={t("aiEventImportance")}>{profile.importance}% </LabelValueCard>
+      </div>
+
+      <LabelValueCard label={t("aiEventStakeholders")}>
+        {profile.stakeholders.length > 0 ? (
+          <ul className="flex flex-wrap gap-2">
+            {profile.stakeholders.map((s, i) => (
+              <li key={i}>
+                <Badge variant="accent">{s}</Badge>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          t("aiNotAvailable")
+        )}
+      </LabelValueCard>
+    </div>
+  );
+}
+
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="space-y-2">
@@ -259,4 +299,5 @@ export const eventProfileDefinition: AIProfileDefinition<EventAIProfile> = {
   mapSuggestions: mapEventSuggestions,
   mapMemories: mapEventMemories,
   ProfileRenderer: EventAIProfileEditor,
+  ProfileReader: EventAIProfileReader,
 };

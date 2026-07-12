@@ -9,6 +9,7 @@ import {
   ObjectProperties,
 } from "@/lib/types";
 import { AIAnalysisInput, AIProfileDefinition } from "../types";
+import { LabelValueCard } from "@/components/ui/LabelValueCard";
 
 const GoalAIProfileSchema: z.ZodType<GoalAIProfile> = z.object({
   type: z.literal("goal"),
@@ -275,6 +276,37 @@ function GoalAIProfileEditor({
   );
 }
 
+function GoalAIProfileReader({ profile }: { profile: GoalAIProfile }) {
+  const { t } = useTranslation();
+
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <LabelValueCard label={t("aiGoalDifficulty")}>{profile.difficulty} / 10</LabelValueCard>
+        <LabelValueCard label={t("aiGoalSuccessProbability")}>{profile.successProbability}%</LabelValueCard>
+        <LabelValueCard label={t("aiGoalMotivationType")}>
+          {t(`aiGoalMotivation${profile.motivationType.charAt(0).toUpperCase() + profile.motivationType.slice(1)}`)}
+        </LabelValueCard>
+        <LabelValueCard label={t("aiGoalEstimatedDuration")}>
+          {profile.estimatedDuration || t("aiNotAvailable")}
+        </LabelValueCard>
+      </div>
+
+      <LabelValueCard label={t("aiGoalRequiredResources")}>
+        {profile.requiredResources.length > 0 ? (
+          <ul className="list-disc space-y-1 pl-4">
+            {profile.requiredResources.map((resource, i) => (
+              <li key={i}>{resource}</li>
+            ))}
+          </ul>
+        ) : (
+          t("aiNotAvailable")
+        )}
+      </LabelValueCard>
+    </div>
+  );
+}
+
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="space-y-2">
@@ -296,4 +328,5 @@ export const goalProfileDefinition: AIProfileDefinition<GoalAIProfile> = {
   mapSuggestions: mapGoalSuggestions,
   mapMemories: mapGoalMemories,
   ProfileRenderer: GoalAIProfileEditor,
+  ProfileReader: GoalAIProfileReader,
 };

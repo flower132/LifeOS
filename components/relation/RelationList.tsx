@@ -1,6 +1,8 @@
 import { Relation } from "@/lib/types";
 import { useObjectStore } from "@/stores/objectStore";
 import { formatDate } from "@/lib/utils";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { useTranslation } from "@/lib/useTranslation";
 
 interface RelationListProps {
   objectId: string;
@@ -9,12 +11,11 @@ interface RelationListProps {
 
 export function RelationList({ objectId, relations }: RelationListProps) {
   const { getById } = useObjectStore();
+  const { t } = useTranslation();
 
   if (relations.length === 0) {
     return (
-      <div className="rounded-xl border border-dashed border-border bg-muted p-6 text-center">
-        <p className="text-sm text-muted-foreground">No relations yet. Relations give the system its structure.</p>
-      </div>
+      <EmptyState description={t("relationsEmpty")} />
     );
   }
 

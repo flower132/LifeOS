@@ -6,6 +6,7 @@ import { hydrateStores } from "@/stores";
 import { storage } from "@/lib/storage";
 import { syncService } from "@/lib/sync/SyncService";
 import { DevTools } from "./DevTools";
+import { Spinner } from "@/components/ui/Spinner";
 
 function getEffectiveThemeColor(
   theme: "light" | "dark" | "system"
@@ -31,13 +32,13 @@ function applyTheme(themeColor: "light" | "dark"): void {
 }
 
 function applyAccentColor(accentColor: "blue" | "green" | "purple" | "orange"): void {
-  const hues: Record<typeof accentColor, string> = {
+  const values: Record<typeof accentColor, string> = {
     blue: "217 91% 60%",
     green: "142 71% 45%",
-    purple: "258 90% 66%",
+    purple: "#7C5CFF",
     orange: "24 95% 53%",
   };
-  document.documentElement.style.setProperty("--accent", hues[accentColor]);
+  document.documentElement.style.setProperty("--accent", values[accentColor]);
   document.documentElement.style.setProperty("--accent-foreground", "0 0% 100%");
 }
 
@@ -56,7 +57,7 @@ function HydrationSkeleton() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background">
       <div className="space-y-3 text-center">
-        <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-accent border-t-transparent" />
+        <Spinner size="md" />
         <p className="text-sm text-muted-foreground">Loading LifeOS...</p>
       </div>
     </div>

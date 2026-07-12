@@ -17,14 +17,14 @@ export function BackButton({
   onClick,
   label,
   className,
-  iconSize = 22,
+  iconSize = 24,
 }: BackButtonProps) {
   const content = (
     <span
       className={cn(
-        "inline-flex h-11 min-w-[44px] items-center gap-1.5 rounded-xl text-muted-foreground transition-colors",
-        "hover:bg-muted hover:text-foreground",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent",
+        "inline-flex h-11 min-w-[44px] items-center gap-1.5 rounded-md text-secondary transition-colors duration-fast ease-out",
+        "hover:bg-muted hover:text-primary",
+        "focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-accent/15",
         label ? "px-3" : "w-11 justify-center",
         className
       )}
@@ -35,7 +35,7 @@ export function BackButton({
         strokeWidth={2}
       />
       {label && (
-        <span className="text-sm font-medium">{label}</span>
+        <span className="text-body-small font-medium">{label}</span>
       )}
     </span>
   );

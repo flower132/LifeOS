@@ -2,7 +2,8 @@
 
 import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { ScanLine, Loader2, Sparkles, ArrowLeft } from "lucide-react";
+import { ScanLine, Sparkles, ArrowLeft } from "lucide-react";
+import { Spinner } from "@/components/ui/Spinner";
 import { AIImageInput } from "@/lib/ai/types";
 import { extractNamesFromImages } from "@/lib/ai/objectIntelligence/multiObjectExtractor";
 import { AIImageUploader } from "./AIImageUploader";
@@ -17,7 +18,7 @@ import {
 import { createObjectsFromDrafts } from "@/lib/create/createObjects";
 import { useLastCreationStore } from "@/stores/lastCreationStore";
 import { useObjectStore } from "@/stores/objectStore";
-import { PageHeader } from "@/components/navigation/PageHeader";
+import { WorkspaceLayout } from "@/components/layout/WorkspaceLayout";
 import { NavigationStepper } from "@/components/navigation/NavigationStepper";
 import { StepTransition } from "@/components/navigation/StepTransition";
 import { ConfirmDialog } from "@/components/navigation/ConfirmDialog";
@@ -145,34 +146,27 @@ export function OCRCreateFlow() {
   }, [drafts, t, router, setLastCreation]);
 
   return (
-    <div className="min-h-screen bg-background">
-      <PageHeader
-        backHref="/create-object"
-        backLabel={t("createSpaceBackToHub")}
-        title={t("createSpaceOCR")}
-        subtitle={t("createSpaceOCRDescription")}
-        titleGoesHome
-        onTitleClick={handleTitleClick}
-        stepper={
-          <NavigationStepper
-            steps={steps}
-            currentStepIndex={stepController.currentStepIndex}
-          />
-        }
-        maxWidth="3xl"
-      />
-
-      <div className="mx-auto max-w-3xl px-6 py-8">
-        {error && (
-          <div className="mb-6 rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-            {error}
-          </div>
-        )}
-
-        <StepTransition
-          stepKey={stepController.currentStep.key}
-          direction={stepController.direction}
-        >
+    <WorkspaceLayout
+      backHref="/create-object"
+      backLabel={t("createSpaceBackToHub")}
+      title={t("createSpaceOCR")}
+      subtitle={t("createSpaceOCRDescription")}
+      titleGoesHome
+      onTitleClick={handleTitleClick}
+      stepper={
+        <NavigationStepper
+          steps={steps}
+          currentStepIndex={stepController.currentStepIndex}
+        />
+      }
+      maxWidth="3xl"
+      error={error ?? undefined}
+      onRetry={hasDrafts ? handleCreate : handleAnalyze}
+    >
+      <StepTransition
+        stepKey={stepController.currentStep.key}
+        direction={stepController.direction}
+      >
           {!hasDrafts ? (
             <div className="space-y-5">
               <div className="space-y-2">
@@ -194,7 +188,7 @@ export function OCRCreateFlow() {
               >
                 {isAnalyzing ? (
                   <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <Spinner size="sm" />
                     {t("createSpaceOCRAnalyzing")}
                   </>
                 ) : (
@@ -238,7 +232,7 @@ export function OCRCreateFlow() {
                 >
                   {isCreating ? (
                     <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <Spinner size="sm" />
                       {t("creating")}
                     </>
                   ) : (
@@ -254,7 +248,6 @@ export function OCRCreateFlow() {
             </div>
           )}
         </StepTransition>
-      </div>
 
       <ConfirmDialog
         open={showConfirm}
@@ -265,6 +258,6 @@ export function OCRCreateFlow() {
         onConfirm={handleConfirmDiscard}
         onCancel={() => setShowConfirm(false)}
       />
-    </div>
+    </WorkspaceLayout>
   );
 }

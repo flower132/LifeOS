@@ -9,6 +9,8 @@ import {
   PersonAIProfile,
 } from "@/lib/types";
 import { AIAnalysisInput, AIProfileDefinition } from "../types";
+import { Card } from "@/components/ui/Card";
+import { LabelValueCard } from "@/components/ui/LabelValueCard";
 
 const PersonAIProfileSchema: z.ZodType<PersonAIProfile> = z.object({
   type: z.literal("person"),
@@ -286,6 +288,57 @@ function PersonAIProfileEditor({
   );
 }
 
+function PersonAIProfileReader({ profile }: { profile: PersonAIProfile }) {
+  const { t } = useTranslation();
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <LabelValueCard label={t("aiProfileRelationshipContext")}>
+          {profile.relationshipContext || t("aiNotAvailable")}
+        </LabelValueCard>
+        <LabelValueCard label={t("aiProfileMbti")}>
+          {profile.mbti || t("aiNotAvailable")}
+        </LabelValueCard>
+        <LabelValueCard label={t("aiProfileMbtiConfidence")}>
+          {profile.mbtiConfidence}%
+        </LabelValueCard>
+      </div>
+
+      <Card>
+        <h4 className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          {t("aiProfileBigFive")}
+        </h4>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          {(Object.keys(profile.bigFive) as Array<keyof PersonAIProfile["bigFive"]>).map((key) => (
+            <div key={key} className="space-y-1">
+              <div className="flex items-center justify-between text-sm">
+                <span className="capitalize text-muted-foreground">{key}</span>
+                <span className="font-medium text-foreground">{profile.bigFive[key]}</span>
+              </div>
+              <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+                <div
+                  className="h-full rounded-full bg-accent"
+                  style={{ width: `${profile.bigFive[key]}%` }}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      </Card>
+
+      <LabelValueCard label={t("aiProfileSummary")}>
+        {profile.personalitySummary || t("aiNotAvailable")}
+      </LabelValueCard>
+
+      {profile.rollingSummary && (
+        <LabelValueCard label={t("aiProfileRollingSummary") ?? "Rolling Summary"}>
+          {profile.rollingSummary}
+        </LabelValueCard>
+      )}
+    </div>
+  );
+}
+
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="space-y-2">
@@ -307,4 +360,5 @@ export const personProfileDefinition: AIProfileDefinition<PersonAIProfile> = {
   mapSuggestions: mapPersonSuggestions,
   mapMemories: mapPersonMemories,
   ProfileRenderer: PersonAIProfileEditor,
+  ProfileReader: PersonAIProfileReader,
 };

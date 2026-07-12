@@ -14,6 +14,7 @@ import { ObjectPropertyEditor } from "./ObjectPropertyEditor";
 import { aiService } from "@/lib/ai";
 import { isAIProfileSupported } from "@/lib/ai/objectIntelligence/profiles";
 import { propertiesToPromptContext } from "@/lib/objectProperties";
+import { ErrorState } from "@/components/ui/ErrorState";
 
 interface ObjectFormProps {
   initialDescription?: string;
@@ -56,8 +57,8 @@ export function ObjectForm({
     onDirtyChange?.(dirty);
   }, [name, description, properties, tagIds, onDirtyChange]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (e?: React.FormEvent) => {
+    e?.preventDefault();
     if (!canSubmit) return;
 
     const trimmedName = name.trim();
@@ -123,9 +124,7 @@ export function ObjectForm({
   return (
     <form onSubmit={handleSubmit} className="mx-auto max-w-2xl space-y-6">
       {error && (
-        <div className="rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-          {error}
-        </div>
+        <ErrorState description={error} onRetry={handleSubmit} />
       )}
 
       <div className="space-y-2">

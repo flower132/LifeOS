@@ -3,80 +3,250 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-  --card: #ffffff;
-  --card-foreground: #171717;
-  --popover: #ffffff;
-  --popover-foreground: #171717;
-  --muted: #f1f5f9;
-  --muted-foreground: #64748b;
-  --border: #e2e8f0;
-  --input: #e2e8f0;
-  --ring: 217 91% 60%;
-  --accent: 217 91% 60%;
-  --accent-foreground: 0 0% 100%;
-  --destructive: 0 84% 60%;
-  --destructive-foreground: 0 0% 100%;
+  /* LifeOS Design Tokens — Light */
+  --background: #fafaf8;
+  --foreground: #1a1a1a;
+
+  --surface: #ffffff;
+  --surface-elevated: #ffffff;
+
+  --text-primary: #1a1a1a;
+  --text-secondary: #6b6b6b;
+  --text-tertiary: #9ca3af;
+  --text-inverse: #ffffff;
+
+  --border: #e8e8e6;
+  --border-subtle: #f0f0ee;
+  --divider: #e8e8e6;
+
+  --accent: #7c5cff;
+  --accent-soft: rgba(124, 92, 255, 0.08);
+  --accent-foreground: #ffffff;
+
+  --success: #22c55e;
+  --warning: #f59e0b;
+  --error: #ef4444;
+  --info: #3b82f6;
+
+  /* Spacing */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+
+  /* Radius */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-2xl: 24px;
+  --radius-full: 9999px;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.08);
+  --shadow-focus: 0 0 0 3px rgba(124, 92, 255, 0.15);
+
+  /* Typography */
+  --font-family: -apple-system, BlinkMacSystemFont, "SF Pro", "Segoe UI",
+    Roboto, "Helvetica Neue", Arial, sans-serif;
+
+  --font-display: 32px;
+  --font-display--line-height: 1.2;
+  --font-display--font-weight: 600;
+
+  --font-h1: 28px;
+  --font-h1--line-height: 1.25;
+  --font-h1--font-weight: 600;
+
+  --font-h2: 22px;
+  --font-h2--line-height: 1.3;
+  --font-h2--font-weight: 600;
+
+  --font-h3: 18px;
+  --font-h3--line-height: 1.35;
+  --font-h3--font-weight: 600;
+
+  --font-body-large: 17px;
+  --font-body-large--line-height: 1.5;
+  --font-body-large--font-weight: 400;
+
+  --font-body: 15px;
+  --font-body--line-height: 1.55;
+  --font-body--font-weight: 400;
+
+  --font-body-small: 13px;
+  --font-body-small--line-height: 1.5;
+  --font-body-small--font-weight: 400;
+
+  --font-caption: 12px;
+  --font-caption--line-height: 1.4;
+  --font-caption--font-weight: 500;
+
+  --font-button: 15px;
+  --font-button--line-height: 1;
+  --font-button--font-weight: 500;
+
+  /* Animation */
+  --duration-fast: 100ms;
+  --duration-normal: 250ms;
+  --duration-slow: 400ms;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.45, 0, 0.55, 1);
 }
 
 .dark {
-  --background: #0f172a;
-  --foreground: #f8fafc;
-  --card: #1e293b;
-  --card-foreground: #f8fafc;
-  --popover: #0f172a;
-  --popover-foreground: #f8fafc;
-  --muted: #334155;
-  --muted-foreground: #94a3b8;
-  --border: #334155;
-  --input: #334155;
-  --ring: 217 91% 60%;
-  --accent: 217 91% 60%;
-  --accent-foreground: 0 0% 100%;
-  --destructive: 0 62% 30%;
-  --destructive-foreground: 0 0% 100%;
+  /* LifeOS Design Tokens — Dark */
+  --background: #0f0f0f;
+  --foreground: #f5f5f5;
+
+  --surface: #1c1c1e;
+  --surface-elevated: #2c2c2e;
+
+  --text-primary: #f5f5f5;
+  --text-secondary: #a1a1a6;
+  --text-tertiary: #6b6b6b;
+  --text-inverse: #000000;
+
+  --border: #2c2c2e;
+  --border-subtle: #1c1c1e;
+  --divider: #2c2c2e;
+
+  --accent: #8f71ff;
+  --accent-soft: rgba(143, 113, 255, 0.12);
+  --accent-foreground: #ffffff;
+
+  --success: #4ade80;
+  --warning: #fbbf24;
+  --error: #f87171;
+  --info: #60a5fa;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.24);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.32);
+  --shadow-focus: 0 0 0 3px rgba(143, 113, 255, 0.2);
 }
 
 @theme inline {
+  /* Core tokens */
   --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-card: var(--card);
-  --color-card-foreground: var(--card-foreground);
-  --color-popover: var(--popover);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-muted: var(--muted);
-  --color-muted-foreground: var(--muted-foreground);
+  --color-foreground: var(--text-primary);
+
+  --color-surface: var(--surface);
+  --color-surface-elevated: var(--surface-elevated);
+
+  --color-primary: var(--text-primary);
+  --color-secondary: var(--text-secondary);
+  --color-tertiary: var(--text-tertiary);
+  --color-inverse: var(--text-inverse);
+
   --color-border: var(--border);
-  --color-input: var(--input);
-  --color-ring: hsl(var(--ring));
-  --color-accent: hsl(var(--accent));
-  --color-accent-foreground: hsl(var(--accent-foreground));
-  --color-destructive: hsl(var(--destructive));
-  --color-destructive-foreground: hsl(var(--destructive-foreground));
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-border-subtle: var(--border-subtle);
+  --color-divider: var(--divider);
+
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-foreground: var(--accent-foreground);
+
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-error: var(--error);
+  --color-info: var(--info);
+
+  /* Legacy shadcn-style aliases for backwards compatibility */
+  --color-card: var(--surface);
+  --color-card-foreground: var(--text-primary);
+  --color-popover: var(--surface-elevated);
+  --color-popover-foreground: var(--text-primary);
+  --color-muted: var(--border-subtle);
+  --color-muted-foreground: var(--text-secondary);
+  --color-input: var(--border);
+  --color-ring: var(--accent);
+  --color-destructive: var(--error);
+  --color-destructive-foreground: var(--text-inverse);
+
+  /* Radius */
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+  --radius-xl: var(--radius-xl);
+  --radius-2xl: var(--radius-2xl);
+  --radius-full: var(--radius-full);
+
+  /* Shadows */
+  --shadow-sm: var(--shadow-sm);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
+  --shadow-focus: var(--shadow-focus);
+
+  /* Typography utilities: text-display, text-h1, text-body, ... */
+  --font-size-display: var(--font-display);
+  --font-size-display--line-height: var(--font-display--line-height);
+  --font-size-display--font-weight: var(--font-display--font-weight);
+
+  --font-size-h1: var(--font-h1);
+  --font-size-h1--line-height: var(--font-h1--line-height);
+  --font-size-h1--font-weight: var(--font-h1--font-weight);
+
+  --font-size-h2: var(--font-h2);
+  --font-size-h2--line-height: var(--font-h2--line-height);
+  --font-size-h2--font-weight: var(--font-h2--font-weight);
+
+  --font-size-h3: var(--font-h3);
+  --font-size-h3--line-height: var(--font-h3--line-height);
+  --font-size-h3--font-weight: var(--font-h3--font-weight);
+
+  --font-size-body-large: var(--font-body-large);
+  --font-size-body-large--line-height: var(--font-body-large--line-height);
+  --font-size-body-large--font-weight: var(--font-body-large--font-weight);
+
+  --font-size-body: var(--font-body);
+  --font-size-body--line-height: var(--font-body--line-height);
+  --font-size-body--font-weight: var(--font-body--font-weight);
+
+  --font-size-body-small: var(--font-body-small);
+  --font-size-body-small--line-height: var(--font-body-small--line-height);
+  --font-size-body-small--font-weight: var(--font-body-small--font-weight);
+
+  --font-size-caption: var(--font-caption);
+  --font-size-caption--line-height: var(--font-caption--line-height);
+  --font-size-caption--font-weight: var(--font-caption--font-weight);
+
+  --font-size-button: var(--font-button);
+  --font-size-button--line-height: var(--font-button--line-height);
+  --font-size-button--font-weight: var(--font-button--font-weight);
+
+  --font-family-sans: var(--font-family);
 }
 
 body {
   background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-sans), ui-sans-serif, system-ui, -apple-system,
-    BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  color: var(--text-primary);
+  font-family: var(--font-family);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-/* Note content minimal markdown styling */
+/* Note content minimal markdown styling — uses LifeOS tokens */
 .note-content h1,
 .note-content h2,
 .note-content h3 {
   font-weight: 600;
   margin-top: 1em;
   margin-bottom: 0.5em;
+  color: var(--text-primary);
 }
 
 .note-content p {
   margin-bottom: 0.75em;
   line-height: 1.6;
+  color: var(--text-primary);
 }
 
 .note-content ul {
@@ -92,35 +262,27 @@ body {
 }
 
 .note-content code {
-  background-color: #f1f5f9;
+  background-color: var(--surface-elevated);
+  color: var(--text-primary);
   padding: 0.125rem 0.375rem;
-  border-radius: 0.25rem;
+  border-radius: var(--radius-sm);
   font-size: 0.875em;
 }
 
 .note-content pre {
-  background-color: #f1f5f9;
+  background-color: var(--surface-elevated);
+  color: var(--text-primary);
   padding: 0.75rem;
-  border-radius: 0.5rem;
+  border-radius: var(--radius-md);
   overflow-x: auto;
   margin-bottom: 0.75em;
 }
 
 .note-content blockquote {
-  border-left: 3px solid #e2e8f0;
+  border-left: 3px solid var(--border);
   padding-left: 0.75rem;
-  color: #475569;
+  color: var(--text-secondary);
   margin-bottom: 0.75em;
-}
-
-.dark .note-content code,
-.dark .note-content pre {
-  background-color: #1e293b;
-}
-
-.dark .note-content blockquote {
-  border-left-color: #334155;
-  color: #94a3b8;
 }
 
 @keyframes fade-in {
@@ -135,14 +297,10 @@ body {
 }
 
 .animate-fade-in {
-  animation: fade-in 300ms ease-out;
+  animation: fade-in var(--duration-normal) var(--ease-out) both;
 }
 
 /* Step transition animations */
-.duration-280 {
-  transition-duration: 280ms;
-}
-
 .step-content {
   transition:
     opacity 280ms cubic-bezier(0.4, 0, 0.2, 1),
@@ -182,7 +340,7 @@ body {
 @keyframes dialog-content-in {
   from {
     opacity: 0;
-    transform: scale(0.95);
+    transform: scale(0.96);
   }
   to {
     opacity: 1;
@@ -191,9 +349,20 @@ body {
 }
 
 .animate-dialog-backdrop {
-  animation: dialog-backdrop-in 200ms ease-out;
+  animation: dialog-backdrop-in var(--duration-fast) var(--ease-out) both;
 }
 
 .animate-dialog-content {
-  animation: dialog-content-in 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  animation: dialog-content-in var(--duration-fast) var(--ease-out) both;
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

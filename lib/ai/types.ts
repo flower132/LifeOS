@@ -142,9 +142,4 @@ export function isValidAIProviderId(value: string): value is AIProviderId {
   return value in DEFAULT_PROVIDER_CONFIGS;
 }
 
-// AI output types are re-exported from schemas to keep a single source of truth.
-export type {
-  SelfInsight,
-  PersonInsight,
-  EventGoalInsight,
-} from "./schemas";
+// Legacy insight schemas have been removed in favor of ObjectAIProfile types.

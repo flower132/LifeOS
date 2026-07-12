@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { AuthPageShell } from "@/components/auth/AuthPageShell";
 import { useAuthActions } from "@/lib/auth/useAuthActions";
+import { ErrorState } from "@/components/ui/ErrorState";
 
 export default function RegisterPage() {
   const [email, setEmail] = useState("");
@@ -50,9 +51,7 @@ export default function RegisterPage() {
         />
 
         {error && (
-          <div className="rounded-xl bg-destructive/10 px-4 py-3 text-sm text-destructive">
-            {error}
-          </div>
+          <ErrorState description={error} />
         )}
         {successMsg && (
           <div className="rounded-xl bg-emerald-500/10 px-4 py-3 text-sm text-emerald-600 dark:text-emerald-400">

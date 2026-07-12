@@ -249,10 +249,6 @@ export class LocalStorageAdapter implements StorageAdapter {
     const version = await this.getStorageVersion();
     if (version >= STORAGE_VERSION) return;
 
-    console.log(
-      `[LifeOS] Migrating storage from version ${version} to ${STORAGE_VERSION}`
-    );
-
     if (version < 2) {
       await this.migrateV1ToV2();
     }
@@ -344,9 +340,6 @@ export class LocalStorageAdapter implements StorageAdapter {
       maybeBackup(KEYS.objects);
       safeSetItem(KEYS.objects, sanitized);
       await recalcTagUsage();
-      console.log(
-        `[LifeOS] Migrated ${sanitized.length} objects to include structured properties`
-      );
     }
   }
 
@@ -373,9 +366,6 @@ export class LocalStorageAdapter implements StorageAdapter {
     if (mutated) {
       maybeBackup(KEYS.objects);
       safeSetItem(KEYS.objects, migrated);
-      console.log(
-        `[LifeOS] Migrated ${migrated.length} objects to stable property keys`
-      );
     }
   }
 
@@ -441,9 +431,6 @@ export class LocalStorageAdapter implements StorageAdapter {
     if (mutated) {
       maybeBackup(KEYS.objects);
       safeSetItem(KEYS.objects, migrated);
-      console.log(
-        `[LifeOS] Migrated ${migrated.length} objects to template-in-properties (v5)`
-      );
     }
   }
 
@@ -470,9 +457,6 @@ export class LocalStorageAdapter implements StorageAdapter {
     if (mutated) {
       maybeBackup(KEYS.notes);
       safeSetItem(KEYS.notes, migrated);
-      console.log(
-        `[LifeOS] Migrated ${migrated.length} notes to include sourceType and attachments (v6)`
-      );
     }
   }
 
@@ -543,9 +527,6 @@ export class LocalStorageAdapter implements StorageAdapter {
     if (mutated) {
       maybeBackup(KEYS.templates);
       safeSetItem(KEYS.templates, nextTemplates);
-      console.log(
-        `[LifeOS] Ensured default templates are up-to-date (version ${CURRENT_TEMPLATE_VERSION})`
-      );
     }
   }
 

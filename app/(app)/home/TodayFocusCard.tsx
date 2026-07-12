@@ -9,6 +9,9 @@ import { useRelationStore } from "@/stores/relationStore";
 import { ObjectTypeBadge } from "@/components/object/ObjectTypeBadge";
 import { EvidenceList } from "@/components/advisor/EvidenceList";
 import { useTranslation } from "@/lib/useTranslation";
+import { ErrorState } from "@/components/ui/ErrorState";
+import { AIInsightSkeleton, SkeletonBlock } from "@/components/ui/Skeleton";
+import { Spinner } from "@/components/ui/Spinner";
 import { AdvisorContext, AdvisorHomeInsightResult } from "@/lib/ai/advisor/types";
 import { advisorService } from "@/lib/ai/advisor";
 import { selectTodayFocus } from "@/lib/ai/advisor/focusSelector";
@@ -79,7 +82,7 @@ export function TodayFocusCard() {
 
   if (!isReady) {
     return (
-      <div className="h-40 animate-pulse rounded-xl bg-muted" />
+      <SkeletonBlock className="h-40" />
     );
   }
 
@@ -106,7 +109,11 @@ export function TodayFocusCard() {
           disabled={isLoading}
           className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-muted-foreground hover:bg-accent/10 hover:text-accent disabled:opacity-50"
         >
-          <RefreshCw className={`h-3.5 w-3.5 ${isLoading ? "animate-spin" : ""}`} />
+          {isLoading ? (
+            <Spinner size="sm" />
+          ) : (
+            <RefreshCw className="h-3.5 w-3.5" />
+          )}
           {t("advisorRefresh")}
         </button>
       </div>
@@ -129,9 +136,10 @@ export function TodayFocusCard() {
       </div>
 
       {error && (
-        <div className="mb-4 rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-          {error}
-        </div>
+        <ErrorState
+          description={error}
+          onRetry={() => void generateInsight()}
+        />
       )}
 
       {insight?.narrative ? (
@@ -158,10 +166,7 @@ export function TodayFocusCard() {
           )}
         </div>
       ) : isLoading ? (
-        <div className="space-y-2">
-          <div className="h-4 w-3/4 animate-pulse rounded bg-accent/10" />
-          <div className="h-4 w-1/2 animate-pulse rounded bg-accent/10" />
-        </div>
+        <AIInsightSkeleton />
       ) : null}
     </div>
   );

@@ -2,17 +2,18 @@
 
 import { useState, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { Sparkles, Loader2, ArrowLeft, Wand2 } from "lucide-react";
+import { Sparkles, ArrowLeft, Wand2 } from "lucide-react";
 import { AIImageInput } from "@/lib/ai/types";
 import { extractObjectsFromInput } from "@/lib/ai/objectIntelligence/multiObjectExtractor";
 import { AIImageUploader } from "./AIImageUploader";
 import { DraftObjectList } from "./DraftObjectList";
 import { useTranslation } from "@/lib/useTranslation";
 import { useSettingsStore } from "@/stores/settingsStore";
-import { PageHeader } from "@/components/navigation/PageHeader";
+import { WorkspaceLayout } from "@/components/layout/WorkspaceLayout";
 import { NavigationStepper } from "@/components/navigation/NavigationStepper";
 import { StepTransition } from "@/components/navigation/StepTransition";
 import { ConfirmDialog } from "@/components/navigation/ConfirmDialog";
+import { Spinner } from "@/components/ui/Spinner";
 import { useStepController } from "@/hooks/useStepController";
 import { isNonEmptyString } from "@/lib/navigation/dirtyCheck";
 import {
@@ -43,6 +44,7 @@ export function AICreateFlow() {
   const [isEnriching, setIsEnriching] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [errorAction, setErrorAction] = useState<"extract" | "enrich" | "create" | null>(null);
   const [showConfirm, setShowConfirm] = useState(false);
 
   const stepController = useStepController({
@@ -59,6 +61,7 @@ export function AICreateFlow() {
     setImages([]);
     setDrafts([]);
     setError(null);
+    setErrorAction(null);
     setIsExtracting(false);
     setIsEnriching(false);
     setIsCreating(false);
@@ -102,6 +105,7 @@ export function AICreateFlow() {
   const handleExtract = useCallback(async () => {
     if (!text.trim() && images.length === 0) return;
     setError(null);
+    setErrorAction(null);
     setIsExtracting(true);
 
     try {
@@ -122,6 +126,7 @@ export function AICreateFlow() {
       stepController.next();
     } catch (err) {
       setError(err instanceof Error ? err.message : t("aiAnalysisFailed"));
+      setErrorAction("extract");
     } finally {
       setIsExtracting(false);
     }
@@ -130,6 +135,7 @@ export function AICreateFlow() {
   const handleEnrich = useCallback(async () => {
     if (selectedDrafts.length === 0) return;
     setError(null);
+    setErrorAction(null);
     setIsEnriching(true);
 
     try {
@@ -142,6 +148,7 @@ export function AICreateFlow() {
       setDrafts(checkDuplicates(enriched));
     } catch (err) {
       setError(err instanceof Error ? err.message : t("aiAnalysisFailed"));
+      setErrorAction("enrich");
     } finally {
       setIsEnriching(false);
     }
@@ -150,6 +157,7 @@ export function AICreateFlow() {
   const handleCreate = useCallback(async () => {
     if (selectedDrafts.length === 0) return;
     setError(null);
+    setErrorAction(null);
     setIsCreating(true);
 
     try {
@@ -166,45 +174,48 @@ export function AICreateFlow() {
             .map((e) => e.draft.name)
             .join(", ")}`
         );
+        setErrorAction("create");
       }
 
       router.push("/create-object");
     } catch (err) {
       setError(err instanceof Error ? err.message : t("failedToCreateObject"));
+      setErrorAction("create");
     } finally {
       setIsCreating(false);
     }
   }, [drafts, selectedDrafts.length, t, router, setLastCreation]);
 
   return (
-    <div className="min-h-screen bg-background">
-      <PageHeader
-        backHref="/create-object"
-        backLabel={t("createSpaceBackToHub")}
-        title={t("createSpaceAIRecommended")}
-        subtitle={t("createSpaceAIDescription")}
-        titleGoesHome
-        onTitleClick={handleTitleClick}
-        stepper={
-          <NavigationStepper
-            steps={steps}
-            currentStepIndex={stepController.currentStepIndex}
-          />
-        }
-        maxWidth="3xl"
-      />
-
-      <div className="mx-auto max-w-3xl px-6 py-8">
-        {error && (
-          <div className="mb-6 rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-            {error}
-          </div>
-        )}
-
-        <StepTransition
-          stepKey={stepController.currentStep.key}
-          direction={stepController.direction}
-        >
+    <WorkspaceLayout
+      backHref="/create-object"
+      backLabel={t("createSpaceBackToHub")}
+      title={t("createSpaceAIRecommended")}
+      subtitle={t("createSpaceAIDescription")}
+      titleGoesHome
+      onTitleClick={handleTitleClick}
+      stepper={
+        <NavigationStepper
+          steps={steps}
+          currentStepIndex={stepController.currentStepIndex}
+        />
+      }
+      maxWidth="3xl"
+      error={error ?? undefined}
+      onRetry={
+        errorAction === "extract"
+          ? handleExtract
+          : errorAction === "enrich"
+          ? handleEnrich
+          : errorAction === "create"
+          ? handleCreate
+          : undefined
+      }
+    >
+      <StepTransition
+        stepKey={stepController.currentStep.key}
+        direction={stepController.direction}
+      >
           {!hasDrafts ? (
             <div className="space-y-5">
           <div className="space-y-2">
@@ -240,7 +251,7 @@ export function AICreateFlow() {
           >
             {isExtracting ? (
               <>
-                <Loader2 className="h-4 w-4 animate-spin" />
+                <Spinner size="sm" />
                 {t("aiAnalyzing")}
               </>
             ) : (
@@ -287,7 +298,7 @@ export function AICreateFlow() {
               >
                 {isEnriching ? (
                   <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <Spinner size="sm" />
                     {t("aiAnalyzing")}
                   </>
                 ) : (
@@ -306,7 +317,7 @@ export function AICreateFlow() {
               >
                 {isCreating ? (
                   <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <Spinner size="sm" />
                     {t("creating")}
                   </>
                 ) : (
@@ -323,7 +334,6 @@ export function AICreateFlow() {
         </div>
       )}
       </StepTransition>
-      </div>
 
       <ConfirmDialog
         open={showConfirm}
@@ -334,6 +344,6 @@ export function AICreateFlow() {
         onConfirm={handleConfirmDiscard}
         onCancel={() => setShowConfirm(false)}
       />
-    </div>
+    </WorkspaceLayout>
   );
 }

@@ -5,6 +5,7 @@ import { User } from "lucide-react";
 import { useObjectStore } from "@/stores/objectStore";
 import { useTranslation } from "@/lib/useTranslation";
 import { SelfAIProfile } from "@/lib/types";
+import { LabelValueCard } from "@/components/ui/LabelValueCard";
 
 export function SelfSummaryCard() {
   const { t } = useTranslation();
@@ -35,23 +36,13 @@ export function SelfSummaryCard() {
       </div>
 
       <div className="space-y-4">
-        <div className="space-y-1">
-          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            {t("selfCurrentFocus")}
-          </p>
-          <p className="text-sm leading-relaxed text-foreground">
-            {profile.currentFocus || t("aiNotAvailable")}
-          </p>
-        </div>
+        <LabelValueCard label={t("selfCurrentFocus")}>
+          {profile.currentFocus || t("aiNotAvailable")}
+        </LabelValueCard>
 
-        <div className="space-y-1">
-          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            {t("selfUnderstanding")}
-          </p>
-          <p className="text-sm leading-relaxed text-foreground">
-            {profile.understandingSummary}
-          </p>
-        </div>
+        <LabelValueCard label={t("selfUnderstanding")}>
+          {profile.understandingSummary}
+        </LabelValueCard>
       </div>
     </div>
   );

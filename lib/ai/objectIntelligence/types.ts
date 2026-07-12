@@ -53,6 +53,8 @@ export interface AIProfileDefinition<T extends ObjectAIProfile = ObjectAIProfile
   mapSuggestions?: (raw: unknown) => ObjectAISuggestion[];
   mapMemories?: (raw: unknown) => ObjectMemory[];
   ProfileRenderer?: ComponentType<{ profile: T; onChange: (profile: T) => void }>;
+  /** Read-only view of the profile used in object detail tabs. */
+  ProfileReader?: ComponentType<{ profile: T }>;
 }
 
 export interface ProfileRegistry {

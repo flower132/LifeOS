@@ -8,6 +8,7 @@ import { useObjectStore } from "@/stores/objectStore";
 import { useTranslation } from "@/lib/useTranslation";
 import { NoteSourceType, NoteAttachment } from "@/lib/types";
 import { triggerBackgroundObjectUpdate } from "@/lib/ai/objectIntelligence/update";
+import { ErrorState } from "@/components/ui/ErrorState";
 
 interface NoteFormProps {
   initialObjectId?: string;
@@ -121,8 +122,8 @@ export function NoteForm({ initialObjectId }: NoteFormProps) {
     setAttachments((prev) => prev.filter((_, i) => i !== index));
   }, []);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (e?: React.FormEvent) => {
+    e?.preventDefault();
     if (!canSubmit) return;
 
     const selectedObjectId = objectId.trim();
@@ -175,9 +176,7 @@ export function NoteForm({ initialObjectId }: NoteFormProps) {
   return (
     <form onSubmit={handleSubmit} className="mx-auto max-w-2xl space-y-6">
       {error && (
-        <div className="rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-          {error}
-        </div>
+        <ErrorState description={error} onRetry={handleSubmit} />
       )}
       <div className="space-y-2">
         <label className="text-sm font-medium text-foreground">{t("linkToObject")}</label>
@@ -238,9 +237,7 @@ export function NoteForm({ initialObjectId }: NoteFormProps) {
         </div>
 
         {imageError && (
-          <div className="rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-            {imageError}
-          </div>
+          <ErrorState description={imageError} />
         )}
 
         <div className="flex flex-wrap gap-3">

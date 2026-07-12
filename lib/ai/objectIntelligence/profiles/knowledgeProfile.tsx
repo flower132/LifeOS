@@ -9,6 +9,8 @@ import {
   ObjectProperties,
 } from "@/lib/types";
 import { AIAnalysisInput, AIProfileDefinition } from "../types";
+import { LabelValueCard } from "@/components/ui/LabelValueCard";
+import { Badge } from "@/components/ui/Badge";
 
 const KnowledgeAIProfileSchema: z.ZodType<KnowledgeAIProfile> = z.object({
   type: z.literal("knowledge"),
@@ -245,6 +247,46 @@ function KnowledgeAIProfileEditor({
   );
 }
 
+function KnowledgeAIProfileReader({ profile }: { profile: KnowledgeAIProfile }) {
+  const { t } = useTranslation();
+
+  return (
+    <div className="space-y-6">
+      <LabelValueCard label={t("aiKnowledgeDifficulty")}>{profile.difficulty}%</LabelValueCard>
+
+      <LabelValueCard label={t("aiKnowledgeRelatedTopics")}>
+        {profile.relatedTopics.length > 0 ? (
+          <ul className="flex flex-wrap gap-2">
+            {profile.relatedTopics.map((topic, i) => (
+              <li key={i}>
+                <Badge variant="accent">{topic}</Badge>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          t("aiNotAvailable")
+        )}
+      </LabelValueCard>
+
+      <LabelValueCard label={t("aiKnowledgeGraph")}>
+        {profile.knowledgeGraph.length > 0 ? (
+          <ul className="space-y-2">
+            {profile.knowledgeGraph.map((edge, i) => (
+              <li key={i} className="rounded-lg border border-border bg-card p-3 text-sm">
+                <span className="font-medium text-foreground">{edge.node}</span>{" "}
+                <span className="text-muted-foreground">— {edge.relation} →</span>{" "}
+                <span className="font-medium text-foreground">{edge.target}</span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          t("aiNotAvailable")
+        )}
+      </LabelValueCard>
+    </div>
+  );
+}
+
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="space-y-2">
@@ -266,4 +308,5 @@ export const knowledgeProfileDefinition: AIProfileDefinition<KnowledgeAIProfile>
   mapSuggestions: mapKnowledgeSuggestions,
   mapMemories: mapKnowledgeMemories,
   ProfileRenderer: KnowledgeAIProfileEditor,
+  ProfileReader: KnowledgeAIProfileReader,
 };

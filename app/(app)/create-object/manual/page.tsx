@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { ObjectForm } from "@/components/object/ObjectForm";
 import { TemplateSelector } from "@/components/template/TemplateSelector";
 import { AIMethodSelector } from "@/components/ai/AIMethodSelector";
-import { PageHeader } from "@/components/navigation/PageHeader";
+import { WorkspaceLayout } from "@/components/layout/WorkspaceLayout";
 import { NavigationStepper } from "@/components/navigation/NavigationStepper";
 import { StepTransition } from "@/components/navigation/StepTransition";
 import { ConfirmDialog } from "@/components/navigation/ConfirmDialog";
@@ -180,35 +180,32 @@ export default function CreateObjectManualPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <PageHeader
-        backHref="/create-object"
-        backLabel={t("createSpaceBackToHub")}
-        title={t("createObjectTitle")}
-        subtitle={
-          step === "type"
-            ? t("chooseTypeSubtitle")
-            : step === "method"
-            ? t("chooseCreationMethodSubtitle")
-            : step === "template"
-            ? t("chooseTemplateSubtitle")
-            : t("createObjectSubtitle")
-        }
-        titleGoesHome
-        onTitleClick={handleTitleClick}
-        stepper={
-          <NavigationStepper
-            steps={steps}
-            currentStepIndex={stepController.currentStepIndex}
-          />
-        }
-      />
-
-      <div className="mx-auto max-w-2xl px-6 py-8">
-        <StepTransition
-          stepKey={step}
-          direction={stepController.direction}
-        >
+    <WorkspaceLayout
+      backHref="/create-object"
+      backLabel={t("createSpaceBackToHub")}
+      title={t("createObjectTitle")}
+      subtitle={
+        step === "type"
+          ? t("chooseTypeSubtitle")
+          : step === "method"
+          ? t("chooseCreationMethodSubtitle")
+          : step === "template"
+          ? t("chooseTemplateSubtitle")
+          : t("createObjectSubtitle")
+      }
+      titleGoesHome
+      onTitleClick={handleTitleClick}
+      stepper={
+        <NavigationStepper
+          steps={steps}
+          currentStepIndex={stepController.currentStepIndex}
+        />
+      }
+    >
+      <StepTransition
+        stepKey={step}
+        direction={stepController.direction}
+      >
           {step === "type" && (
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               {LIFE_OBJECT_TYPES.map((typeOption) => {
@@ -287,7 +284,6 @@ export default function CreateObjectManualPage() {
             </div>
           )}
         </StepTransition>
-      </div>
 
       <ConfirmDialog
         open={showConfirm}
@@ -298,6 +294,6 @@ export default function CreateObjectManualPage() {
         onConfirm={handleConfirmDiscard}
         onCancel={() => setShowConfirm(false)}
       />
-    </div>
+    </WorkspaceLayout>
   );
 }
