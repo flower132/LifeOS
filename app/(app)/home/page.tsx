@@ -4,9 +4,12 @@ import Link from "next/link";
 import { PlusCircle, Users, StickyNote } from "lucide-react";
 import { useObjectStore } from "@/stores/objectStore";
 import { useNoteStore } from "@/stores/noteStore";
+import { useIntelligenceStore } from "@/stores/intelligenceStore";
 import { QuickCapture } from "@/components/capture/QuickCapture";
 import { ObjectCard } from "@/components/object/ObjectCard";
 import { NoteCard } from "@/components/note/NoteCard";
+import { TodayStoryCard } from "@/components/intelligence/TodayStoryCard";
+import { PatternFeedCard } from "@/components/intelligence/PatternFeedCard";
 import { TodayFocusCard } from "./TodayFocusCard";
 import { SelfSummaryCard } from "./SelfSummaryCard";
 import { useTranslation } from "@/lib/useTranslation";
@@ -19,6 +22,7 @@ import { SkeletonBlock } from "@/components/ui/Skeleton";
 export default function HomePage() {
   const { objects, loaded: objectsLoaded } = useObjectStore();
   const { notes, loaded: notesLoaded } = useNoteStore();
+  const { cache: intelligenceCache, hydrated: intelligenceHydrated } = useIntelligenceStore();
   const { t } = useTranslation();
 
   const recentObjects = objects
@@ -47,6 +51,12 @@ export default function HomePage() {
     >
       <div className="space-y-8">
         <QuickCapture />
+
+        <TodayStoryCard />
+
+        {intelligenceHydrated && intelligenceCache.patterns.length > 0 && (
+          <PatternFeedCard patterns={intelligenceCache.patterns} />
+        )}
 
         <SelfSummaryCard />
 

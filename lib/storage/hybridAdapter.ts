@@ -8,6 +8,9 @@ import {
   TemplateUpdateInput,
   AIAnalysisHistoryEntry,
   ObjectDeletionSnapshot,
+  IntelligenceCache,
+  IntelligenceMeta,
+  IntelligenceTodayStory,
 } from "@/lib/types";
 import { AppSettings, StorageAdapter } from "@/lib/storage/types";
 import { localStorageAdapter } from "@/lib/storage/localStorageAdapter";
@@ -234,6 +237,28 @@ export class HybridStorageAdapter implements StorageAdapter {
   async setAIAnalysisHistory(entries: AIAnalysisHistoryEntry[]): Promise<void> {
     await this.local.setAIAnalysisHistory(entries);
     this.requestSync("aiAnalysisHistory");
+  }
+
+  // ---- intelligence caches (local-only for P0; full sync in P1) ------------
+  async getIntelligenceCache(): Promise<IntelligenceCache> {
+    return this.local.getIntelligenceCache();
+  }
+  async setIntelligenceCache(cache: IntelligenceCache): Promise<void> {
+    await this.local.setIntelligenceCache(cache);
+  }
+  async getIntelligenceMeta(): Promise<IntelligenceMeta> {
+    return this.local.getIntelligenceMeta();
+  }
+  async setIntelligenceMeta(meta: IntelligenceMeta): Promise<void> {
+    await this.local.setIntelligenceMeta(meta);
+  }
+  async getTodayStory(date: string): Promise<IntelligenceTodayStory | null> {
+    return this.local.getTodayStory(date);
+  }
+  async createTodayStory(
+    story: Omit<IntelligenceTodayStory, "id" | "createdAt">
+  ): Promise<IntelligenceTodayStory> {
+    return this.local.createTodayStory(story);
   }
 }
 

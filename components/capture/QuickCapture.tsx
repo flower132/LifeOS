@@ -7,6 +7,7 @@ import { useObjectStore } from "@/stores/objectStore";
 import { PenLine } from "lucide-react";
 import { useTranslation } from "@/lib/useTranslation";
 import { triggerBackgroundObjectUpdate } from "@/lib/ai/objectIntelligence/update";
+import { intelligenceScheduler } from "@/lib/intelligence";
 
 export function QuickCapture() {
   const router = useRouter();
@@ -40,6 +41,9 @@ export function QuickCapture() {
       if (targetObject?.type === "self") {
         void triggerBackgroundObjectUpdate(targetObject, created);
       }
+
+      intelligenceScheduler.markPending();
+      intelligenceScheduler.scheduleIncremental(created.id);
 
       router.push(`/objects/${created.object_id}`);
     } finally {

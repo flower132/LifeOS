@@ -64,6 +64,8 @@ const STORAGE_METHODS: (keyof StorageAdapter)[] = [
   "getAIAnalysisHistory", "getAIAnalysisHistoryByObjectId", "getAIAnalysisHistoryByType",
   "getAIAnalysisHistoryEntryById", "createAIAnalysisHistory", "updateAIAnalysisHistoryObjectId",
   "deleteAIAnalysisHistory", "clearAIAnalysisHistory", "setAIAnalysisHistory",
+  "getIntelligenceCache", "setIntelligenceCache", "getIntelligenceMeta", "setIntelligenceMeta",
+  "getTodayStory", "createTodayStory",
 ];
 
 const storageProxy = {} as StorageAdapter;

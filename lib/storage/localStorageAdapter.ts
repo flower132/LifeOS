@@ -10,6 +10,9 @@ import {
   TEMPLATE_CATEGORIES,
   AIAnalysisHistoryEntry,
   ObjectDeletionSnapshot,
+  IntelligenceCache,
+  IntelligenceMeta,
+  IntelligenceTodayStory,
 } from "@/lib/types";
 import {
   isValidLifeObject,
@@ -18,6 +21,9 @@ import {
   isValidTag,
   isValidTemplate,
   isValidAIAnalysisHistoryEntry,
+  isValidIntelligenceCache,
+  isValidIntelligenceMeta,
+  isValidIntelligenceTodayStory,
   validateInputObject,
   validateInputNote,
   validateInputRelation,
@@ -48,6 +54,29 @@ const KEYS = {
   templates: "lifeos_templates",
   settings: "lifeos_settings",
   aiAnalysisHistory: "lifeos_ai_analysis_history",
+  intelligenceCache: "lifeos_intelligence_cache",
+  intelligenceMeta: "lifeos_intelligence_meta",
+  todayStories: "lifeos_today_stories",
+};
+
+const DEFAULT_INTELLIGENCE_CACHE: IntelligenceCache = {
+  chapters: [],
+  patterns: [],
+  relationshipPatterns: [],
+  decisions: [],
+  decisionPatterns: [],
+  growthSnapshots: [],
+  themeSnapshots: [],
+  crossObjectInsights: [],
+  reflectionQuestions: [],
+  todayStories: [],
+};
+
+const DEFAULT_INTELLIGENCE_META: IntelligenceMeta = {
+  lastFullAnalysisAt: null,
+  lastIncrementalAnalysisAt: null,
+  analysisVersion: "1.0.0",
+  pendingUpdate: false,
 };
 
 const ENTITY_KEYS = [
@@ -57,6 +86,9 @@ const ENTITY_KEYS = [
   KEYS.tags,
   KEYS.templates,
   KEYS.settings,
+  KEYS.intelligenceCache,
+  KEYS.intelligenceMeta,
+  KEYS.todayStories,
 ];
 
 class StorageError extends Error {
@@ -1075,6 +1107,62 @@ export class LocalStorageAdapter implements StorageAdapter {
   async setAIAnalysisHistory(entries: AIAnalysisHistoryEntry[]): Promise<void> {
     const valid = entries.filter((e) => isValidAIAnalysisHistoryEntry(e));
     safeSetItem(KEYS.aiAnalysisHistory, valid);
+  }
+
+  // Intelligence Engine caches
+  async getIntelligenceCache(): Promise<IntelligenceCache> {
+    const raw = safeGetItem<unknown>(KEYS.intelligenceCache, null);
+    if (isValidIntelligenceCache(raw)) {
+      return raw;
+    }
+    return DEFAULT_INTELLIGENCE_CACHE;
+  }
+
+  async setIntelligenceCache(cache: IntelligenceCache): Promise<void> {
+    if (!isValidIntelligenceCache(cache)) {
+      throw new StorageError("Invalid intelligence cache", "validation");
+    }
+    safeSetItem(KEYS.intelligenceCache, cache);
+  }
+
+  async getIntelligenceMeta(): Promise<IntelligenceMeta> {
+    const raw = safeGetItem<unknown>(KEYS.intelligenceMeta, null);
+    if (isValidIntelligenceMeta(raw)) {
+      return raw;
+    }
+    return DEFAULT_INTELLIGENCE_META;
+  }
+
+  async setIntelligenceMeta(meta: IntelligenceMeta): Promise<void> {
+    if (!isValidIntelligenceMeta(meta)) {
+      throw new StorageError("Invalid intelligence meta", "validation");
+    }
+    safeSetItem(KEYS.intelligenceMeta, meta);
+  }
+
+  async getTodayStory(date: string): Promise<IntelligenceTodayStory | null> {
+    const stories = safeGetItem<unknown[]>(KEYS.todayStories, []);
+    if (!Array.isArray(stories)) return null;
+    const valid = filterValid(stories, isValidIntelligenceTodayStory, "todayStory");
+    return valid.find((s) => s.date === date) ?? null;
+  }
+
+  async createTodayStory(
+    story: Omit<IntelligenceTodayStory, "id" | "createdAt">
+  ): Promise<IntelligenceTodayStory> {
+    if (!story.date || typeof story.story !== "string" || story.story.trim().length === 0) {
+      throw new StorageError("Invalid today story", "validation");
+    }
+    const stories = safeGetItem<unknown[]>(KEYS.todayStories, []);
+    const valid = filterValid(stories, isValidIntelligenceTodayStory, "todayStory");
+    const created: IntelligenceTodayStory = {
+      ...story,
+      id: uuidv4(),
+      createdAt: now(),
+    };
+    const next = [created, ...valid.filter((s) => s.date !== story.date)].slice(0, 30);
+    safeSetItem(KEYS.todayStories, next);
+    return created;
   }
 }
 

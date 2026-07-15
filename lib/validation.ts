@@ -9,6 +9,9 @@ import {
   ObjectAIInsight,
   ObjectAISuggestion,
   ObjectMemory,
+  IntelligenceCache,
+  IntelligenceMeta,
+  IntelligenceTodayStory,
 } from "./types";
 
 const VALID_OBJECT_TYPES = new Set([
@@ -310,6 +313,124 @@ export function isValidAIAnalysisHistoryEntry(obj: unknown): obj is AIAnalysisHi
   if (h.memoriesSnapshot !== undefined && !Array.isArray(h.memoriesSnapshot)) {
     return false;
   }
+
+  return true;
+}
+
+// ── Intelligence Engine validators ──────────────────────────────────────────
+
+const VALID_INTELLIGENCE_PATTERN_CATEGORIES = new Set([
+  "emotion",
+  "behavior",
+  "relationship",
+  "decision",
+  "goal",
+  "health",
+  "work",
+]);
+
+const VALID_INTELLIGENCE_PATTERN_FREQUENCIES = new Set([
+  "recurring",
+  "spike",
+  "declining",
+  "stable",
+]);
+
+const VALID_INTELLIGENCE_PATTERN_STATUSES = new Set([
+  "active",
+  "dismissed",
+  "confirmed",
+]);
+
+const VALID_INTELLIGENCE_USER_FEEDBACK = new Set([
+  "agree",
+  "disagree",
+  "neutral",
+]);
+
+function isValidIntelligenceEvidence(obj: unknown): boolean {
+  if (!obj || typeof obj !== "object") return false;
+  const e = obj as Record<string, unknown>;
+  return typeof e.quote === "string" && typeof e.source === "string";
+}
+
+export function isValidIntelligenceCache(obj: unknown): obj is IntelligenceCache {
+  if (!obj || typeof obj !== "object") return false;
+  const c = obj as Record<string, unknown>;
+
+  const arrays = [
+    "chapters",
+    "patterns",
+    "relationshipPatterns",
+    "decisions",
+    "decisionPatterns",
+    "growthSnapshots",
+    "themeSnapshots",
+    "crossObjectInsights",
+    "reflectionQuestions",
+    "todayStories",
+  ];
+
+  for (const key of arrays) {
+    if (!Array.isArray(c[key])) return false;
+  }
+
+  return true;
+}
+
+export function isValidIntelligenceMeta(obj: unknown): obj is IntelligenceMeta {
+  if (!obj || typeof obj !== "object") return false;
+  const m = obj as Record<string, unknown>;
+
+  if (m.lastFullAnalysisAt !== null && m.lastFullAnalysisAt !== undefined && !isValidIsoDate(m.lastFullAnalysisAt)) {
+    return false;
+  }
+  if (
+    m.lastIncrementalAnalysisAt !== null &&
+    m.lastIncrementalAnalysisAt !== undefined &&
+    !isValidIsoDate(m.lastIncrementalAnalysisAt)
+  ) {
+    return false;
+  }
+  if (typeof m.analysisVersion !== "string") return false;
+  if (typeof m.pendingUpdate !== "boolean") return false;
+
+  return true;
+}
+
+export function isValidIntelligencePattern(obj: unknown): boolean {
+  if (!obj || typeof obj !== "object") return false;
+  const p = obj as Record<string, unknown>;
+
+  if (!isValidId(p.id)) return false;
+  if (typeof p.title !== "string" || p.title.trim().length === 0) return false;
+  if (typeof p.description !== "string") return false;
+  if (!VALID_INTELLIGENCE_PATTERN_CATEGORIES.has(p.category as string)) return false;
+  if (!isValidIsoDate(p.firstSeenAt)) return false;
+  if (!isValidIsoDate(p.lastSeenAt)) return false;
+  if (!VALID_INTELLIGENCE_PATTERN_FREQUENCIES.has(p.frequency as string)) return false;
+  if (typeof p.confidence !== "number" || p.confidence < 0 || p.confidence > 1) return false;
+  if (!Array.isArray(p.evidence) || !p.evidence.every(isValidIntelligenceEvidence)) return false;
+  if (!Array.isArray(p.noteIds)) return false;
+  if (!VALID_INTELLIGENCE_PATTERN_STATUSES.has(p.status as string)) return false;
+  if (p.userFeedback !== undefined && !VALID_INTELLIGENCE_USER_FEEDBACK.has(p.userFeedback as string)) {
+    return false;
+  }
+  if (!isValidIsoDate(p.createdAt)) return false;
+  if (!isValidIsoDate(p.updatedAt)) return false;
+
+  return true;
+}
+
+export function isValidIntelligenceTodayStory(obj: unknown): obj is IntelligenceTodayStory {
+  if (!obj || typeof obj !== "object") return false;
+  const s = obj as Record<string, unknown>;
+
+  if (!isValidId(s.id)) return false;
+  if (typeof s.date !== "string" || s.date.trim().length === 0) return false;
+  if (typeof s.story !== "string" || s.story.trim().length === 0) return false;
+  if (!Array.isArray(s.evidence) || !s.evidence.every(isValidIntelligenceEvidence)) return false;
+  if (!isValidIsoDate(s.createdAt)) return false;
 
   return true;
 }

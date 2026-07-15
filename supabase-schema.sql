@@ -135,6 +135,50 @@ create policy "Users can only access their own AI analysis history"
   using (auth.uid() = user_id)
   with check (auth.uid() = user_id);
 
+-- ------------------- intelligence caches -------------------
+-- Intelligence outputs are computed caches, not primary user data.
+-- They are stored as typed JSON blobs to keep offline/online sync simple.
+create table if not exists public.intelligence_cache (
+  id          uuid primary key default uuid_generate_v4(),
+  user_id     uuid references auth.users(id) on delete cascade not null,
+  payload     jsonb not null default '{}'::jsonb,
+  created_at  timestamptz default now(),
+  updated_at  timestamptz default now()
+);
+alter table public.intelligence_cache enable row level security;
+create policy "Users can only access their own intelligence cache"
+  on public.intelligence_cache for all
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
+
+create table if not exists public.intelligence_meta (
+  user_id     uuid primary key references auth.users(id) on delete cascade,
+  last_full_analysis_at timestamptz,
+  last_incremental_analysis_at timestamptz,
+  analysis_version text default '1.0.0',
+  pending_update boolean default false,
+  updated_at  timestamptz default now()
+);
+alter table public.intelligence_meta enable row level security;
+create policy "Users can only access their own intelligence meta"
+  on public.intelligence_meta for all
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
+
+create table if not exists public.today_stories (
+  id          uuid primary key default uuid_generate_v4(),
+  user_id     uuid references auth.users(id) on delete cascade not null,
+  date        date not null,
+  story       text not null,
+  evidence    jsonb default '[]'::jsonb,
+  created_at  timestamptz default now()
+);
+alter table public.today_stories enable row level security;
+create policy "Users can only access their own today stories"
+  on public.today_stories for all
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
+
 -- ------------------- indexes -------------------
 create index if not exists idx_objects_user     on public.objects(user_id);
 create index if not exists idx_notes_user      on public.notes(user_id);
@@ -145,6 +189,8 @@ create index if not exists idx_templates_user  on public.templates(user_id);
 create index if not exists idx_settings_user   on public.settings(user_id);
 create index if not exists idx_ai_history_user on public.ai_analysis_history(user_id);
 create index if not exists idx_ai_history_object on public.ai_analysis_history(object_id);
+create index if not exists idx_intelligence_cache_user on public.intelligence_cache(user_id);
+create index if not exists idx_today_stories_user_date on public.today_stories(user_id, date);
 
 -- ============================================================
 -- Done! Now enable Email auth in Supabase Dashboard → Authentication → Providers

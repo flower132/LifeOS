@@ -4,9 +4,11 @@ import {
   TemplateCreateInput, TemplateUpdateInput,
   AIAnalysisHistoryEntry, ObjectAIProfile, NoteAttachment,
   ObjectDeletionSnapshot,
+  IntelligenceCache, IntelligenceMeta, IntelligenceTodayStory,
 } from "@/lib/types";
 import { getSupabase, resetSupabase } from "@/lib/supabaseClient";
 import { generateId } from "@/lib/id";
+import { isValidIntelligenceCache, isValidIntelligenceMeta } from "@/lib/validation";
 
 const toISO = (d: unknown) =>
   d ? new Date(d as string | number).toISOString() : new Date().toISOString();
@@ -127,6 +129,51 @@ function mapSettings(rows: DbRow[]): Record<string, unknown> {
   return s;
 }
 
+function mapIntelligenceCache(row: DbRow | null): IntelligenceCache {
+  if (!row) {
+    return {
+      chapters: [], patterns: [], relationshipPatterns: [], decisions: [], decisionPatterns: [],
+      growthSnapshots: [], themeSnapshots: [], crossObjectInsights: [], reflectionQuestions: [], todayStories: [],
+    };
+  }
+  const payload = row.payload;
+  if (
+    payload !== null &&
+    typeof payload === "object" &&
+    !Array.isArray(payload) &&
+    isValidIntelligenceCache(payload)
+  ) {
+    return payload as IntelligenceCache;
+  }
+  return {
+    chapters: [], patterns: [], relationshipPatterns: [], decisions: [], decisionPatterns: [],
+    growthSnapshots: [], themeSnapshots: [], crossObjectInsights: [], reflectionQuestions: [], todayStories: [],
+  };
+}
+
+function mapIntelligenceMeta(row: DbRow | null): IntelligenceMeta {
+  if (!row) {
+    return { lastFullAnalysisAt: null, lastIncrementalAnalysisAt: null, analysisVersion: "1.0.0", pendingUpdate: false };
+  }
+  const meta: IntelligenceMeta = {
+    lastFullAnalysisAt: row.last_full_analysis_at ? toISO(row.last_full_analysis_at) : null,
+    lastIncrementalAnalysisAt: row.last_incremental_analysis_at ? toISO(row.last_incremental_analysis_at) : null,
+    analysisVersion: getString(row, "analysis_version") || "1.0.0",
+    pendingUpdate: getBoolean(row, "pending_update"),
+  };
+  return isValidIntelligenceMeta(meta) ? meta : { lastFullAnalysisAt: null, lastIncrementalAnalysisAt: null, analysisVersion: "1.0.0", pendingUpdate: false };
+}
+
+function mapTodayStory(r: DbRow): IntelligenceTodayStory {
+  return {
+    id: getString(r, "id"),
+    date: getString(r, "date"),
+    story: getString(r, "story"),
+    evidence: getArray(r, "evidence"),
+    createdAt: toISO(r.created_at),
+  };
+}
+
 function mapHistory(r: DbRow): AIAnalysisHistoryEntry {
   const profileSnapshot = r.profile_snapshot;
   return {
@@ -160,8 +207,16 @@ export class SupabaseAdapter implements StorageAdapter {
     objects: LifeObject[]; notes: Note[]; relations: Relation[];
     tags: Tag[]; templates: Template[]; settings: Record<string, unknown>;
     aiAnalysisHistory: AIAnalysisHistoryEntry[];
+    intelligenceCache: IntelligenceCache;
+    intelligenceMeta: IntelligenceMeta;
+    todayStories: IntelligenceTodayStory[];
     _loaded: boolean;
-  } = { objects: [], notes: [], relations: [], tags: [], templates: [], settings: {}, aiAnalysisHistory: [], _loaded: false };
+  } = { objects: [], notes: [], relations: [], tags: [], templates: [], settings: {}, aiAnalysisHistory: [], intelligenceCache: {
+    chapters: [], patterns: [], relationshipPatterns: [], decisions: [], decisionPatterns: [],
+    growthSnapshots: [], themeSnapshots: [], crossObjectInsights: [], reflectionQuestions: [], todayStories: [],
+  }, intelligenceMeta: {
+    lastFullAnalysisAt: null, lastIncrementalAnalysisAt: null, analysisVersion: "1.0.0", pendingUpdate: false,
+  }, todayStories: [], _loaded: false };
 
   private _initPromise: Promise<void> | null = null;
 
@@ -175,7 +230,12 @@ export class SupabaseAdapter implements StorageAdapter {
             this.init();
           }
           if (event === "SIGNED_OUT") {
-            this.cache = { objects: [], notes: [], relations: [], tags: [], templates: [], settings: {}, aiAnalysisHistory: [], _loaded: false };
+            this.cache = { objects: [], notes: [], relations: [], tags: [], templates: [], settings: {}, aiAnalysisHistory: [], intelligenceCache: {
+              chapters: [], patterns: [], relationshipPatterns: [], decisions: [], decisionPatterns: [],
+              growthSnapshots: [], themeSnapshots: [], crossObjectInsights: [], reflectionQuestions: [], todayStories: [],
+            }, intelligenceMeta: {
+              lastFullAnalysisAt: null, lastIncrementalAnalysisAt: null, analysisVersion: "1.0.0", pendingUpdate: false,
+            }, todayStories: [], _loaded: false };
             resetSupabase();
           }
         });
@@ -208,7 +268,7 @@ export class SupabaseAdapter implements StorageAdapter {
     if (!uid) return;
 
     const client = getSupabase();
-    const [objs, notes, rels, tags, tpls, sets, history] = await Promise.all([
+    const [objs, notes, rels, tags, tpls, sets, history, intelCache, intelMeta, stories] = await Promise.all([
       client.from("objects").select("*").eq("user_id", uid),
       client.from("notes").select("*").eq("user_id", uid),
       client.from("relations").select("*").eq("user_id", uid),
@@ -216,6 +276,9 @@ export class SupabaseAdapter implements StorageAdapter {
       client.from("templates").select("*").eq("user_id", uid),
       client.from("settings").select("*").eq("user_id", uid),
       client.from("ai_analysis_history").select("*").eq("user_id", uid),
+      client.from("intelligence_cache").select("*").eq("user_id", uid).maybeSingle(),
+      client.from("intelligence_meta").select("*").eq("user_id", uid).maybeSingle(),
+      client.from("today_stories").select("*").eq("user_id", uid),
     ]);
 
     this.cache.objects    = (objs.data  || []).map(mapObject);
@@ -225,6 +288,9 @@ export class SupabaseAdapter implements StorageAdapter {
     this.cache.templates = (tpls.data || []).map(mapTemplate);
     this.cache.settings  = mapSettings(sets.data || []);
     this.cache.aiAnalysisHistory = (history.data || []).map(mapHistory);
+    this.cache.intelligenceCache = mapIntelligenceCache(intelCache.data);
+    this.cache.intelligenceMeta = mapIntelligenceMeta(intelMeta.data);
+    this.cache.todayStories = ((stories.data || []) as DbRow[]).map(mapTodayStory);
   }
 
   // ---------- version ----------
@@ -995,5 +1061,86 @@ export class SupabaseAdapter implements StorageAdapter {
       await client.from("ai_analysis_history").delete().eq("user_id", uid);
     }
     this.cache.aiAnalysisHistory = [];
+  }
+
+  // ---------- Intelligence Engine caches ----------
+  async getIntelligenceCache(): Promise<IntelligenceCache> {
+    await this.init();
+    return { ...this.cache.intelligenceCache };
+  }
+
+  async setIntelligenceCache(cache: IntelligenceCache): Promise<void> {
+    await this.init();
+    const uid = await getUid();
+    if (!uid) throw new Error("Not authenticated");
+    if (!isValidIntelligenceCache(cache)) {
+      throw new Error("Invalid intelligence cache");
+    }
+    const client = getSupabase();
+    const now = new Date().toISOString();
+    const { error } = await client
+      .from("intelligence_cache")
+      .upsert({ user_id: uid, payload: cache, updated_at: now }, { onConflict: "user_id" });
+    if (error) throw error;
+    this.cache.intelligenceCache = cache;
+  }
+
+  async getIntelligenceMeta(): Promise<IntelligenceMeta> {
+    await this.init();
+    return { ...this.cache.intelligenceMeta };
+  }
+
+  async setIntelligenceMeta(meta: IntelligenceMeta): Promise<void> {
+    await this.init();
+    const uid = await getUid();
+    if (!uid) throw new Error("Not authenticated");
+    if (!isValidIntelligenceMeta(meta)) {
+      throw new Error("Invalid intelligence meta");
+    }
+    const client = getSupabase();
+    const now = new Date().toISOString();
+    const { error } = await client
+      .from("intelligence_meta")
+      .upsert(
+        {
+          user_id: uid,
+          last_full_analysis_at: meta.lastFullAnalysisAt,
+          last_incremental_analysis_at: meta.lastIncrementalAnalysisAt,
+          analysis_version: meta.analysisVersion,
+          pending_update: meta.pendingUpdate,
+          updated_at: now,
+        },
+        { onConflict: "user_id" }
+      );
+    if (error) throw error;
+    this.cache.intelligenceMeta = meta;
+  }
+
+  async getTodayStory(date: string): Promise<IntelligenceTodayStory | null> {
+    await this.init();
+    return this.cache.todayStories.find((s) => s.date === date) ?? null;
+  }
+
+  async createTodayStory(
+    story: Omit<IntelligenceTodayStory, "id" | "createdAt">
+  ): Promise<IntelligenceTodayStory> {
+    await this.init();
+    const uid = await getUid();
+    if (!uid) throw new Error("Not authenticated");
+    const client = getSupabase();
+    const now = new Date().toISOString();
+    const row = {
+      id: generateId(),
+      user_id: uid,
+      date: story.date,
+      story: story.story,
+      evidence: story.evidence,
+      created_at: now,
+    };
+    const { data, error } = await client.from("today_stories").insert(row).select().single();
+    if (error) throw error;
+    const created = mapTodayStory(data);
+    this.cache.todayStories = [created, ...this.cache.todayStories.filter((s) => s.date !== story.date)].slice(0, 30);
+    return created;
   }
 }

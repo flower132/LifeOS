@@ -8,6 +8,9 @@ import {
   TemplateUpdateInput,
   AIAnalysisHistoryEntry,
   ObjectDeletionSnapshot,
+  IntelligenceCache,
+  IntelligenceMeta,
+  IntelligenceTodayStory,
 } from "@/lib/types";
 
 import { AIProviderId } from "@/lib/ai/types";
@@ -107,6 +110,14 @@ export interface StorageAdapter {
   deleteAIAnalysisHistory(id: string): Promise<void>;
   clearAIAnalysisHistory(): Promise<void>;
   setAIAnalysisHistory(entries: AIAnalysisHistoryEntry[]): Promise<void>;
+
+  // Intelligence Engine caches
+  getIntelligenceCache(): Promise<IntelligenceCache>;
+  setIntelligenceCache(cache: IntelligenceCache): Promise<void>;
+  getIntelligenceMeta(): Promise<IntelligenceMeta>;
+  setIntelligenceMeta(meta: IntelligenceMeta): Promise<void>;
+  getTodayStory(date: string): Promise<IntelligenceTodayStory | null>;
+  createTodayStory(story: Omit<IntelligenceTodayStory, "id" | "createdAt">): Promise<IntelligenceTodayStory>;
 }
 
 export interface StorageConfig {

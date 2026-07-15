@@ -184,6 +184,183 @@ export interface AIAnalysisHistoryEntry {
   memoriesSnapshot?: ObjectMemory[];
 }
 
+// ── Intelligence Engine ─────────────────────────────────────────────────────
+
+export type IntelligencePatternCategory =
+  | "emotion"
+  | "behavior"
+  | "relationship"
+  | "decision"
+  | "goal"
+  | "health"
+  | "work";
+
+export type IntelligencePatternFrequency =
+  | "recurring"
+  | "spike"
+  | "declining"
+  | "stable";
+
+export type IntelligencePatternStatus = "active" | "dismissed" | "confirmed";
+export type IntelligenceUserFeedback = "agree" | "disagree" | "neutral";
+
+export interface IntelligenceEvidence {
+  quote: string;
+  source: string; // e.g. "note:<id>", "memory:<id>", "object:<id>"
+}
+
+export interface IntelligenceChapter {
+  id: string;
+  title: string;
+  summary: string;
+  startAt: string; // ISO
+  endAt?: string; // ISO
+  objectsInvolved: string[];
+  noteIds: string[];
+  evidence: IntelligenceEvidence[];
+  status: "active" | "closed";
+  userModified: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface IntelligencePattern {
+  id: string;
+  title: string;
+  description: string;
+  category: IntelligencePatternCategory;
+  firstSeenAt: string; // ISO
+  lastSeenAt: string; // ISO
+  frequency: IntelligencePatternFrequency;
+  confidence: number; // 0-1
+  evidence: IntelligenceEvidence[];
+  noteIds: string[];
+  status: IntelligencePatternStatus;
+  userFeedback?: IntelligenceUserFeedback;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface IntelligenceRelationshipPattern {
+  id: string;
+  personId: string;
+  personName: string;
+  observation: string;
+  trend: "closer" | "distant" | "stable" | "complex";
+  evidence: IntelligenceEvidence[];
+  noteIds: string[];
+  status: "active" | "dismissed";
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface IntelligenceDecision {
+  id: string;
+  title: string;
+  madeAt: string; // ISO
+  context: string;
+  reason: string;
+  outcome?: string;
+  relatedGoalIds: string[];
+  relatedPersonIds: string[];
+  noteIds: string[];
+  evidence: IntelligenceEvidence[];
+  status: "identified" | "confirmed" | "rejected";
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface IntelligenceDecisionPattern {
+  id: string;
+  observation: string;
+  decisionsInvolved: string[];
+  evidence: IntelligenceEvidence[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface IntelligenceGrowthTheme {
+  id: string;
+  statement: string;
+  direction: "growing" | "emerging" | "struggling" | "stable";
+  evidence: IntelligenceEvidence[];
+}
+
+export interface IntelligenceGrowthSnapshot {
+  id: string;
+  periodFrom: string; // ISO
+  periodTo: string; // ISO
+  summary: string;
+  themes: IntelligenceGrowthTheme[];
+  evidence: IntelligenceEvidence[];
+  createdAt: string;
+}
+
+export interface IntelligenceThemeSnapshot {
+  id: string;
+  periodFrom: string; // ISO
+  periodTo: string; // ISO
+  themes: { statement: string; evidence: IntelligenceEvidence[] }[];
+  createdAt: string;
+}
+
+export interface IntelligenceCrossObjectInsight {
+  id: string;
+  title: string;
+  description: string;
+  category: "growth" | "pattern" | "relationship" | "decision" | "theme";
+  sourceIds: string[];
+  evidence: IntelligenceEvidence[];
+  status: "active" | "dismissed";
+  userFeedback?: "agree" | "disagree";
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface IntelligenceReflectionQuestion {
+  id: string;
+  question: string;
+  triggeredBy: {
+    type: "pattern" | "growth" | "relationship" | "decision" | "today";
+    id: string;
+  };
+  evidence: IntelligenceEvidence[];
+  status: "pending" | "answered" | "dismissed";
+  answeredAt?: string;
+  answer?: string;
+  createdAt: string;
+}
+
+export interface IntelligenceTodayStory {
+  id: string;
+  date: string; // YYYY-MM-DD
+  story: string;
+  evidence: IntelligenceEvidence[];
+  createdAt: string;
+}
+
+export interface IntelligenceCache {
+  chapters: IntelligenceChapter[];
+  patterns: IntelligencePattern[];
+  relationshipPatterns: IntelligenceRelationshipPattern[];
+  decisions: IntelligenceDecision[];
+  decisionPatterns: IntelligenceDecisionPattern[];
+  growthSnapshots: IntelligenceGrowthSnapshot[];
+  themeSnapshots: IntelligenceThemeSnapshot[];
+  crossObjectInsights: IntelligenceCrossObjectInsight[];
+  reflectionQuestions: IntelligenceReflectionQuestion[];
+  todayStories: IntelligenceTodayStory[];
+}
+
+export interface IntelligenceMeta {
+  lastFullAnalysisAt: string | null;
+  lastIncrementalAnalysisAt: string | null;
+  analysisVersion: string;
+  pendingUpdate: boolean;
+}
+
+export type IntelligenceRunType = "full" | "incremental" | "todayStory";
+
 // ── Core domain types ───────────────────────────────────────────────────────
 
 export type NoteSourceType =

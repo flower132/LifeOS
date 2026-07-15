@@ -8,6 +8,7 @@ import { useObjectStore } from "@/stores/objectStore";
 import { useTranslation } from "@/lib/useTranslation";
 import { NoteSourceType, NoteAttachment } from "@/lib/types";
 import { triggerBackgroundObjectUpdate } from "@/lib/ai/objectIntelligence/update";
+import { intelligenceScheduler } from "@/lib/intelligence";
 import { ErrorState } from "@/components/ui/ErrorState";
 
 interface NoteFormProps {
@@ -163,6 +164,9 @@ export function NoteForm({ initialObjectId }: NoteFormProps) {
           return;
         }
       }
+
+      intelligenceScheduler.markPending();
+      intelligenceScheduler.scheduleIncremental(created.id);
 
       router.push(`/objects/${created.object_id}`);
     } catch (err) {
