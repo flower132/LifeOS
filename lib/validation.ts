@@ -354,6 +354,84 @@ function isValidIntelligenceEvidence(obj: unknown): boolean {
   return typeof e.quote === "string" && typeof e.source === "string";
 }
 
+export function isValidDailyTimeline(obj: unknown): boolean {
+  if (!obj || typeof obj !== "object") return false;
+  const t = obj as Record<string, unknown>;
+  return (
+    typeof t.date === "string" &&
+    typeof t.summary === "string" &&
+    Array.isArray(t.evidence) &&
+    t.evidence.every(isValidIntelligenceEvidence) &&
+    typeof t.createdAt === "string" &&
+    typeof t.updatedAt === "string"
+  );
+}
+
+export function isValidWeeklyReview(obj: unknown): boolean {
+  if (!obj || typeof obj !== "object") return false;
+  const r = obj as Record<string, unknown>;
+  const sectionValid = (s: unknown) => {
+    if (!s || typeof s !== "object") return false;
+    const sec = s as Record<string, unknown>;
+    return typeof sec.statement === "string" && Array.isArray(sec.evidence) && sec.evidence.every(isValidIntelligenceEvidence);
+  };
+  const namedSectionValid = (s: unknown) => {
+    if (!s || typeof s !== "object") return false;
+    const sec = s as Record<string, unknown>;
+    return (
+      typeof sec.name === "string" &&
+      typeof sec.reason === "string" &&
+      Array.isArray(sec.evidence) &&
+      sec.evidence.every(isValidIntelligenceEvidence)
+    );
+  };
+  return (
+    typeof r.id === "string" &&
+    typeof r.weekKey === "string" &&
+    typeof r.periodFrom === "string" &&
+    typeof r.periodTo === "string" &&
+    (r.mostImportantPerson === undefined || namedSectionValid(r.mostImportantPerson)) &&
+    (r.mostImportantGoal === undefined || namedSectionValid(r.mostImportantGoal)) &&
+    (r.growth === undefined || sectionValid(r.growth)) &&
+    (r.emotion === undefined || sectionValid(r.emotion)) &&
+    (r.gratitude === undefined || sectionValid(r.gratitude)) &&
+    (r.status === "active" || r.status === "dismissed") &&
+    typeof r.createdAt === "string"
+  );
+}
+
+export function isValidMonthlyStory(obj: unknown): boolean {
+  if (!obj || typeof obj !== "object") return false;
+  const s = obj as Record<string, unknown>;
+  return (
+    typeof s.id === "string" &&
+    typeof s.monthKey === "string" &&
+    typeof s.periodFrom === "string" &&
+    typeof s.periodTo === "string" &&
+    typeof s.story === "string" &&
+    Array.isArray(s.evidence) &&
+    s.evidence.every(isValidIntelligenceEvidence) &&
+    (s.status === "active" || s.status === "dismissed") &&
+    typeof s.createdAt === "string"
+  );
+}
+
+export function isValidCompanionMeta(obj: unknown): boolean {
+  if (!obj || typeof obj !== "object") return false;
+  const m = obj as Record<string, unknown>;
+  const nullableString = (v: unknown) => v === null || typeof v === "string";
+  return (
+    nullableString(m.lastFocusDate) &&
+    nullableString(m.lastReminderDate) &&
+    nullableString(m.lastReflectionDate) &&
+    nullableString(m.lastWeeklyWeekKey) &&
+    nullableString(m.lastMonthlyMonthKey) &&
+    typeof m.consecutiveRejections === "number" &&
+    nullableString(m.lastAppearanceAt) &&
+    typeof m.appearanceCountToday === "number"
+  );
+}
+
 export function isValidIntelligenceCache(obj: unknown): obj is IntelligenceCache {
   if (!obj || typeof obj !== "object") return false;
   const c = obj as Record<string, unknown>;
@@ -369,6 +447,13 @@ export function isValidIntelligenceCache(obj: unknown): obj is IntelligenceCache
     "crossObjectInsights",
     "reflectionQuestions",
     "todayStories",
+    "todayFocuses",
+    "reminders",
+    "reflections",
+    "dailyTimelines",
+    "weeklyReviews",
+    "monthlyStories",
+    "feedback",
   ];
 
   for (const key of arrays) {

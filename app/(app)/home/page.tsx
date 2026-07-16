@@ -10,7 +10,11 @@ import { ObjectCard } from "@/components/object/ObjectCard";
 import { NoteCard } from "@/components/note/NoteCard";
 import { TodayStoryCard } from "@/components/intelligence/TodayStoryCard";
 import { PatternFeedCard } from "@/components/intelligence/PatternFeedCard";
+import { WeeklyReviewCard } from "@/components/intelligence/WeeklyReviewCard";
+import { MonthlyStoryCard } from "@/components/intelligence/MonthlyStoryCard";
 import { TodayFocusCard } from "./TodayFocusCard";
+import { ReflectionCard } from "./ReflectionCard";
+import { ReminderCard } from "./ReminderCard";
 import { SelfSummaryCard } from "./SelfSummaryCard";
 import { useTranslation } from "@/lib/useTranslation";
 import { UserAvatar } from "@/components/user/UserAvatar";
@@ -58,9 +62,16 @@ export default function HomePage() {
           <PatternFeedCard patterns={intelligenceCache.patterns} />
         )}
 
-        <SelfSummaryCard />
+        <WeeklyReviewCard />
+        <MonthlyStoryCard />
 
         <TodayFocusCard />
+
+        <ReflectionCard />
+
+        <ReminderCard />
+
+        <SelfSummaryCard />
 
         <section>
           <div className="mb-4 flex items-center justify-between">

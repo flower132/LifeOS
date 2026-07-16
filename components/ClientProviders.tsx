@@ -5,6 +5,7 @@ import { useSettingsStore } from "@/stores/settingsStore";
 import { hydrateStores } from "@/stores";
 import { storage } from "@/lib/storage";
 import { syncService } from "@/lib/sync/SyncService";
+import { companionScheduler } from "@/lib/companion/scheduler";
 import { DevTools } from "./DevTools";
 import { Spinner } from "@/components/ui/Spinner";
 
@@ -138,6 +139,12 @@ export function ClientProviders({ children }: { children: React.ReactNode }) {
         });
     }
   }, []);
+
+  // Trigger Daily Companion once stores are hydrated.
+  useEffect(() => {
+    if (!hydrated) return;
+    companionScheduler.onPageVisit();
+  }, [hydrated]);
 
   return (
     <>

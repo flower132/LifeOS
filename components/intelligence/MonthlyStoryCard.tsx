@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Sunrise, RefreshCw } from "lucide-react";
+import { BookOpen, X } from "lucide-react";
 import { useTranslation } from "@/lib/useTranslation";
 import { useIntelligenceStore } from "@/stores/intelligenceStore";
 import { useSettingsStore } from "@/stores/settingsStore";
@@ -9,24 +9,26 @@ import { companionService } from "@/lib/companion";
 import { Spinner } from "@/components/ui/Spinner";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { IntelligenceEvidenceList } from "./IntelligenceEvidenceList";
-import { getLocalDateString } from "@/lib/companion/utils/date";
+import { getMonthKey } from "@/lib/companion/utils/date";
 
-export function TodayStoryCard() {
+export function MonthlyStoryCard() {
   const { t } = useTranslation();
-  const todayStories = useIntelligenceStore((s) => s.cache.todayStories);
+  const monthKey = getMonthKey();
+  const monthlyStories = useIntelligenceStore((s) => s.cache.monthlyStories);
+  const setMonthlyStories = useIntelligenceStore((s) => s.setMonthlyStories);
   const hydrated = useIntelligenceStore((s) => s.hydrated);
   const companionEnabled = useSettingsStore((s) => s.companionEnabled);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const today = getLocalDateString();
-  const story = todayStories.find((s) => s.date === today) ?? null;
+  const story =
+    monthlyStories.find((s) => s.monthKey === monthKey && s.status === "active") ?? null;
 
-  const generate = async (force = false) => {
+  const generate = async () => {
     setError(null);
     setIsLoading(true);
     try {
-      await companionService.ensureTodayStory({ force });
+      await companionService.ensureMonthlyStory(monthKey);
     } catch (err) {
       setError(err instanceof Error ? err.message : t("aiAnalysisFailed"));
     } finally {
@@ -45,60 +47,57 @@ export function TodayStoryCard() {
   }, [hydrated, story, companionEnabled]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
+  const handleDismiss = async () => {
+    if (!story) return;
+    const next = monthlyStories.map((s) =>
+      s.id === story.id ? { ...s, status: "dismissed" as const } : s
+    );
+    await setMonthlyStories(next);
+  };
+
   if (!hydrated || isLoading) {
     return (
       <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Spinner size="sm" />
-          {t("todayStoryLoading")}
+          {t("monthlyStoryLoading") ?? "正在书写本月故事..."}
         </div>
       </div>
     );
   }
 
-  if (!companionEnabled) {
+  if (!companionEnabled || !story) {
     return null;
   }
 
-  if (!story) {
-    if (error) {
-      return (
-        <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
-          <ErrorState description={error} onRetry={() => void generate(true)} />
-        </div>
-      );
-    }
-    return null;
+  if (error) {
+    return (
+      <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
+        <ErrorState description={error} onRetry={() => void generate()} />
+      </div>
+    );
   }
 
   return (
     <div className="rounded-xl border border-accent/20 bg-accent/[0.03] p-5">
-      <div className="mb-3 flex items-center justify-between">
+      <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Sunrise className="h-4 w-4 text-accent" />
+          <BookOpen className="h-4 w-4 text-accent" />
           <h2 className="text-sm font-semibold uppercase tracking-wide text-foreground">
-            {t("todayStory")}
+            {t("monthlyStory") ?? "This Month's Story"}
           </h2>
         </div>
         <button
           type="button"
-          onClick={() => void generate(true)}
-          disabled={isLoading}
-          className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-muted-foreground hover:bg-accent/10 hover:text-accent disabled:opacity-50"
+          onClick={() => void handleDismiss()}
+          className="rounded-lg p-1 text-muted-foreground hover:bg-accent/10"
+          aria-label={t("dismiss") ?? "忽略"}
         >
-          {isLoading ? (
-            <Spinner size="sm" />
-          ) : (
-            <RefreshCw className="h-3.5 w-3.5" />
-          )}
-          {t("refresh")}
+          <X className="h-4 w-4" />
         </button>
       </div>
 
       <p className="text-sm leading-relaxed text-foreground">{story.story}</p>
-      {story.greeting ? (
-        <p className="mt-2 text-sm text-muted-foreground">{story.greeting}</p>
-      ) : null}
       <IntelligenceEvidenceList evidence={story.evidence} />
     </div>
   );

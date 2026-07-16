@@ -1,67 +1,43 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Compass, RefreshCw, Sparkles } from "lucide-react";
-import { useObjectStore } from "@/stores/objectStore";
-import { useNoteStore } from "@/stores/noteStore";
-import { useRelationStore } from "@/stores/relationStore";
-import { ObjectTypeBadge } from "@/components/object/ObjectTypeBadge";
-import { EvidenceList } from "@/components/advisor/EvidenceList";
+import { Compass, Sparkles, Check, X } from "lucide-react";
 import { useTranslation } from "@/lib/useTranslation";
+import { useIntelligenceStore } from "@/stores/intelligenceStore";
+import { useSettingsStore } from "@/stores/settingsStore";
+import { useObjectStore } from "@/stores/objectStore";
+import { ObjectTypeBadge } from "@/components/object/ObjectTypeBadge";
+import { CompanionEvidenceList } from "@/components/companion/CompanionEvidenceList";
 import { ErrorState } from "@/components/ui/ErrorState";
-import { AIInsightSkeleton, SkeletonBlock } from "@/components/ui/Skeleton";
+import { SkeletonBlock } from "@/components/ui/Skeleton";
 import { Spinner } from "@/components/ui/Spinner";
-import { AdvisorContext, AdvisorHomeInsightResult } from "@/lib/ai/advisor/types";
-import { advisorService } from "@/lib/ai/advisor";
-import { selectTodayFocus } from "@/lib/ai/advisor/focusSelector";
+import { companionService } from "@/lib/companion";
+import { recordFeedback } from "@/lib/companion/learning";
+import { getLocalDateString } from "@/lib/companion/utils/date";
 
 export function TodayFocusCard() {
   const { t } = useTranslation();
-  const { objects, loaded: objectsLoaded } = useObjectStore();
-  const { notes, loaded: notesLoaded } = useNoteStore();
-  const { getByObjectId: getRelationsByObjectId } = useRelationStore();
+  const today = getLocalDateString();
+  const todayFocuses = useIntelligenceStore((s) => s.cache.todayFocuses);
+  const setTodayFocuses = useIntelligenceStore((s) => s.setTodayFocuses);
+  const hydrated = useIntelligenceStore((s) => s.hydrated);
+  const companionEnabled = useSettingsStore((s) => s.companionEnabled);
+  const objects = useObjectStore((s) => s.objects);
 
-  const [insight, setInsight] = useState<AdvisorHomeInsightResult | null>(null);
+  const focus = todayFocuses.find((f) => f.date === today && f.status === "active") ?? null;
+  const focusObject = focus?.objectId
+    ? objects.find((o) => o.id === focus.objectId)
+    : null;
+
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const object = useMemo(() => {
-    return selectTodayFocus(objects, notes);
-  }, [objects, notes]);
-
-  const context: AdvisorContext | null = useMemo(() => {
-    if (!object) return null;
-    const objectNotes = notes
-      .filter((n) => n.object_id === object.id)
-      .sort(
-        (a, b) =>
-          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-      );
-    const relations = getRelationsByObjectId(object.id);
-    const relatedObjectIds = new Set<string>();
-    relations.forEach((r) => {
-      relatedObjectIds.add(r.source_object_id);
-      relatedObjectIds.add(r.target_object_id);
-    });
-    relatedObjectIds.delete(object.id);
-    const relatedObjects = objects.filter((o) => relatedObjectIds.has(o.id)
-    );
-    return {
-      object,
-      notes: objectNotes,
-      relations,
-      relatedObjects,
-    };
-  }, [object, notes, getRelationsByObjectId, objects]);
-
-  const generateInsight = async () => {
-    if (!context) return;
+  const generate = async () => {
     setError(null);
     setIsLoading(true);
     try {
-      const res = await advisorService.generateHomeInsight(context);
-      setInsight(res);
+      await companionService.ensureTodayFocus();
     } catch (err) {
       setError(err instanceof Error ? err.message : t("aiAnalysisFailed"));
     } finally {
@@ -71,26 +47,81 @@ export function TodayFocusCard() {
 
   /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
-    if (context && !insight && !isLoading) {
-      void generateInsight();
+    if (!hydrated) return;
+    if (!companionEnabled) return;
+    if (!focus && !isLoading && !error) {
+      void generate();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [context]);
+  }, [hydrated, focus, companionEnabled]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
-  const isReady = objectsLoaded && notesLoaded;
+  const updateFocus = async (updates: Partial<typeof focus>) => {
+    if (!focus) return;
+    const next = todayFocuses.map((f) =>
+      f.id === focus.id ? { ...f, ...updates, updatedAt: new Date().toISOString() } : f
+    );
+    await setTodayFocuses(next);
+  };
 
-  if (!isReady) {
+  const sourceId =
+    focus?.objectId ||
+    focus?.relationId ||
+    focus?.memoryId ||
+    focus?.placeId ||
+    focus?.habitId ||
+    focus?.id;
+
+  const handleDone = () => {
+    void updateFocus({ status: "done" });
+    if (focus) {
+      recordFeedback({
+        kind: "focus",
+        itemId: focus.id,
+        action: "done",
+        reason: `sourceId:${sourceId}`,
+      });
+    }
+  };
+
+  const handleDismiss = () => {
+    void updateFocus({ status: "dismissed" });
+    if (focus) {
+      recordFeedback({
+        kind: "focus",
+        itemId: focus.id,
+        action: "dismiss",
+        reason: `sourceId:${sourceId}`,
+      });
+    }
+  };
+
+  if (!hydrated || isLoading) {
     return (
-      <SkeletonBlock className="h-40" />
+      <div className="rounded-xl border border-accent/20 bg-accent/[0.03] p-5">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Spinner size="sm" />
+          {t("todayFocusLoading") ?? "正在生成今日焦点..."}
+        </div>
+      </div>
     );
   }
 
-  if (!object || !context) {
+  if (!companionEnabled) {
+    return null;
+  }
+
+  if (error) {
     return (
-      <div className="rounded-xl border border-dashed border-border bg-card p-6 text-center">
-        <p className="text-sm text-muted-foreground">{t("advisorNoFocus")}</p>
+      <div className="rounded-xl border border-accent/20 bg-accent/[0.03] p-5">
+        <ErrorState description={error} onRetry={() => void generate()} />
       </div>
+    );
+  }
+
+  if (!focus) {
+    return (
+      <SkeletonBlock className="h-40" />
     );
   }
 
@@ -100,74 +131,60 @@ export function TodayFocusCard() {
         <div className="flex items-center gap-2">
           <Compass className="h-4 w-4 text-accent" />
           <h2 className="text-sm font-semibold uppercase tracking-wide text-foreground">
-            {t("todayFocus")}
+            {t("todayFocus") ?? "Today's Focus"}
           </h2>
         </div>
-        <button
-          type="button"
-          onClick={() => void generateInsight()}
-          disabled={isLoading}
-          className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-muted-foreground hover:bg-accent/10 hover:text-accent disabled:opacity-50"
-        >
-          {isLoading ? (
-            <Spinner size="sm" />
-          ) : (
-            <RefreshCw className="h-3.5 w-3.5" />
-          )}
-          {t("advisorRefresh")}
-        </button>
+        {focus.objectId && (
+          <Link
+            href={`/advisor?objectId=${focus.objectId}`}
+            className="inline-flex items-center gap-1 rounded-lg bg-accent px-3 py-1.5 text-xs font-medium text-accent-foreground hover:bg-accent/90"
+          >
+            <Sparkles className="h-3.5 w-3.5" />
+            {t("askLifeOS")}
+          </Link>
+        )}
       </div>
 
-      <div className="mb-4 flex items-center gap-3">
-        <ObjectTypeBadge type={object.type} />
-        <Link
-          href={`/objects/${object.id}`}
-          className="text-base font-medium text-foreground hover:text-accent"
-        >
-          {object.name}
-        </Link>
-        <Link
-          href={`/advisor?objectId=${object.id}`}
-          className="ml-auto inline-flex items-center gap-1 rounded-lg bg-accent px-3 py-1.5 text-xs font-medium text-accent-foreground hover:bg-accent/90"
-        >
-          <Sparkles className="h-3.5 w-3.5" />
-          {t("askLifeOS")}
-        </Link>
+      <div className="mb-3 flex items-center gap-3">
+        {focusObject && <ObjectTypeBadge type={focusObject.type} />}
+        <span className="text-base font-medium text-foreground">{focus.title}</span>
       </div>
 
-      {error && (
-        <ErrorState
-          description={error}
-          onRetry={() => void generateInsight()}
-        />
+      {focus.explanation && (
+        <div className="mb-3 rounded-lg border border-border bg-card p-3">
+          <p className="text-sm leading-relaxed text-foreground">{focus.explanation}</p>
+        </div>
       )}
 
-      {insight?.narrative ? (
-        <div className="space-y-3">
-          <div className="rounded-lg border border-border bg-card p-4">
-            <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              {t("advisorInsightTitle")}
-            </h3>
-            <p className="text-sm leading-relaxed text-foreground">
-              {insight.narrative}
-            </p>
-            <EvidenceList evidence={insight.evidence} />
-          </div>
-
-          {insight.maybeToday && (
-            <div className="rounded-lg border border-border bg-card p-4">
-              <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                {t("advisorMaybeTodayTitle")}
-              </h3>
-              <p className="text-sm leading-relaxed text-foreground">
-                {insight.maybeToday}
-              </p>
-            </div>
-          )}
+      {focus.whyNow && (
+        <div className="rounded-lg border border-border bg-card p-3">
+          <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            {t("whyNow") ?? "Why Now"}
+          </h3>
+          <p className="text-sm leading-relaxed text-foreground">{focus.whyNow}</p>
         </div>
-      ) : isLoading ? (
-        <AIInsightSkeleton />
-      ) : null}
+      )}
+
+      <CompanionEvidenceList evidence={focus.evidence} />
+
+      <div className="mt-4 flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={handleDone}
+          className="inline-flex items-center gap-1 rounded-lg bg-accent px-3 py-1.5 text-xs font-medium text-accent-foreground hover:bg-accent/90"
+        >
+          <Check className="h-3.5 w-3.5" />
+          {t("done") ?? "完成"}
+        </button>
+        <button
+          type="button"
+          onClick={handleDismiss}
+          className="inline-flex items-center gap-1 rounded-lg border border-input bg-background px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-muted"
+        >
+          <X className="h-3.5 w-3.5" />
+          {t("dismiss") ?? "忽略"}
+        </button>
+      </div>
     </div>
   );
 }

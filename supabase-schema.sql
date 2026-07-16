@@ -170,12 +170,31 @@ create table if not exists public.today_stories (
   user_id     uuid references auth.users(id) on delete cascade not null,
   date        date not null,
   story       text not null,
+  greeting    text,
   evidence    jsonb default '[]'::jsonb,
   created_at  timestamptz default now()
 );
 alter table public.today_stories enable row level security;
 create policy "Users can only access their own today stories"
   on public.today_stories for all
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
+
+create table if not exists public.companion_meta (
+  user_id     uuid primary key references auth.users(id) on delete cascade,
+  last_focus_date date,
+  last_reminder_date date,
+  last_reflection_date date,
+  last_weekly_week_key text,
+  last_monthly_month_key text,
+  consecutive_rejections int default 0,
+  last_appearance_at timestamptz,
+  appearance_count_today int default 0,
+  updated_at  timestamptz default now()
+);
+alter table public.companion_meta enable row level security;
+create policy "Users can only access their own companion meta"
+  on public.companion_meta for all
   using (auth.uid() = user_id)
   with check (auth.uid() = user_id);
 
@@ -191,6 +210,7 @@ create index if not exists idx_ai_history_user on public.ai_analysis_history(use
 create index if not exists idx_ai_history_object on public.ai_analysis_history(object_id);
 create index if not exists idx_intelligence_cache_user on public.intelligence_cache(user_id);
 create index if not exists idx_today_stories_user_date on public.today_stories(user_id, date);
+create index if not exists idx_companion_meta_user on public.companion_meta(user_id);
 
 -- ============================================================
 -- Done! Now enable Email auth in Supabase Dashboard → Authentication → Providers

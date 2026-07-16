@@ -29,6 +29,15 @@ const DEFAULT_SETTINGS: AppSettings = {
   aiApiKey: "",
   openaiKey: "",
   anthropicKey: "",
+  companionEnabled: true,
+  allowNotifications: false,
+  quietMode: {
+    enabled: true,
+    doNotDisturbStart: "22:00",
+    doNotDisturbEnd: "07:00",
+    consecutiveRejectionThreshold: 3,
+    lowMoodKeywords: ["累", "难过", "烦躁", "tired", "sad", "疲惫", "焦虑"],
+  },
 };
 
 interface SettingsState extends AppSettings {
@@ -50,6 +59,9 @@ interface SettingsState extends AppSettings {
   setAIModel: (model: string) => Promise<void>;
   setAIBaseUrl: (baseUrl: string) => Promise<void>;
   setAIApiKey: (apiKey: string) => Promise<void>;
+  setCompanionEnabled: (enabled: boolean) => Promise<void>;
+  setAllowNotifications: (enabled: boolean) => Promise<void>;
+  setQuietMode: (quietMode: AppSettings["quietMode"]) => Promise<void>;
   reset: () => Promise<void>;
 }
 
@@ -78,6 +90,32 @@ function coerceDateFormat(value: string): DateFormat {
 
 function coerceTimeFormat(value: string): TimeFormat {
   return value === "12h" ? "12h" : "24h";
+}
+
+function coerceQuietMode(
+  value: unknown
+): AppSettings["quietMode"] {
+  const defaults = DEFAULT_SETTINGS.quietMode;
+  if (!value || typeof value !== "object") return defaults;
+  const q = value as Record<string, unknown>;
+  return {
+    enabled: typeof q.enabled === "boolean" ? q.enabled : defaults.enabled,
+    doNotDisturbStart:
+      typeof q.doNotDisturbStart === "string"
+        ? q.doNotDisturbStart
+        : defaults.doNotDisturbStart,
+    doNotDisturbEnd:
+      typeof q.doNotDisturbEnd === "string"
+        ? q.doNotDisturbEnd
+        : defaults.doNotDisturbEnd,
+    consecutiveRejectionThreshold:
+      typeof q.consecutiveRejectionThreshold === "number"
+        ? q.consecutiveRejectionThreshold
+        : defaults.consecutiveRejectionThreshold,
+    lowMoodKeywords: Array.isArray(q.lowMoodKeywords)
+      ? q.lowMoodKeywords.filter((k): k is string => typeof k === "string")
+      : defaults.lowMoodKeywords,
+  };
 }
 
 function coerceAIProvider(value: string): AIProviderId {
@@ -147,6 +185,15 @@ function mergeWithDefaults(raw: Partial<AppSettings>): AppSettings {
     aiApiKey: typeof migrated.aiApiKey === "string" ? migrated.aiApiKey : DEFAULT_SETTINGS.aiApiKey,
     openaiKey: typeof migrated.openaiKey === "string" ? migrated.openaiKey : DEFAULT_SETTINGS.openaiKey,
     anthropicKey: typeof migrated.anthropicKey === "string" ? migrated.anthropicKey : DEFAULT_SETTINGS.anthropicKey,
+    companionEnabled:
+      migrated.companionEnabled !== undefined
+        ? Boolean(migrated.companionEnabled)
+        : DEFAULT_SETTINGS.companionEnabled,
+    allowNotifications:
+      migrated.allowNotifications !== undefined
+        ? Boolean(migrated.allowNotifications)
+        : DEFAULT_SETTINGS.allowNotifications,
+    quietMode: coerceQuietMode(migrated.quietMode),
   };
 }
 
@@ -186,6 +233,9 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       aiApiKey: state.aiApiKey,
       openaiKey: state.openaiKey,
       anthropicKey: state.anthropicKey,
+      companionEnabled: state.companionEnabled,
+      allowNotifications: state.allowNotifications,
+      quietMode: state.quietMode,
     });
   },
 
@@ -311,6 +361,33 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       await storage.setSettings({ aiApiKey });
     } catch (err) {
       set({ error: err instanceof Error ? err.message : "Failed to save AI API key" });
+    }
+  },
+
+  setCompanionEnabled: async (companionEnabled) => {
+    set({ companionEnabled });
+    try {
+      await storage.setSettings({ companionEnabled });
+    } catch (err) {
+      set({ error: err instanceof Error ? err.message : "Failed to save companion setting" });
+    }
+  },
+
+  setAllowNotifications: async (allowNotifications) => {
+    set({ allowNotifications });
+    try {
+      await storage.setSettings({ allowNotifications });
+    } catch (err) {
+      set({ error: err instanceof Error ? err.message : "Failed to save notification setting" });
+    }
+  },
+
+  setQuietMode: async (quietMode) => {
+    set({ quietMode });
+    try {
+      await storage.setSettings({ quietMode });
+    } catch (err) {
+      set({ error: err instanceof Error ? err.message : "Failed to save quiet mode" });
     }
   },
 

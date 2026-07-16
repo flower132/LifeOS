@@ -21,7 +21,11 @@ import {
   RelatedMemory,
 } from "./types";
 import { buildPatternPrompt, discoverPatterns } from "../engines/patternEngine";
-import { buildTodayStoryPrompt, mapTodayStoryOutput } from "../engines/todayStoryEngine";
+import {
+  buildTodayStoryPrompt,
+  mapTodayStoryOutput,
+  buildMockTodayStory,
+} from "../engines/todayStoryEngine";
 import { buildRelatedMemoriesPrompt, mapRelatedMemoriesOutput } from "../engines/relatedMemoriesEngine";
 import { useIntelligenceStore } from "@/stores/intelligenceStore";
 
@@ -150,12 +154,16 @@ export class IntelligenceService {
     store.setMeta({ ...store.meta, lastFullAnalysisAt: new Date().toISOString(), pendingUpdate: false });
   }
 
-  async generateTodayStory(date: string): Promise<IntelligenceTodayStory | null> {
-    const cached = await storage.getTodayStory(date);
-    if (cached) return cached;
+  async generateTodayStory(
+    date: string,
+    opts?: { force?: boolean }
+  ): Promise<IntelligenceTodayStory | null> {
+    if (!opts?.force) {
+      const cached = await storage.getTodayStory(date);
+      if (cached) return cached;
+    }
 
     const { provider, isMock } = selectProviderForAnalysis();
-    if (isMock) return null;
 
     const context = await buildContext({ maxNotes: 100 });
     if (!context) return null;
@@ -167,9 +175,15 @@ export class IntelligenceService {
       date,
     };
 
-    const prompt = buildTodayStoryPrompt(input);
-    const rawOutput = await callStructured(provider, prompt);
-    const story = mapTodayStoryOutput(rawOutput, date);
+    let story: IntelligenceTodayStory | null;
+    if (isMock) {
+      story = buildMockTodayStory(input, date);
+    } else {
+      const prompt = buildTodayStoryPrompt(input);
+      const rawOutput = await callStructured(provider, prompt);
+      story = mapTodayStoryOutput(rawOutput, date);
+    }
+
     if (!story) return null;
 
     await storage.createTodayStory(story);

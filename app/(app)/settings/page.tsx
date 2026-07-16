@@ -16,6 +16,7 @@ import {
   CheckCircle2,
   XCircle,
   Loader2,
+  Heart,
 } from "lucide-react";
 import { useSettingsStore } from "@/stores/settingsStore";
 import { hydrateStores } from "@/stores";
@@ -56,6 +57,8 @@ export default function SettingsPage() {
     aiModel,
     aiBaseUrl,
     aiApiKey,
+    companionEnabled,
+    allowNotifications,
     loaded,
     error,
     setLanguage,
@@ -69,6 +72,8 @@ export default function SettingsPage() {
     setAIModel,
     setAIBaseUrl,
     setAIApiKey,
+    setCompanionEnabled,
+    setAllowNotifications,
   } = useSettingsStore();
 
   const [exportingJson, setExportingJson] = useState(false);
@@ -574,6 +579,40 @@ export default function SettingsPage() {
                 </div>
               </div>
             )}
+          </div>
+        </SectionCard>
+
+        {/* Daily Companion */}
+        <SectionCard icon={Heart} title={t("companionSettings") ?? "Daily Companion"}>
+          <div className="space-y-4">
+            <label className="flex items-center justify-between">
+              <span className="text-sm text-foreground">
+                {t("companionEnabled") ?? "启用 Daily Companion"}
+              </span>
+              <input
+                type="checkbox"
+                checked={companionEnabled}
+                onChange={(e) => void setCompanionEnabled(e.target.checked)}
+                className="h-5 w-5 rounded border-input text-accent focus:ring-accent"
+              />
+            </label>
+
+            <label className="flex items-center justify-between">
+              <span className="text-sm text-foreground">
+                {t("allowNotifications") ?? "允许每日提醒通知"}
+              </span>
+              <input
+                type="checkbox"
+                checked={allowNotifications}
+                onChange={(e) => void setAllowNotifications(e.target.checked)}
+                className="h-5 w-5 rounded border-input text-accent focus:ring-accent"
+              />
+            </label>
+
+            <p className="text-xs text-muted-foreground">
+              {t("companionSettingsDescription") ??
+                "Daily Companion 每天只出现最值得出现的一件事：一条 Today Focus、一句 Today Story，以及一个温柔的晚间反思。"}
+            </p>
           </div>
         </SectionCard>
 

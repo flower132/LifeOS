@@ -11,6 +11,8 @@ import {
   IntelligenceCache,
   IntelligenceMeta,
   IntelligenceTodayStory,
+  QuietModeSettings,
+  CompanionMeta,
 } from "@/lib/types";
 
 import { AIProviderId } from "@/lib/ai/types";
@@ -31,6 +33,10 @@ export type AppSettings = {
   aiModel: string;
   aiBaseUrl: string;
   aiApiKey: string;
+  // Daily Companion settings
+  companionEnabled: boolean;
+  allowNotifications: boolean;
+  quietMode: QuietModeSettings;
   // Deprecated: kept for migration from old settings schema.
   openaiKey?: string;
   anthropicKey?: string;
@@ -118,6 +124,10 @@ export interface StorageAdapter {
   setIntelligenceMeta(meta: IntelligenceMeta): Promise<void>;
   getTodayStory(date: string): Promise<IntelligenceTodayStory | null>;
   createTodayStory(story: Omit<IntelligenceTodayStory, "id" | "createdAt">): Promise<IntelligenceTodayStory>;
+
+  // Daily Companion meta
+  getCompanionMeta(): Promise<CompanionMeta>;
+  setCompanionMeta(meta: CompanionMeta): Promise<void>;
 }
 
 export interface StorageConfig {

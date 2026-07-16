@@ -11,6 +11,7 @@ import {
   IntelligenceCache,
   IntelligenceMeta,
   IntelligenceTodayStory,
+  CompanionMeta,
 } from "@/lib/types";
 import { AppSettings, StorageAdapter } from "@/lib/storage/types";
 import { localStorageAdapter } from "@/lib/storage/localStorageAdapter";
@@ -259,6 +260,12 @@ export class HybridStorageAdapter implements StorageAdapter {
     story: Omit<IntelligenceTodayStory, "id" | "createdAt">
   ): Promise<IntelligenceTodayStory> {
     return this.local.createTodayStory(story);
+  }
+  async getCompanionMeta(): Promise<CompanionMeta> {
+    return this.local.getCompanionMeta();
+  }
+  async setCompanionMeta(meta: CompanionMeta): Promise<void> {
+    await this.local.setCompanionMeta(meta);
   }
 }
 

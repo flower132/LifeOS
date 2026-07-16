@@ -23,6 +23,7 @@ export const patternOutputSchema = z.object({
 
 export const todayStoryOutputSchema = z.object({
   story: z.string(),
+  greeting: z.string().optional(),
   evidence: z.array(intelligenceEvidenceSchema),
 });
 

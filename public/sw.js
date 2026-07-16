@@ -84,3 +84,21 @@ self.addEventListener("fetch", (event) => {
     })
   );
 });
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const action = event.action || "open";
+  const reminderId = event.notification.data?.reminderId;
+  const url = reminderId
+    ? `/home?companionAction=${action}&reminderId=${reminderId}`
+    : "/home";
+  event.waitUntil(
+    self.clients.matchAll({ type: "window" }).then((clients) => {
+      const client = clients.find((c) => c.url.includes("/home")) || clients[0];
+      if (client) {
+        return client.navigate(url).then((c) => c?.focus());
+      }
+      return self.clients.openWindow(url);
+    })
+  );
+});

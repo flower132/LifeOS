@@ -13,6 +13,7 @@ import {
   IntelligenceCache,
   IntelligenceMeta,
   IntelligenceTodayStory,
+  CompanionMeta,
 } from "@/lib/types";
 import {
   isValidLifeObject,
@@ -24,6 +25,7 @@ import {
   isValidIntelligenceCache,
   isValidIntelligenceMeta,
   isValidIntelligenceTodayStory,
+  isValidCompanionMeta,
   validateInputObject,
   validateInputNote,
   validateInputRelation,
@@ -57,6 +59,7 @@ const KEYS = {
   intelligenceCache: "lifeos_intelligence_cache",
   intelligenceMeta: "lifeos_intelligence_meta",
   todayStories: "lifeos_today_stories",
+  companionMeta: "lifeos_companion_meta",
 };
 
 const DEFAULT_INTELLIGENCE_CACHE: IntelligenceCache = {
@@ -70,6 +73,13 @@ const DEFAULT_INTELLIGENCE_CACHE: IntelligenceCache = {
   crossObjectInsights: [],
   reflectionQuestions: [],
   todayStories: [],
+  todayFocuses: [],
+  reminders: [],
+  reflections: [],
+  dailyTimelines: [],
+  weeklyReviews: [],
+  monthlyStories: [],
+  feedback: [],
 };
 
 const DEFAULT_INTELLIGENCE_META: IntelligenceMeta = {
@@ -77,6 +87,17 @@ const DEFAULT_INTELLIGENCE_META: IntelligenceMeta = {
   lastIncrementalAnalysisAt: null,
   analysisVersion: "1.0.0",
   pendingUpdate: false,
+};
+
+const DEFAULT_COMPANION_META: CompanionMeta = {
+  lastFocusDate: null,
+  lastReminderDate: null,
+  lastReflectionDate: null,
+  lastWeeklyWeekKey: null,
+  lastMonthlyMonthKey: null,
+  consecutiveRejections: 0,
+  lastAppearanceAt: null,
+  appearanceCountToday: 0,
 };
 
 const ENTITY_KEYS = [
@@ -1112,8 +1133,10 @@ export class LocalStorageAdapter implements StorageAdapter {
   // Intelligence Engine caches
   async getIntelligenceCache(): Promise<IntelligenceCache> {
     const raw = safeGetItem<unknown>(KEYS.intelligenceCache, null);
-    if (isValidIntelligenceCache(raw)) {
-      return raw;
+    if (raw && typeof raw === "object" && !Array.isArray(raw)) {
+      // Merge with defaults so older caches missing new Daily Companion arrays
+      // continue to work without being reset.
+      return { ...DEFAULT_INTELLIGENCE_CACHE, ...raw } as IntelligenceCache;
     }
     return DEFAULT_INTELLIGENCE_CACHE;
   }
@@ -1138,6 +1161,25 @@ export class LocalStorageAdapter implements StorageAdapter {
       throw new StorageError("Invalid intelligence meta", "validation");
     }
     safeSetItem(KEYS.intelligenceMeta, meta);
+  }
+
+  // Daily Companion meta
+  async getCompanionMeta(): Promise<CompanionMeta> {
+    const raw = safeGetItem<unknown>(KEYS.companionMeta, null);
+    if (raw && typeof raw === "object" && !Array.isArray(raw)) {
+      const merged = { ...DEFAULT_COMPANION_META, ...raw };
+      if (isValidCompanionMeta(merged)) {
+        return merged as CompanionMeta;
+      }
+    }
+    return DEFAULT_COMPANION_META;
+  }
+
+  async setCompanionMeta(meta: CompanionMeta): Promise<void> {
+    if (!isValidCompanionMeta(meta)) {
+      throw new StorageError("Invalid companion meta", "validation");
+    }
+    safeSetItem(KEYS.companionMeta, meta);
   }
 
   async getTodayStory(date: string): Promise<IntelligenceTodayStory | null> {

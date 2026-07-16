@@ -5,10 +5,11 @@ import {
   AIAnalysisHistoryEntry, ObjectAIProfile, NoteAttachment,
   ObjectDeletionSnapshot,
   IntelligenceCache, IntelligenceMeta, IntelligenceTodayStory,
+  CompanionMeta,
 } from "@/lib/types";
 import { getSupabase, resetSupabase } from "@/lib/supabaseClient";
 import { generateId } from "@/lib/id";
-import { isValidIntelligenceCache, isValidIntelligenceMeta } from "@/lib/validation";
+import { isValidIntelligenceCache, isValidIntelligenceMeta, isValidCompanionMeta } from "@/lib/validation";
 
 const toISO = (d: unknown) =>
   d ? new Date(d as string | number).toISOString() : new Date().toISOString();
@@ -129,12 +130,31 @@ function mapSettings(rows: DbRow[]): Record<string, unknown> {
   return s;
 }
 
+function emptyIntelligenceCache(): IntelligenceCache {
+  return {
+    chapters: [],
+    patterns: [],
+    relationshipPatterns: [],
+    decisions: [],
+    decisionPatterns: [],
+    growthSnapshots: [],
+    themeSnapshots: [],
+    crossObjectInsights: [],
+    reflectionQuestions: [],
+    todayStories: [],
+    todayFocuses: [],
+    reminders: [],
+    reflections: [],
+    dailyTimelines: [],
+    weeklyReviews: [],
+    monthlyStories: [],
+    feedback: [],
+  };
+}
+
 function mapIntelligenceCache(row: DbRow | null): IntelligenceCache {
   if (!row) {
-    return {
-      chapters: [], patterns: [], relationshipPatterns: [], decisions: [], decisionPatterns: [],
-      growthSnapshots: [], themeSnapshots: [], crossObjectInsights: [], reflectionQuestions: [], todayStories: [],
-    };
+    return emptyIntelligenceCache();
   }
   const payload = row.payload;
   if (
@@ -145,10 +165,7 @@ function mapIntelligenceCache(row: DbRow | null): IntelligenceCache {
   ) {
     return payload as IntelligenceCache;
   }
-  return {
-    chapters: [], patterns: [], relationshipPatterns: [], decisions: [], decisionPatterns: [],
-    growthSnapshots: [], themeSnapshots: [], crossObjectInsights: [], reflectionQuestions: [], todayStories: [],
-  };
+  return emptyIntelligenceCache();
 }
 
 function mapIntelligenceMeta(row: DbRow | null): IntelligenceMeta {
@@ -164,11 +181,37 @@ function mapIntelligenceMeta(row: DbRow | null): IntelligenceMeta {
   return isValidIntelligenceMeta(meta) ? meta : { lastFullAnalysisAt: null, lastIncrementalAnalysisAt: null, analysisVersion: "1.0.0", pendingUpdate: false };
 }
 
+function mapCompanionMeta(r: DbRow | null): CompanionMeta {
+  const defaults: CompanionMeta = {
+    lastFocusDate: null,
+    lastReminderDate: null,
+    lastReflectionDate: null,
+    lastWeeklyWeekKey: null,
+    lastMonthlyMonthKey: null,
+    consecutiveRejections: 0,
+    lastAppearanceAt: null,
+    appearanceCountToday: 0,
+  };
+  if (!r) return defaults;
+  const meta: CompanionMeta = {
+    lastFocusDate: getOptionalString(r, "last_focus_date") ?? null,
+    lastReminderDate: getOptionalString(r, "last_reminder_date") ?? null,
+    lastReflectionDate: getOptionalString(r, "last_reflection_date") ?? null,
+    lastWeeklyWeekKey: getOptionalString(r, "last_weekly_week_key") ?? null,
+    lastMonthlyMonthKey: getOptionalString(r, "last_monthly_month_key") ?? null,
+    consecutiveRejections: getNumber(r, "consecutive_rejections"),
+    lastAppearanceAt: r.last_appearance_at ? toISO(r.last_appearance_at) : null,
+    appearanceCountToday: getNumber(r, "appearance_count_today"),
+  };
+  return isValidCompanionMeta(meta) ? meta : defaults;
+}
+
 function mapTodayStory(r: DbRow): IntelligenceTodayStory {
   return {
     id: getString(r, "id"),
     date: getString(r, "date"),
     story: getString(r, "story"),
+    greeting: getOptionalString(r, "greeting"),
     evidence: getArray(r, "evidence"),
     createdAt: toISO(r.created_at),
   };
@@ -210,13 +253,13 @@ export class SupabaseAdapter implements StorageAdapter {
     intelligenceCache: IntelligenceCache;
     intelligenceMeta: IntelligenceMeta;
     todayStories: IntelligenceTodayStory[];
+    companionMeta: CompanionMeta;
     _loaded: boolean;
-  } = { objects: [], notes: [], relations: [], tags: [], templates: [], settings: {}, aiAnalysisHistory: [], intelligenceCache: {
-    chapters: [], patterns: [], relationshipPatterns: [], decisions: [], decisionPatterns: [],
-    growthSnapshots: [], themeSnapshots: [], crossObjectInsights: [], reflectionQuestions: [], todayStories: [],
-  }, intelligenceMeta: {
+  } = { objects: [], notes: [], relations: [], tags: [], templates: [], settings: {}, aiAnalysisHistory: [], intelligenceCache: emptyIntelligenceCache(), intelligenceMeta: {
     lastFullAnalysisAt: null, lastIncrementalAnalysisAt: null, analysisVersion: "1.0.0", pendingUpdate: false,
-  }, todayStories: [], _loaded: false };
+  }, todayStories: [], companionMeta: {
+    lastFocusDate: null, lastReminderDate: null, lastReflectionDate: null, lastWeeklyWeekKey: null, lastMonthlyMonthKey: null, consecutiveRejections: 0, lastAppearanceAt: null, appearanceCountToday: 0,
+  }, _loaded: false };
 
   private _initPromise: Promise<void> | null = null;
 
@@ -230,12 +273,11 @@ export class SupabaseAdapter implements StorageAdapter {
             this.init();
           }
           if (event === "SIGNED_OUT") {
-            this.cache = { objects: [], notes: [], relations: [], tags: [], templates: [], settings: {}, aiAnalysisHistory: [], intelligenceCache: {
-              chapters: [], patterns: [], relationshipPatterns: [], decisions: [], decisionPatterns: [],
-              growthSnapshots: [], themeSnapshots: [], crossObjectInsights: [], reflectionQuestions: [], todayStories: [],
-            }, intelligenceMeta: {
+            this.cache = { objects: [], notes: [], relations: [], tags: [], templates: [], settings: {}, aiAnalysisHistory: [], intelligenceCache: emptyIntelligenceCache(), intelligenceMeta: {
               lastFullAnalysisAt: null, lastIncrementalAnalysisAt: null, analysisVersion: "1.0.0", pendingUpdate: false,
-            }, todayStories: [], _loaded: false };
+            }, todayStories: [], companionMeta: {
+              lastFocusDate: null, lastReminderDate: null, lastReflectionDate: null, lastWeeklyWeekKey: null, lastMonthlyMonthKey: null, consecutiveRejections: 0, lastAppearanceAt: null, appearanceCountToday: 0,
+            }, _loaded: false };
             resetSupabase();
           }
         });
@@ -268,7 +310,7 @@ export class SupabaseAdapter implements StorageAdapter {
     if (!uid) return;
 
     const client = getSupabase();
-    const [objs, notes, rels, tags, tpls, sets, history, intelCache, intelMeta, stories] = await Promise.all([
+    const [objs, notes, rels, tags, tpls, sets, history, intelCache, intelMeta, stories, companionMeta] = await Promise.all([
       client.from("objects").select("*").eq("user_id", uid),
       client.from("notes").select("*").eq("user_id", uid),
       client.from("relations").select("*").eq("user_id", uid),
@@ -279,6 +321,7 @@ export class SupabaseAdapter implements StorageAdapter {
       client.from("intelligence_cache").select("*").eq("user_id", uid).maybeSingle(),
       client.from("intelligence_meta").select("*").eq("user_id", uid).maybeSingle(),
       client.from("today_stories").select("*").eq("user_id", uid),
+      client.from("companion_meta").select("*").eq("user_id", uid).maybeSingle(),
     ]);
 
     this.cache.objects    = (objs.data  || []).map(mapObject);
@@ -291,6 +334,7 @@ export class SupabaseAdapter implements StorageAdapter {
     this.cache.intelligenceCache = mapIntelligenceCache(intelCache.data);
     this.cache.intelligenceMeta = mapIntelligenceMeta(intelMeta.data);
     this.cache.todayStories = ((stories.data || []) as DbRow[]).map(mapTodayStory);
+    this.cache.companionMeta = mapCompanionMeta(companionMeta.data);
   }
 
   // ---------- version ----------
@@ -1134,6 +1178,7 @@ export class SupabaseAdapter implements StorageAdapter {
       user_id: uid,
       date: story.date,
       story: story.story,
+      greeting: story.greeting,
       evidence: story.evidence,
       created_at: now,
     };
@@ -1142,5 +1187,36 @@ export class SupabaseAdapter implements StorageAdapter {
     const created = mapTodayStory(data);
     this.cache.todayStories = [created, ...this.cache.todayStories.filter((s) => s.date !== story.date)].slice(0, 30);
     return created;
+  }
+
+  // ---------- Daily Companion meta ----------
+  async getCompanionMeta(): Promise<CompanionMeta> {
+    await this.init();
+    return this.cache.companionMeta;
+  }
+
+  async setCompanionMeta(meta: CompanionMeta): Promise<void> {
+    await this.init();
+    const uid = await getUid();
+    if (!uid) throw new Error("Not authenticated");
+    if (!isValidCompanionMeta(meta)) {
+      throw new Error("Invalid companion meta");
+    }
+
+    const client = getSupabase();
+    const row = {
+      user_id: uid,
+      last_focus_date: meta.lastFocusDate,
+      last_reminder_date: meta.lastReminderDate,
+      last_reflection_date: meta.lastReflectionDate,
+      last_weekly_week_key: meta.lastWeeklyWeekKey,
+      last_monthly_month_key: meta.lastMonthlyMonthKey,
+      consecutive_rejections: meta.consecutiveRejections,
+      last_appearance_at: meta.lastAppearanceAt,
+      appearance_count_today: meta.appearanceCountToday,
+    };
+    const { error } = await client.from("companion_meta").upsert(row, { onConflict: "user_id" });
+    if (error) throw error;
+    this.cache.companionMeta = meta;
   }
 }

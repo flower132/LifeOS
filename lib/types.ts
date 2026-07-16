@@ -335,8 +335,139 @@ export interface IntelligenceTodayStory {
   id: string;
   date: string; // YYYY-MM-DD
   story: string;
+  greeting?: string; // optional warm opening sentence
   evidence: IntelligenceEvidence[];
   createdAt: string;
+}
+
+// ── Daily Companion ───────────────────────────────────────────────────────────
+
+export type TodayFocusSourceType =
+  | "person"
+  | "goal"
+  | "project"
+  | "self"
+  | "relationship"
+  | "memory"
+  | "event"
+  | "decision"
+  | "place"
+  | "habit";
+
+export interface TodayFocus {
+  id: string;
+  date: string; // YYYY-MM-DD local date
+  sourceType: TodayFocusSourceType;
+  objectId?: string;
+  relationId?: string;
+  memoryId?: string;
+  placeId?: string;
+  habitId?: string;
+  title: string; // <= 15 chars
+  explanation: string; // <= 50 chars
+  whyNow: string; // <= 80 chars
+  evidence: IntelligenceEvidence[];
+  status: "active" | "done" | "dismissed";
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type ReminderTriggerSource =
+  | "person"
+  | "goal"
+  | "project"
+  | "health"
+  | "relationship"
+  | "memory";
+
+export interface CompanionReminder {
+  id: string;
+  date: string; // YYYY-MM-DD local date
+  triggerSource: ReminderTriggerSource;
+  objectId?: string;
+  relationId?: string;
+  memoryId?: string;
+  title: string; // <= 15 chars
+  whyNow: string; // <= 80 chars
+  actionLabel: string;
+  actionRoute?: string;
+  status: "pending" | "done" | "later" | "skipped";
+  respondedAt?: string;
+  evidence: IntelligenceEvidence[];
+  createdAt: string;
+}
+
+export interface ReflectionQuestion {
+  id: string;
+  date: string; // YYYY-MM-DD local date
+  question: string; // <= 40 chars
+  seedSource: "memory" | "goal" | "project" | "relationship" | "self";
+  seedId: string;
+  answer?: string;
+  status: "pending" | "answered" | "dismissed";
+  answeredAt?: string;
+  evidence: IntelligenceEvidence[];
+  createdAt: string;
+}
+
+export interface DailyTimeline {
+  date: string; // YYYY-MM-DD
+  summary: string; // <= 150 chars
+  evidence: IntelligenceEvidence[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface WeeklyReview {
+  id: string;
+  weekKey: string; // e.g. "2026-W29"
+  periodFrom: string; // ISO
+  periodTo: string; // ISO
+  mostImportantPerson?: {
+    name: string;
+    objectId?: string;
+    reason: string;
+    evidence: IntelligenceEvidence[];
+  };
+  mostImportantGoal?: {
+    name: string;
+    objectId?: string;
+    reason: string;
+    evidence: IntelligenceEvidence[];
+  };
+  growth?: { statement: string; evidence: IntelligenceEvidence[] };
+  emotion?: { statement: string; evidence: IntelligenceEvidence[] };
+  gratitude?: { statement: string; evidence: IntelligenceEvidence[] };
+  status: "active" | "dismissed";
+  createdAt: string;
+}
+
+export interface MonthlyStory {
+  id: string;
+  monthKey: string; // e.g. "2026-07"
+  periodFrom: string; // ISO
+  periodTo: string; // ISO
+  story: string; // 300-500 words
+  evidence: IntelligenceEvidence[];
+  status: "active" | "dismissed";
+  createdAt: string;
+}
+
+export interface CompanionFeedback {
+  id: string;
+  kind: "focus" | "reminder" | "reflection" | "insight" | "suggestion";
+  itemId: string;
+  action: "done" | "later" | "skip" | "ignore" | "dismiss";
+  reason?: string;
+  createdAt: string;
+}
+
+export interface QuietModeSettings {
+  enabled: boolean;
+  doNotDisturbStart: string; // "22:00"
+  doNotDisturbEnd: string; // "07:00"
+  consecutiveRejectionThreshold: number;
+  lowMoodKeywords: string[];
 }
 
 export interface IntelligenceCache {
@@ -350,6 +481,14 @@ export interface IntelligenceCache {
   crossObjectInsights: IntelligenceCrossObjectInsight[];
   reflectionQuestions: IntelligenceReflectionQuestion[];
   todayStories: IntelligenceTodayStory[];
+  // Daily Companion outputs
+  todayFocuses: TodayFocus[];
+  reminders: CompanionReminder[];
+  reflections: ReflectionQuestion[];
+  dailyTimelines: DailyTimeline[];
+  weeklyReviews: WeeklyReview[];
+  monthlyStories: MonthlyStory[];
+  feedback: CompanionFeedback[];
 }
 
 export interface IntelligenceMeta {
@@ -357,6 +496,17 @@ export interface IntelligenceMeta {
   lastIncrementalAnalysisAt: string | null;
   analysisVersion: string;
   pendingUpdate: boolean;
+}
+
+export interface CompanionMeta {
+  lastFocusDate: string | null;
+  lastReminderDate: string | null;
+  lastReflectionDate: string | null;
+  lastWeeklyWeekKey: string | null;
+  lastMonthlyMonthKey: string | null;
+  consecutiveRejections: number;
+  lastAppearanceAt: string | null;
+  appearanceCountToday: number;
 }
 
 export type IntelligenceRunType = "full" | "incremental" | "todayStory";
