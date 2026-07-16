@@ -6,10 +6,22 @@ import {
   ObjectDeletionSnapshot,
   IntelligenceCache, IntelligenceMeta, IntelligenceTodayStory,
   CompanionMeta,
+  MemoryMoment, LifeChapter, MemoryRelationEdge,
+  Anniversary, Highlight, DecisionMemory,
 } from "@/lib/types";
 import { getSupabase, resetSupabase } from "@/lib/supabaseClient";
 import { generateId } from "@/lib/id";
-import { isValidIntelligenceCache, isValidIntelligenceMeta, isValidCompanionMeta } from "@/lib/validation";
+import {
+  isValidIntelligenceCache,
+  isValidIntelligenceMeta,
+  isValidCompanionMeta,
+  isValidMemoryMoment,
+  isValidLifeChapter,
+  isValidMemoryRelationEdge,
+  isValidAnniversary,
+  isValidHighlight,
+  isValidDecisionMemory,
+} from "@/lib/validation";
 
 const toISO = (d: unknown) =>
   d ? new Date(d as string | number).toISOString() : new Date().toISOString();
@@ -217,6 +229,92 @@ function mapTodayStory(r: DbRow): IntelligenceTodayStory {
   };
 }
 
+// ---------- Long-term Memory mappers ----------
+function mapMoment(r: DbRow): MemoryMoment {
+  return {
+    id: getString(r, "id"),
+    kind: getString(r, "kind") as MemoryMoment["kind"],
+    dedupeKey: getString(r, "dedupe_key"),
+    title: getString(r, "title"),
+    description: getOptionalString(r, "description"),
+    memoryIds: getArray<string>(r, "memory_ids"),
+    objectIds: getArray<string>(r, "object_ids"),
+    occurredAt: toISO(r.occurred_at),
+    createdAt: toISO(r.created_at),
+    updatedAt: toISO(r.updated_at),
+  };
+}
+
+function mapChapter(r: DbRow): LifeChapter {
+  return {
+    id: getString(r, "id"),
+    dedupeKey: getString(r, "dedupe_key"),
+    title: getString(r, "title"),
+    description: getString(r, "description"),
+    startDate: toISO(r.start_date),
+    endDate: r.end_date ? toISO(r.end_date) : undefined,
+    people: getArray<string>(r, "people"),
+    goals: getArray<string>(r, "goals"),
+    places: getArray<string>(r, "places"),
+    representativeMemoryIds: getArray<string>(r, "representative_memory_ids"),
+    status: (getString(r, "status") as LifeChapter["status"]) || "active",
+    createdAt: toISO(r.created_at),
+    updatedAt: toISO(r.updated_at),
+  };
+}
+
+function mapMemoryRelation(r: DbRow): MemoryRelationEdge {
+  return {
+    id: getString(r, "id"),
+    sourceMemoryId: getString(r, "source_memory_id"),
+    targetMemoryId: getString(r, "target_memory_id"),
+    reason: getString(r, "reason"),
+    confidence: getNumber(r, "confidence"),
+    createdAt: toISO(r.created_at),
+  };
+}
+
+function mapAnniversary(r: DbRow): Anniversary {
+  return {
+    id: getString(r, "id"),
+    title: getString(r, "title"),
+    sourceType: getString(r, "source_type") as Anniversary["sourceType"],
+    sourceId: getString(r, "source_id"),
+    originalDate: toISO(r.original_date),
+    monthDay: getString(r, "month_day"),
+    createdAt: toISO(r.created_at),
+  };
+}
+
+function mapHighlight(r: DbRow): Highlight {
+  return {
+    id: getString(r, "id"),
+    year: getNumber(r, "year"),
+    category: getString(r, "category") as Highlight["category"],
+    title: getString(r, "title"),
+    memoryId: getOptionalString(r, "memory_id"),
+    objectId: getOptionalString(r, "object_id"),
+    score: getNumber(r, "score"),
+    createdAt: toISO(r.created_at),
+  };
+}
+
+function mapDecision(r: DbRow): DecisionMemory {
+  return {
+    id: getString(r, "id"),
+    decision: getString(r, "decision"),
+    context: getString(r, "context"),
+    emotion: getString(r, "emotion"),
+    reason: getString(r, "reason"),
+    outcome: getOptionalString(r, "outcome"),
+    review: getOptionalString(r, "review"),
+    objectIds: getArray<string>(r, "object_ids"),
+    decidedAt: toISO(r.decided_at),
+    createdAt: toISO(r.created_at),
+    updatedAt: toISO(r.updated_at),
+  };
+}
+
 function mapHistory(r: DbRow): AIAnalysisHistoryEntry {
   const profileSnapshot = r.profile_snapshot;
   return {
@@ -254,12 +352,18 @@ export class SupabaseAdapter implements StorageAdapter {
     intelligenceMeta: IntelligenceMeta;
     todayStories: IntelligenceTodayStory[];
     companionMeta: CompanionMeta;
+    moments: MemoryMoment[];
+    chapters: LifeChapter[];
+    memoryRelations: MemoryRelationEdge[];
+    anniversaries: Anniversary[];
+    highlights: Highlight[];
+    decisions: DecisionMemory[];
     _loaded: boolean;
   } = { objects: [], notes: [], relations: [], tags: [], templates: [], settings: {}, aiAnalysisHistory: [], intelligenceCache: emptyIntelligenceCache(), intelligenceMeta: {
     lastFullAnalysisAt: null, lastIncrementalAnalysisAt: null, analysisVersion: "1.0.0", pendingUpdate: false,
   }, todayStories: [], companionMeta: {
     lastFocusDate: null, lastReminderDate: null, lastReflectionDate: null, lastWeeklyWeekKey: null, lastMonthlyMonthKey: null, consecutiveRejections: 0, lastAppearanceAt: null, appearanceCountToday: 0,
-  }, _loaded: false };
+  }, moments: [], chapters: [], memoryRelations: [], anniversaries: [], highlights: [], decisions: [], _loaded: false };
 
   private _initPromise: Promise<void> | null = null;
 
@@ -277,7 +381,7 @@ export class SupabaseAdapter implements StorageAdapter {
               lastFullAnalysisAt: null, lastIncrementalAnalysisAt: null, analysisVersion: "1.0.0", pendingUpdate: false,
             }, todayStories: [], companionMeta: {
               lastFocusDate: null, lastReminderDate: null, lastReflectionDate: null, lastWeeklyWeekKey: null, lastMonthlyMonthKey: null, consecutiveRejections: 0, lastAppearanceAt: null, appearanceCountToday: 0,
-            }, _loaded: false };
+            }, moments: [], chapters: [], memoryRelations: [], anniversaries: [], highlights: [], decisions: [], _loaded: false };
             resetSupabase();
           }
         });
@@ -310,7 +414,7 @@ export class SupabaseAdapter implements StorageAdapter {
     if (!uid) return;
 
     const client = getSupabase();
-    const [objs, notes, rels, tags, tpls, sets, history, intelCache, intelMeta, stories, companionMeta] = await Promise.all([
+    const [objs, notes, rels, tags, tpls, sets, history, intelCache, intelMeta, stories, companionMeta, moments, chapters, memoryRelations, anniversaries, highlights, decisions] = await Promise.all([
       client.from("objects").select("*").eq("user_id", uid),
       client.from("notes").select("*").eq("user_id", uid),
       client.from("relations").select("*").eq("user_id", uid),
@@ -322,6 +426,12 @@ export class SupabaseAdapter implements StorageAdapter {
       client.from("intelligence_meta").select("*").eq("user_id", uid).maybeSingle(),
       client.from("today_stories").select("*").eq("user_id", uid),
       client.from("companion_meta").select("*").eq("user_id", uid).maybeSingle(),
+      client.from("moments").select("*").eq("user_id", uid),
+      client.from("chapters").select("*").eq("user_id", uid),
+      client.from("memory_relations").select("*").eq("user_id", uid),
+      client.from("anniversaries").select("*").eq("user_id", uid),
+      client.from("highlights").select("*").eq("user_id", uid),
+      client.from("decisions").select("*").eq("user_id", uid),
     ]);
 
     this.cache.objects    = (objs.data  || []).map(mapObject);
@@ -335,6 +445,12 @@ export class SupabaseAdapter implements StorageAdapter {
     this.cache.intelligenceMeta = mapIntelligenceMeta(intelMeta.data);
     this.cache.todayStories = ((stories.data || []) as DbRow[]).map(mapTodayStory);
     this.cache.companionMeta = mapCompanionMeta(companionMeta.data);
+    this.cache.moments = ((moments.data || []) as DbRow[]).map(mapMoment).filter(isValidMemoryMoment);
+    this.cache.chapters = ((chapters.data || []) as DbRow[]).map(mapChapter).filter(isValidLifeChapter);
+    this.cache.memoryRelations = ((memoryRelations.data || []) as DbRow[]).map(mapMemoryRelation).filter(isValidMemoryRelationEdge);
+    this.cache.anniversaries = ((anniversaries.data || []) as DbRow[]).map(mapAnniversary).filter(isValidAnniversary);
+    this.cache.highlights = ((highlights.data || []) as DbRow[]).map(mapHighlight).filter(isValidHighlight);
+    this.cache.decisions = ((decisions.data || []) as DbRow[]).map(mapDecision).filter(isValidDecisionMemory);
   }
 
   // ---------- version ----------
@@ -918,6 +1034,12 @@ export class SupabaseAdapter implements StorageAdapter {
     templates: number;
     settings: number;
     aiAnalysisHistory: number;
+    moments: number;
+    chapters: number;
+    memoryRelations: number;
+    anniversaries: number;
+    highlights: number;
+    decisions: number;
     hasData: boolean;
   }> {
     await this.init();
@@ -931,6 +1053,12 @@ export class SupabaseAdapter implements StorageAdapter {
         templates: 0,
         settings: 0,
         aiAnalysisHistory: 0,
+        moments: 0,
+        chapters: 0,
+        memoryRelations: 0,
+        anniversaries: 0,
+        highlights: 0,
+        decisions: 0,
         hasData: false,
       };
     }
@@ -943,8 +1071,14 @@ export class SupabaseAdapter implements StorageAdapter {
       client.from("templates").select("id", { count: "exact", head: true }).eq("user_id", uid),
       client.from("settings").select("key", { count: "exact", head: true }).eq("user_id", uid),
       client.from("ai_analysis_history").select("id", { count: "exact", head: true }).eq("user_id", uid),
+      client.from("moments").select("id", { count: "exact", head: true }).eq("user_id", uid),
+      client.from("chapters").select("id", { count: "exact", head: true }).eq("user_id", uid),
+      client.from("memory_relations").select("id", { count: "exact", head: true }).eq("user_id", uid),
+      client.from("anniversaries").select("id", { count: "exact", head: true }).eq("user_id", uid),
+      client.from("highlights").select("id", { count: "exact", head: true }).eq("user_id", uid),
+      client.from("decisions").select("id", { count: "exact", head: true }).eq("user_id", uid),
     ]);
-    const [objects, notes, relations, tags, templates, settings, aiAnalysisHistory] = counts.map(
+    const [objects, notes, relations, tags, templates, settings, aiAnalysisHistory, moments, chapters, memoryRelations, anniversaries, highlights, decisions] = counts.map(
       (c) => c.count ?? 0
     );
     const hasData =
@@ -954,7 +1088,13 @@ export class SupabaseAdapter implements StorageAdapter {
       tags > 0 ||
       templates > 0 ||
       settings > 0 ||
-      aiAnalysisHistory > 0;
+      aiAnalysisHistory > 0 ||
+      moments > 0 ||
+      chapters > 0 ||
+      memoryRelations > 0 ||
+      anniversaries > 0 ||
+      highlights > 0 ||
+      decisions > 0;
     return {
       objects,
       notes,
@@ -963,6 +1103,12 @@ export class SupabaseAdapter implements StorageAdapter {
       templates,
       settings,
       aiAnalysisHistory,
+      moments,
+      chapters,
+      memoryRelations,
+      anniversaries,
+      highlights,
+      decisions,
       hasData,
     };
   }
@@ -1218,5 +1364,428 @@ export class SupabaseAdapter implements StorageAdapter {
     const { error } = await client.from("companion_meta").upsert(row, { onConflict: "user_id" });
     if (error) throw error;
     this.cache.companionMeta = meta;
+  }
+
+  // ---------- Long-term Memory: Moments ----------
+  async getMoments(): Promise<MemoryMoment[]> {
+    await this.init();
+    return [...this.cache.moments];
+  }
+  async createMoment(moment: Omit<MemoryMoment, "id" | "createdAt" | "updatedAt">): Promise<MemoryMoment> {
+    await this.init();
+    const uid = await getUid();
+    if (!uid) throw new Error("Not authenticated");
+    const now = new Date().toISOString();
+    const row = {
+      id: generateId(), user_id: uid,
+      kind: moment.kind, dedupe_key: moment.dedupeKey,
+      title: moment.title, description: moment.description ?? null,
+      memory_ids: moment.memoryIds, object_ids: moment.objectIds,
+      occurred_at: moment.occurredAt, created_at: now, updated_at: now,
+    };
+    const client = getSupabase();
+    const { data, error } = await client.from("moments").insert(row).select().single();
+    if (error) throw error;
+    const created = mapMoment(data);
+    this.cache.moments = [...this.cache.moments, created];
+    return created;
+  }
+  async updateMoment(id: string, updates: Partial<Omit<MemoryMoment, "id" | "createdAt">>): Promise<MemoryMoment> {
+    await this.init();
+    const uid = await getUid();
+    if (!uid) throw new Error("Not authenticated");
+    const client = getSupabase();
+    const { data, error } = await client
+      .from("moments")
+      .update({
+        ...(updates.kind !== undefined && { kind: updates.kind }),
+        ...(updates.dedupeKey !== undefined && { dedupe_key: updates.dedupeKey }),
+        ...(updates.title !== undefined && { title: updates.title }),
+        ...(updates.description !== undefined && { description: updates.description }),
+        ...(updates.memoryIds !== undefined && { memory_ids: updates.memoryIds }),
+        ...(updates.objectIds !== undefined && { object_ids: updates.objectIds }),
+        ...(updates.occurredAt !== undefined && { occurred_at: updates.occurredAt }),
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", id).eq("user_id", uid)
+      .select().single();
+    if (error) throw error;
+    const updated = mapMoment(data);
+    this.cache.moments = this.cache.moments.map((m) => (m.id === id ? updated : m));
+    return updated;
+  }
+  async deleteMoment(id: string): Promise<void> {
+    await this.init();
+    const uid = await getUid();
+    if (uid) {
+      const client = getSupabase();
+      await client.from("moments").delete().eq("id", id).eq("user_id", uid);
+    }
+    this.cache.moments = this.cache.moments.filter((m) => m.id !== id);
+  }
+  async setMoments(moments: MemoryMoment[]): Promise<void> {
+    await this.init();
+    const uid = await getUid();
+    if (!uid) throw new Error("Not authenticated");
+    const client = getSupabase();
+    const rows = moments.map((m) => ({
+      id: m.id, user_id: uid,
+      kind: m.kind, dedupe_key: m.dedupeKey,
+      title: m.title, description: m.description ?? null,
+      memory_ids: m.memoryIds, object_ids: m.objectIds,
+      occurred_at: m.occurredAt, created_at: m.createdAt, updated_at: m.updatedAt,
+    }));
+    const currentIds = new Set(this.cache.moments.map((m) => m.id));
+    const nextIds = new Set(moments.map((m) => m.id));
+    const idsToDelete = Array.from(currentIds).filter((id) => !nextIds.has(id));
+    if (idsToDelete.length > 0) {
+      await client.from("moments").delete().in("id", idsToDelete).eq("user_id", uid);
+    }
+    if (rows.length > 0) {
+      const { error } = await client.from("moments").upsert(rows, { onConflict: "id" });
+      if (error) throw error;
+    }
+    this.cache.moments = moments;
+  }
+
+  // ---------- Long-term Memory: Chapters ----------
+  async getChapters(): Promise<LifeChapter[]> {
+    await this.init();
+    return [...this.cache.chapters];
+  }
+  async createChapter(chapter: Omit<LifeChapter, "id" | "createdAt" | "updatedAt">): Promise<LifeChapter> {
+    await this.init();
+    const uid = await getUid();
+    if (!uid) throw new Error("Not authenticated");
+    const now = new Date().toISOString();
+    const row = {
+      id: generateId(), user_id: uid,
+      dedupe_key: chapter.dedupeKey,
+      title: chapter.title, description: chapter.description,
+      start_date: chapter.startDate, end_date: chapter.endDate ?? null,
+      people: chapter.people, goals: chapter.goals, places: chapter.places,
+      representative_memory_ids: chapter.representativeMemoryIds,
+      status: chapter.status, created_at: now, updated_at: now,
+    };
+    const client = getSupabase();
+    const { data, error } = await client.from("chapters").insert(row).select().single();
+    if (error) throw error;
+    const created = mapChapter(data);
+    this.cache.chapters = [...this.cache.chapters, created];
+    return created;
+  }
+  async updateChapter(id: string, updates: Partial<Omit<LifeChapter, "id" | "createdAt">>): Promise<LifeChapter> {
+    await this.init();
+    const uid = await getUid();
+    if (!uid) throw new Error("Not authenticated");
+    const client = getSupabase();
+    const { data, error } = await client
+      .from("chapters")
+      .update({
+        ...(updates.dedupeKey !== undefined && { dedupe_key: updates.dedupeKey }),
+        ...(updates.title !== undefined && { title: updates.title }),
+        ...(updates.description !== undefined && { description: updates.description }),
+        ...(updates.startDate !== undefined && { start_date: updates.startDate }),
+        ...(updates.endDate !== undefined && { end_date: updates.endDate }),
+        ...(updates.people !== undefined && { people: updates.people }),
+        ...(updates.goals !== undefined && { goals: updates.goals }),
+        ...(updates.places !== undefined && { places: updates.places }),
+        ...(updates.representativeMemoryIds !== undefined && { representative_memory_ids: updates.representativeMemoryIds }),
+        ...(updates.status !== undefined && { status: updates.status }),
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", id).eq("user_id", uid)
+      .select().single();
+    if (error) throw error;
+    const updated = mapChapter(data);
+    this.cache.chapters = this.cache.chapters.map((c) => (c.id === id ? updated : c));
+    return updated;
+  }
+  async deleteChapter(id: string): Promise<void> {
+    await this.init();
+    const uid = await getUid();
+    if (uid) {
+      const client = getSupabase();
+      await client.from("chapters").delete().eq("id", id).eq("user_id", uid);
+    }
+    this.cache.chapters = this.cache.chapters.filter((c) => c.id !== id);
+  }
+  async setChapters(chapters: LifeChapter[]): Promise<void> {
+    await this.init();
+    const uid = await getUid();
+    if (!uid) throw new Error("Not authenticated");
+    const client = getSupabase();
+    const rows = chapters.map((c) => ({
+      id: c.id, user_id: uid,
+      dedupe_key: c.dedupeKey,
+      title: c.title, description: c.description,
+      start_date: c.startDate, end_date: c.endDate ?? null,
+      people: c.people, goals: c.goals, places: c.places,
+      representative_memory_ids: c.representativeMemoryIds,
+      status: c.status, created_at: c.createdAt, updated_at: c.updatedAt,
+    }));
+    const currentIds = new Set(this.cache.chapters.map((c) => c.id));
+    const nextIds = new Set(chapters.map((c) => c.id));
+    const idsToDelete = Array.from(currentIds).filter((id) => !nextIds.has(id));
+    if (idsToDelete.length > 0) {
+      await client.from("chapters").delete().in("id", idsToDelete).eq("user_id", uid);
+    }
+    if (rows.length > 0) {
+      const { error } = await client.from("chapters").upsert(rows, { onConflict: "id" });
+      if (error) throw error;
+    }
+    this.cache.chapters = chapters;
+  }
+
+  // ---------- Long-term Memory: Memory Relations ----------
+  async getMemoryRelations(): Promise<MemoryRelationEdge[]> {
+    await this.init();
+    return [...this.cache.memoryRelations];
+  }
+  async createMemoryRelation(edge: Omit<MemoryRelationEdge, "id" | "createdAt">): Promise<MemoryRelationEdge> {
+    await this.init();
+    const uid = await getUid();
+    if (!uid) throw new Error("Not authenticated");
+    const row = {
+      id: generateId(), user_id: uid,
+      source_memory_id: edge.sourceMemoryId, target_memory_id: edge.targetMemoryId,
+      reason: edge.reason, confidence: edge.confidence,
+      created_at: new Date().toISOString(),
+    };
+    const client = getSupabase();
+    const { data, error } = await client.from("memory_relations").insert(row).select().single();
+    if (error) throw error;
+    const created = mapMemoryRelation(data);
+    this.cache.memoryRelations = [...this.cache.memoryRelations, created];
+    return created;
+  }
+  async deleteMemoryRelation(id: string): Promise<void> {
+    await this.init();
+    const uid = await getUid();
+    if (uid) {
+      const client = getSupabase();
+      await client.from("memory_relations").delete().eq("id", id).eq("user_id", uid);
+    }
+    this.cache.memoryRelations = this.cache.memoryRelations.filter((e) => e.id !== id);
+  }
+  async setMemoryRelations(edges: MemoryRelationEdge[]): Promise<void> {
+    await this.init();
+    const uid = await getUid();
+    if (!uid) throw new Error("Not authenticated");
+    const client = getSupabase();
+    const rows = edges.map((e) => ({
+      id: e.id, user_id: uid,
+      source_memory_id: e.sourceMemoryId, target_memory_id: e.targetMemoryId,
+      reason: e.reason, confidence: e.confidence,
+      created_at: e.createdAt,
+    }));
+    const currentIds = new Set(this.cache.memoryRelations.map((e) => e.id));
+    const nextIds = new Set(edges.map((e) => e.id));
+    const idsToDelete = Array.from(currentIds).filter((id) => !nextIds.has(id));
+    if (idsToDelete.length > 0) {
+      await client.from("memory_relations").delete().in("id", idsToDelete).eq("user_id", uid);
+    }
+    if (rows.length > 0) {
+      const { error } = await client.from("memory_relations").upsert(rows, { onConflict: "id" });
+      if (error) throw error;
+    }
+    this.cache.memoryRelations = edges;
+  }
+
+  // ---------- Long-term Memory: Anniversaries ----------
+  async getAnniversaries(): Promise<Anniversary[]> {
+    await this.init();
+    return [...this.cache.anniversaries];
+  }
+  async createAnniversary(anniversary: Omit<Anniversary, "id" | "createdAt">): Promise<Anniversary> {
+    await this.init();
+    const uid = await getUid();
+    if (!uid) throw new Error("Not authenticated");
+    const row = {
+      id: generateId(), user_id: uid,
+      title: anniversary.title, source_type: anniversary.sourceType,
+      source_id: anniversary.sourceId, original_date: anniversary.originalDate,
+      month_day: anniversary.monthDay,
+      created_at: new Date().toISOString(),
+    };
+    const client = getSupabase();
+    const { data, error } = await client.from("anniversaries").insert(row).select().single();
+    if (error) throw error;
+    const created = mapAnniversary(data);
+    this.cache.anniversaries = [...this.cache.anniversaries, created];
+    return created;
+  }
+  async deleteAnniversary(id: string): Promise<void> {
+    await this.init();
+    const uid = await getUid();
+    if (uid) {
+      const client = getSupabase();
+      await client.from("anniversaries").delete().eq("id", id).eq("user_id", uid);
+    }
+    this.cache.anniversaries = this.cache.anniversaries.filter((a) => a.id !== id);
+  }
+  async setAnniversaries(anniversaries: Anniversary[]): Promise<void> {
+    await this.init();
+    const uid = await getUid();
+    if (!uid) throw new Error("Not authenticated");
+    const client = getSupabase();
+    const rows = anniversaries.map((a) => ({
+      id: a.id, user_id: uid,
+      title: a.title, source_type: a.sourceType,
+      source_id: a.sourceId, original_date: a.originalDate,
+      month_day: a.monthDay, created_at: a.createdAt,
+    }));
+    const currentIds = new Set(this.cache.anniversaries.map((a) => a.id));
+    const nextIds = new Set(anniversaries.map((a) => a.id));
+    const idsToDelete = Array.from(currentIds).filter((id) => !nextIds.has(id));
+    if (idsToDelete.length > 0) {
+      await client.from("anniversaries").delete().in("id", idsToDelete).eq("user_id", uid);
+    }
+    if (rows.length > 0) {
+      const { error } = await client.from("anniversaries").upsert(rows, { onConflict: "id" });
+      if (error) throw error;
+    }
+    this.cache.anniversaries = anniversaries;
+  }
+
+  // ---------- Long-term Memory: Highlights ----------
+  async getHighlights(): Promise<Highlight[]> {
+    await this.init();
+    return [...this.cache.highlights];
+  }
+  async createHighlight(highlight: Omit<Highlight, "id" | "createdAt">): Promise<Highlight> {
+    await this.init();
+    const uid = await getUid();
+    if (!uid) throw new Error("Not authenticated");
+    const row = {
+      id: generateId(), user_id: uid,
+      year: highlight.year, category: highlight.category,
+      title: highlight.title,
+      memory_id: highlight.memoryId ?? null, object_id: highlight.objectId ?? null,
+      score: highlight.score, created_at: new Date().toISOString(),
+    };
+    const client = getSupabase();
+    const { data, error } = await client.from("highlights").insert(row).select().single();
+    if (error) throw error;
+    const created = mapHighlight(data);
+    this.cache.highlights = [...this.cache.highlights, created];
+    return created;
+  }
+  async deleteHighlight(id: string): Promise<void> {
+    await this.init();
+    const uid = await getUid();
+    if (uid) {
+      const client = getSupabase();
+      await client.from("highlights").delete().eq("id", id).eq("user_id", uid);
+    }
+    this.cache.highlights = this.cache.highlights.filter((h) => h.id !== id);
+  }
+  async setHighlights(highlights: Highlight[]): Promise<void> {
+    await this.init();
+    const uid = await getUid();
+    if (!uid) throw new Error("Not authenticated");
+    const client = getSupabase();
+    const rows = highlights.map((h) => ({
+      id: h.id, user_id: uid,
+      year: h.year, category: h.category, title: h.title,
+      memory_id: h.memoryId ?? null, object_id: h.objectId ?? null,
+      score: h.score, created_at: h.createdAt,
+    }));
+    const currentIds = new Set(this.cache.highlights.map((h) => h.id));
+    const nextIds = new Set(highlights.map((h) => h.id));
+    const idsToDelete = Array.from(currentIds).filter((id) => !nextIds.has(id));
+    if (idsToDelete.length > 0) {
+      await client.from("highlights").delete().in("id", idsToDelete).eq("user_id", uid);
+    }
+    if (rows.length > 0) {
+      const { error } = await client.from("highlights").upsert(rows, { onConflict: "id" });
+      if (error) throw error;
+    }
+    this.cache.highlights = highlights;
+  }
+
+  // ---------- Long-term Memory: Decisions ----------
+  async getDecisions(): Promise<DecisionMemory[]> {
+    await this.init();
+    return [...this.cache.decisions];
+  }
+  async createDecision(decision: Omit<DecisionMemory, "id" | "createdAt" | "updatedAt">): Promise<DecisionMemory> {
+    await this.init();
+    const uid = await getUid();
+    if (!uid) throw new Error("Not authenticated");
+    const now = new Date().toISOString();
+    const row = {
+      id: generateId(), user_id: uid,
+      decision: decision.decision, context: decision.context,
+      emotion: decision.emotion, reason: decision.reason,
+      outcome: decision.outcome ?? null, review: decision.review ?? null,
+      object_ids: decision.objectIds, decided_at: decision.decidedAt,
+      created_at: now, updated_at: now,
+    };
+    const client = getSupabase();
+    const { data, error } = await client.from("decisions").insert(row).select().single();
+    if (error) throw error;
+    const created = mapDecision(data);
+    this.cache.decisions = [created, ...this.cache.decisions];
+    return created;
+  }
+  async updateDecision(id: string, updates: Partial<Omit<DecisionMemory, "id" | "createdAt">>): Promise<DecisionMemory> {
+    await this.init();
+    const uid = await getUid();
+    if (!uid) throw new Error("Not authenticated");
+    const client = getSupabase();
+    const { data, error } = await client
+      .from("decisions")
+      .update({
+        ...(updates.decision !== undefined && { decision: updates.decision }),
+        ...(updates.context !== undefined && { context: updates.context }),
+        ...(updates.emotion !== undefined && { emotion: updates.emotion }),
+        ...(updates.reason !== undefined && { reason: updates.reason }),
+        ...(updates.outcome !== undefined && { outcome: updates.outcome }),
+        ...(updates.review !== undefined && { review: updates.review }),
+        ...(updates.objectIds !== undefined && { object_ids: updates.objectIds }),
+        ...(updates.decidedAt !== undefined && { decided_at: updates.decidedAt }),
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", id).eq("user_id", uid)
+      .select().single();
+    if (error) throw error;
+    const updated = mapDecision(data);
+    this.cache.decisions = this.cache.decisions.map((d) => (d.id === id ? updated : d));
+    return updated;
+  }
+  async deleteDecision(id: string): Promise<void> {
+    await this.init();
+    const uid = await getUid();
+    if (uid) {
+      const client = getSupabase();
+      await client.from("decisions").delete().eq("id", id).eq("user_id", uid);
+    }
+    this.cache.decisions = this.cache.decisions.filter((d) => d.id !== id);
+  }
+  async setDecisions(decisions: DecisionMemory[]): Promise<void> {
+    await this.init();
+    const uid = await getUid();
+    if (!uid) throw new Error("Not authenticated");
+    const client = getSupabase();
+    const rows = decisions.map((d) => ({
+      id: d.id, user_id: uid,
+      decision: d.decision, context: d.context,
+      emotion: d.emotion, reason: d.reason,
+      outcome: d.outcome ?? null, review: d.review ?? null,
+      object_ids: d.objectIds, decided_at: d.decidedAt,
+      created_at: d.createdAt, updated_at: d.updatedAt,
+    }));
+    const currentIds = new Set(this.cache.decisions.map((d) => d.id));
+    const nextIds = new Set(decisions.map((d) => d.id));
+    const idsToDelete = Array.from(currentIds).filter((id) => !nextIds.has(id));
+    if (idsToDelete.length > 0) {
+      await client.from("decisions").delete().in("id", idsToDelete).eq("user_id", uid);
+    }
+    if (rows.length > 0) {
+      const { error } = await client.from("decisions").upsert(rows, { onConflict: "id" });
+      if (error) throw error;
+    }
+    this.cache.decisions = decisions;
   }
 }

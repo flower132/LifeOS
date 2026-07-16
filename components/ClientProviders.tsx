@@ -6,6 +6,7 @@ import { hydrateStores } from "@/stores";
 import { storage } from "@/lib/storage";
 import { syncService } from "@/lib/sync/SyncService";
 import { companionScheduler } from "@/lib/companion/scheduler";
+import { longTermMemoryService } from "@/lib/services";
 import { DevTools } from "./DevTools";
 import { Spinner } from "@/components/ui/Spinner";
 
@@ -144,6 +145,13 @@ export function ClientProviders({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!hydrated) return;
     companionScheduler.onPageVisit();
+  }, [hydrated]);
+
+  // Long-term Memory：订阅一手数据变化，启动时全量刷新一次。
+  useEffect(() => {
+    if (!hydrated) return;
+    longTermMemoryService.init();
+    longTermMemoryService.scheduleRefresh();
   }, [hydrated]);
 
   return (

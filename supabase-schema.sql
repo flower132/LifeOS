@@ -198,6 +198,129 @@ create policy "Users can only access their own companion meta"
   using (auth.uid() = user_id)
   with check (auth.uid() = user_id);
 
+-- ------------------- long-term memory: moments -------------------
+create table if not exists public.moments (
+  id          uuid primary key default uuid_generate_v4(),
+  user_id     uuid references auth.users(id) on delete cascade not null,
+  kind        text not null check (kind in ('first_meeting','first_goal','first_travel','first_move','first_goal_completed','first_job_change','first_venture','first_graduation','milestone')),
+  dedupe_key  text not null,
+  title       text not null,
+  description text,
+  memory_ids  jsonb default '[]'::jsonb,
+  object_ids  jsonb default '[]'::jsonb,
+  occurred_at timestamptz not null,
+  created_at  timestamptz default now(),
+  updated_at  timestamptz default now()
+);
+create unique index if not exists idx_moments_user_dedupe on public.moments(user_id, dedupe_key);
+alter table public.moments enable row level security;
+create policy "Users can only access their own moments"
+  on public.moments for all
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
+
+-- ------------------- long-term memory: chapters -------------------
+create table if not exists public.chapters (
+  id          uuid primary key default uuid_generate_v4(),
+  user_id     uuid references auth.users(id) on delete cascade not null,
+  dedupe_key  text not null,
+  title       text not null,
+  description text default '',
+  start_date  timestamptz not null,
+  end_date    timestamptz,
+  people      jsonb default '[]'::jsonb,
+  goals       jsonb default '[]'::jsonb,
+  places      jsonb default '[]'::jsonb,
+  representative_memory_ids jsonb default '[]'::jsonb,
+  status      text default 'active' check (status in ('active','closed')),
+  created_at  timestamptz default now(),
+  updated_at  timestamptz default now()
+);
+create unique index if not exists idx_chapters_user_dedupe on public.chapters(user_id, dedupe_key);
+alter table public.chapters enable row level security;
+create policy "Users can only access their own chapters"
+  on public.chapters for all
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
+
+-- ------------------- long-term memory: memory_relations -------------------
+create table if not exists public.memory_relations (
+  id               uuid primary key default uuid_generate_v4(),
+  user_id          uuid references auth.users(id) on delete cascade not null,
+  source_memory_id text not null,
+  target_memory_id text not null,
+  reason           text default '',
+  confidence       double precision default 0,
+  created_at       timestamptz default now()
+);
+create index if not exists idx_memory_relations_source on public.memory_relations(user_id, source_memory_id);
+create index if not exists idx_memory_relations_target on public.memory_relations(user_id, target_memory_id);
+alter table public.memory_relations enable row level security;
+create policy "Users can only access their own memory relations"
+  on public.memory_relations for all
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
+
+-- ------------------- long-term memory: anniversaries -------------------
+create table if not exists public.anniversaries (
+  id           uuid primary key default uuid_generate_v4(),
+  user_id      uuid references auth.users(id) on delete cascade not null,
+  title        text not null,
+  source_type  text not null check (source_type in ('person','goal','project','event','moment')),
+  source_id    text not null,
+  original_date timestamptz not null,
+  month_day    text not null,
+  created_at   timestamptz default now()
+);
+create unique index if not exists idx_anniversaries_user_source on public.anniversaries(user_id, source_type, source_id);
+create index if not exists idx_anniversaries_user_month_day on public.anniversaries(user_id, month_day);
+alter table public.anniversaries enable row level security;
+create policy "Users can only access their own anniversaries"
+  on public.anniversaries for all
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
+
+-- ------------------- long-term memory: highlights -------------------
+create table if not exists public.highlights (
+  id         uuid primary key default uuid_generate_v4(),
+  user_id    uuid references auth.users(id) on delete cascade not null,
+  year       int not null,
+  category   text not null check (category in ('most_important','most_growth','happiest','hardest','key_decision','relationship_change')),
+  title      text not null,
+  memory_id  text,
+  object_id  text,
+  score      double precision default 0,
+  created_at timestamptz default now()
+);
+create unique index if not exists idx_highlights_user_year_category on public.highlights(user_id, year, category);
+alter table public.highlights enable row level security;
+create policy "Users can only access their own highlights"
+  on public.highlights for all
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
+
+-- ------------------- long-term memory: decisions -------------------
+create table if not exists public.decisions (
+  id         uuid primary key default uuid_generate_v4(),
+  user_id    uuid references auth.users(id) on delete cascade not null,
+  decision   text not null,
+  context    text default '',
+  emotion    text default '',
+  reason     text default '',
+  outcome    text,
+  review     text,
+  object_ids jsonb default '[]'::jsonb,
+  decided_at timestamptz not null,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+create index if not exists idx_decisions_user_decided_at on public.decisions(user_id, decided_at);
+alter table public.decisions enable row level security;
+create policy "Users can only access their own decisions"
+  on public.decisions for all
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
+
 -- ------------------- indexes -------------------
 create index if not exists idx_objects_user     on public.objects(user_id);
 create index if not exists idx_notes_user      on public.notes(user_id);

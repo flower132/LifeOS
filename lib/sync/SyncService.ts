@@ -224,6 +224,12 @@ class SyncServiceImpl implements SyncService {
       templates,
       settings,
       aiAnalysisHistory,
+      moments,
+      chapters,
+      memoryRelations,
+      anniversaries,
+      highlights,
+      decisions,
     ] = await Promise.all([
       adapter.getObjects(),
       adapter.getNotes(),
@@ -232,6 +238,12 @@ class SyncServiceImpl implements SyncService {
       adapter.getTemplates(),
       adapter.getSettings(),
       adapter.getAIAnalysisHistory(),
+      adapter.getMoments(),
+      adapter.getChapters(),
+      adapter.getMemoryRelations(),
+      adapter.getAnniversaries(),
+      adapter.getHighlights(),
+      adapter.getDecisions(),
     ]);
     return {
       objects,
@@ -241,6 +253,12 @@ class SyncServiceImpl implements SyncService {
       templates,
       settings,
       aiAnalysisHistory,
+      moments,
+      chapters,
+      memoryRelations,
+      anniversaries,
+      highlights,
+      decisions,
     };
   }
 
@@ -255,6 +273,12 @@ class SyncServiceImpl implements SyncService {
       templates,
       settings,
       aiAnalysisHistory,
+      moments,
+      chapters,
+      memoryRelations,
+      anniversaries,
+      highlights,
+      decisions,
     ] = await Promise.all([
       adapter.getObjects(),
       adapter.getNotes(),
@@ -263,6 +287,12 @@ class SyncServiceImpl implements SyncService {
       adapter.getTemplates(),
       adapter.getSettings(),
       adapter.getAIAnalysisHistory(),
+      adapter.getMoments(),
+      adapter.getChapters(),
+      adapter.getMemoryRelations(),
+      adapter.getAnniversaries(),
+      adapter.getHighlights(),
+      adapter.getDecisions(),
     ]);
     return {
       objects,
@@ -272,6 +302,12 @@ class SyncServiceImpl implements SyncService {
       templates,
       settings,
       aiAnalysisHistory,
+      moments,
+      chapters,
+      memoryRelations,
+      anniversaries,
+      highlights,
+      decisions,
     };
   }
 
@@ -286,6 +322,12 @@ class SyncServiceImpl implements SyncService {
       adapter.setTemplates(snapshot.templates),
       adapter.setSettings(snapshot.settings),
       adapter.setAIAnalysisHistory(snapshot.aiAnalysisHistory),
+      adapter.setMoments(snapshot.moments),
+      adapter.setChapters(snapshot.chapters),
+      adapter.setMemoryRelations(snapshot.memoryRelations),
+      adapter.setAnniversaries(snapshot.anniversaries),
+      adapter.setHighlights(snapshot.highlights),
+      adapter.setDecisions(snapshot.decisions),
     ]);
   }
 
@@ -299,6 +341,12 @@ class SyncServiceImpl implements SyncService {
       adapter.setTemplates(snapshot.templates),
       adapter.setSettings(snapshot.settings),
       adapter.setAIAnalysisHistory(snapshot.aiAnalysisHistory),
+      adapter.setMoments(snapshot.moments),
+      adapter.setChapters(snapshot.chapters),
+      adapter.setMemoryRelations(snapshot.memoryRelations),
+      adapter.setAnniversaries(snapshot.anniversaries),
+      adapter.setHighlights(snapshot.highlights),
+      adapter.setDecisions(snapshot.decisions),
     ]);
   }
 }

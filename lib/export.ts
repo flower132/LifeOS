@@ -1,5 +1,17 @@
 import { storage } from "./storage";
-import { LifeObject, Note, Relation, Tag, Template } from "./types";
+import {
+  LifeObject,
+  Note,
+  Relation,
+  Tag,
+  Template,
+  MemoryMoment,
+  LifeChapter,
+  MemoryRelationEdge,
+  Anniversary,
+  Highlight,
+  DecisionMemory,
+} from "./types";
 import {
   getDefaultProperties,
   migratePropertyKeys,
@@ -18,6 +30,13 @@ export interface ExportedData {
   tags: unknown;
   templates: unknown;
   settings: unknown;
+  // Long-term Memory（v5.1+ 附加；旧导出文件缺省为空）
+  moments?: unknown;
+  chapters?: unknown;
+  memoryRelations?: unknown;
+  anniversaries?: unknown;
+  highlights?: unknown;
+  decisions?: unknown;
 }
 
 function looksLikeTemplateContent(
@@ -54,13 +73,22 @@ function looksLikeTemplateContent(
 }
 
 export async function exportAllData(): Promise<ExportedData> {
-  const [objects, notes, relations, tags, templates, settings] = await Promise.all([
+  const [
+    objects, notes, relations, tags, templates, settings,
+    moments, chapters, memoryRelations, anniversaries, highlights, decisions,
+  ] = await Promise.all([
     storage.getObjects(),
     storage.getNotes(),
     storage.getRelations(),
     storage.getTags(),
     storage.getTemplates(),
     storage.getSettings(),
+    storage.getMoments(),
+    storage.getChapters(),
+    storage.getMemoryRelations(),
+    storage.getAnniversaries(),
+    storage.getHighlights(),
+    storage.getDecisions(),
   ]);
 
   return {
@@ -72,6 +100,12 @@ export async function exportAllData(): Promise<ExportedData> {
     tags,
     templates,
     settings,
+    moments,
+    chapters,
+    memoryRelations,
+    anniversaries,
+    highlights,
+    decisions,
   };
 }
 
@@ -255,6 +289,18 @@ export async function importAllData(data: unknown): Promise<void> {
   const templates = Array.isArray(payload.templates) ? (payload.templates as Template[]) : [];
   const settings = payload.settings && typeof payload.settings === "object" ? payload.settings : {};
 
+  // Long-term Memory（旧导出文件可能缺省，缺省时保持现状由引擎重建）
+  const moments = Array.isArray(payload.moments) ? (payload.moments as MemoryMoment[]) : [];
+  const chapters = Array.isArray(payload.chapters) ? (payload.chapters as LifeChapter[]) : [];
+  const memoryRelations = Array.isArray(payload.memoryRelations)
+    ? (payload.memoryRelations as MemoryRelationEdge[])
+    : [];
+  const anniversaries = Array.isArray(payload.anniversaries)
+    ? (payload.anniversaries as Anniversary[])
+    : [];
+  const highlights = Array.isArray(payload.highlights) ? (payload.highlights as Highlight[]) : [];
+  const decisions = Array.isArray(payload.decisions) ? (payload.decisions as DecisionMemory[]) : [];
+
   // Write through the storage adapter. Validation happens inside the adapter.
   await Promise.all([
     storage.setStorageVersion(STORAGE_VERSION),
@@ -264,6 +310,12 @@ export async function importAllData(data: unknown): Promise<void> {
     storage.setRelations(relations),
     storage.setTags(tags),
     storage.setTemplates(templates),
+    storage.setMoments(moments),
+    storage.setChapters(chapters),
+    storage.setMemoryRelations(memoryRelations),
+    storage.setAnniversaries(anniversaries),
+    storage.setHighlights(highlights),
+    storage.setDecisions(decisions),
   ]);
 }
 
@@ -298,6 +350,13 @@ export async function clearAllData(): Promise<void> {
     "lifeos_settings",
     "lifeos_version",
     "lifeos_recent_tags",
+    // Long-term Memory
+    "lifeos_moments",
+    "lifeos_chapters",
+    "lifeos_memory_relations",
+    "lifeos_anniversaries",
+    "lifeos_highlights",
+    "lifeos_decisions",
   ];
   keys.forEach((key) => window.localStorage.removeItem(key));
 }

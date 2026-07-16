@@ -12,6 +12,12 @@ import {
   IntelligenceCache,
   IntelligenceMeta,
   IntelligenceTodayStory,
+  MemoryMoment,
+  LifeChapter,
+  MemoryRelationEdge,
+  Anniversary,
+  Highlight,
+  DecisionMemory,
 } from "./types";
 
 const VALID_OBJECT_TYPES = new Set([
@@ -516,6 +522,134 @@ export function isValidIntelligenceTodayStory(obj: unknown): obj is Intelligence
   if (typeof s.story !== "string" || s.story.trim().length === 0) return false;
   if (!Array.isArray(s.evidence) || !s.evidence.every(isValidIntelligenceEvidence)) return false;
   if (!isValidIsoDate(s.createdAt)) return false;
+
+  return true;
+}
+
+// ── Long-term Memory validators ─────────────────────────────────────────────
+
+const VALID_MOMENT_KINDS = new Set([
+  "first_meeting",
+  "first_goal",
+  "first_travel",
+  "first_move",
+  "first_goal_completed",
+  "first_job_change",
+  "first_venture",
+  "first_graduation",
+  "milestone",
+]);
+
+export function isValidMemoryMoment(obj: unknown): obj is MemoryMoment {
+  if (!obj || typeof obj !== "object") return false;
+  const m = obj as Record<string, unknown>;
+
+  if (!isValidId(m.id)) return false;
+  if (!VALID_MOMENT_KINDS.has(m.kind as string)) return false;
+  if (typeof m.dedupeKey !== "string" || m.dedupeKey.trim().length === 0) return false;
+  if (typeof m.title !== "string" || m.title.trim().length === 0) return false;
+  if (m.description !== undefined && typeof m.description !== "string") return false;
+  if (!Array.isArray(m.memoryIds)) return false;
+  if (!Array.isArray(m.objectIds)) return false;
+  if (!isValidIsoDate(m.occurredAt)) return false;
+  if (!isValidIsoDate(m.createdAt)) return false;
+  if (!isValidIsoDate(m.updatedAt)) return false;
+
+  return true;
+}
+
+export function isValidLifeChapter(obj: unknown): obj is LifeChapter {
+  if (!obj || typeof obj !== "object") return false;
+  const c = obj as Record<string, unknown>;
+
+  if (!isValidId(c.id)) return false;
+  if (typeof c.dedupeKey !== "string" || c.dedupeKey.trim().length === 0) return false;
+  if (typeof c.title !== "string" || c.title.trim().length === 0) return false;
+  if (typeof c.description !== "string") return false;
+  if (!isValidIsoDate(c.startDate)) return false;
+  if (c.endDate !== undefined && !isValidIsoDate(c.endDate)) return false;
+  if (!Array.isArray(c.people)) return false;
+  if (!Array.isArray(c.goals)) return false;
+  if (!Array.isArray(c.places)) return false;
+  if (!Array.isArray(c.representativeMemoryIds)) return false;
+  if (c.status !== "active" && c.status !== "closed") return false;
+  if (!isValidIsoDate(c.createdAt)) return false;
+  if (!isValidIsoDate(c.updatedAt)) return false;
+
+  return true;
+}
+
+export function isValidMemoryRelationEdge(obj: unknown): obj is MemoryRelationEdge {
+  if (!obj || typeof obj !== "object") return false;
+  const e = obj as Record<string, unknown>;
+
+  if (!isValidId(e.id)) return false;
+  if (typeof e.sourceMemoryId !== "string" || e.sourceMemoryId.trim().length === 0) return false;
+  if (typeof e.targetMemoryId !== "string" || e.targetMemoryId.trim().length === 0) return false;
+  if (typeof e.reason !== "string") return false;
+  if (typeof e.confidence !== "number" || e.confidence < 0 || e.confidence > 1) return false;
+  if (!isValidIsoDate(e.createdAt)) return false;
+
+  return true;
+}
+
+const VALID_ANNIVERSARY_SOURCE_TYPES = new Set(["person", "goal", "project", "event", "moment"]);
+
+export function isValidAnniversary(obj: unknown): obj is Anniversary {
+  if (!obj || typeof obj !== "object") return false;
+  const a = obj as Record<string, unknown>;
+
+  if (!isValidId(a.id)) return false;
+  if (typeof a.title !== "string" || a.title.trim().length === 0) return false;
+  if (!VALID_ANNIVERSARY_SOURCE_TYPES.has(a.sourceType as string)) return false;
+  if (typeof a.sourceId !== "string" || a.sourceId.trim().length === 0) return false;
+  if (!isValidIsoDate(a.originalDate)) return false;
+  if (typeof a.monthDay !== "string" || !/^\d{2}-\d{2}$/.test(a.monthDay)) return false;
+  if (!isValidIsoDate(a.createdAt)) return false;
+
+  return true;
+}
+
+const VALID_HIGHLIGHT_CATEGORIES = new Set([
+  "most_important",
+  "most_growth",
+  "happiest",
+  "hardest",
+  "key_decision",
+  "relationship_change",
+]);
+
+export function isValidHighlight(obj: unknown): obj is Highlight {
+  if (!obj || typeof obj !== "object") return false;
+  const h = obj as Record<string, unknown>;
+
+  if (!isValidId(h.id)) return false;
+  if (typeof h.year !== "number" || h.year < 1900 || h.year > 3000) return false;
+  if (!VALID_HIGHLIGHT_CATEGORIES.has(h.category as string)) return false;
+  if (typeof h.title !== "string" || h.title.trim().length === 0) return false;
+  if (h.memoryId !== undefined && typeof h.memoryId !== "string") return false;
+  if (h.objectId !== undefined && typeof h.objectId !== "string") return false;
+  if (typeof h.score !== "number" || h.score < 0 || h.score > 1) return false;
+  if (!isValidIsoDate(h.createdAt)) return false;
+
+  return true;
+}
+
+export function isValidDecisionMemory(obj: unknown): obj is DecisionMemory {
+  if (!obj || typeof obj !== "object") return false;
+  const d = obj as Record<string, unknown>;
+
+  if (!isValidId(d.id)) return false;
+  if (typeof d.decision !== "string" || d.decision.trim().length === 0) return false;
+  if (typeof d.context !== "string") return false;
+  if (typeof d.emotion !== "string") return false;
+  if (typeof d.reason !== "string") return false;
+  if (d.outcome !== undefined && typeof d.outcome !== "string") return false;
+  if (d.review !== undefined && typeof d.review !== "string") return false;
+  if (!Array.isArray(d.objectIds)) return false;
+  if (!isValidIsoDate(d.decidedAt)) return false;
+  if (!isValidIsoDate(d.createdAt)) return false;
+  if (!isValidIsoDate(d.updatedAt)) return false;
 
   return true;
 }

@@ -12,6 +12,12 @@ import {
   IntelligenceMeta,
   IntelligenceTodayStory,
   CompanionMeta,
+  MemoryMoment,
+  LifeChapter,
+  MemoryRelationEdge,
+  Anniversary,
+  Highlight,
+  DecisionMemory,
 } from "@/lib/types";
 import { AppSettings, StorageAdapter } from "@/lib/storage/types";
 import { localStorageAdapter } from "@/lib/storage/localStorageAdapter";
@@ -266,6 +272,145 @@ export class HybridStorageAdapter implements StorageAdapter {
   }
   async setCompanionMeta(meta: CompanionMeta): Promise<void> {
     await this.local.setCompanionMeta(meta);
+  }
+
+  // ---- long-term memory --------------------------------------------------
+  async getMoments(): Promise<MemoryMoment[]> {
+    return this.local.getMoments();
+  }
+  async createMoment(
+    moment: Omit<MemoryMoment, "id" | "createdAt" | "updatedAt">
+  ): Promise<MemoryMoment> {
+    const created = await this.local.createMoment(moment);
+    this.requestSync("moments", created.id);
+    return created;
+  }
+  async updateMoment(
+    id: string,
+    updates: Partial<Omit<MemoryMoment, "id" | "createdAt">>
+  ): Promise<MemoryMoment> {
+    const updated = await this.local.updateMoment(id, updates);
+    this.requestSync("moments", id);
+    return updated;
+  }
+  async deleteMoment(id: string): Promise<void> {
+    await this.local.deleteMoment(id);
+    this.requestSync("moments", id);
+  }
+  async setMoments(moments: MemoryMoment[]): Promise<void> {
+    await this.local.setMoments(moments);
+    this.requestSync("moments");
+  }
+
+  async getChapters(): Promise<LifeChapter[]> {
+    return this.local.getChapters();
+  }
+  async createChapter(
+    chapter: Omit<LifeChapter, "id" | "createdAt" | "updatedAt">
+  ): Promise<LifeChapter> {
+    const created = await this.local.createChapter(chapter);
+    this.requestSync("chapters", created.id);
+    return created;
+  }
+  async updateChapter(
+    id: string,
+    updates: Partial<Omit<LifeChapter, "id" | "createdAt">>
+  ): Promise<LifeChapter> {
+    const updated = await this.local.updateChapter(id, updates);
+    this.requestSync("chapters", id);
+    return updated;
+  }
+  async deleteChapter(id: string): Promise<void> {
+    await this.local.deleteChapter(id);
+    this.requestSync("chapters", id);
+  }
+  async setChapters(chapters: LifeChapter[]): Promise<void> {
+    await this.local.setChapters(chapters);
+    this.requestSync("chapters");
+  }
+
+  async getMemoryRelations(): Promise<MemoryRelationEdge[]> {
+    return this.local.getMemoryRelations();
+  }
+  async createMemoryRelation(
+    edge: Omit<MemoryRelationEdge, "id" | "createdAt">
+  ): Promise<MemoryRelationEdge> {
+    const created = await this.local.createMemoryRelation(edge);
+    this.requestSync("memoryRelations", created.id);
+    return created;
+  }
+  async deleteMemoryRelation(id: string): Promise<void> {
+    await this.local.deleteMemoryRelation(id);
+    this.requestSync("memoryRelations", id);
+  }
+  async setMemoryRelations(edges: MemoryRelationEdge[]): Promise<void> {
+    await this.local.setMemoryRelations(edges);
+    this.requestSync("memoryRelations");
+  }
+
+  async getAnniversaries(): Promise<Anniversary[]> {
+    return this.local.getAnniversaries();
+  }
+  async createAnniversary(
+    anniversary: Omit<Anniversary, "id" | "createdAt">
+  ): Promise<Anniversary> {
+    const created = await this.local.createAnniversary(anniversary);
+    this.requestSync("anniversaries", created.id);
+    return created;
+  }
+  async deleteAnniversary(id: string): Promise<void> {
+    await this.local.deleteAnniversary(id);
+    this.requestSync("anniversaries", id);
+  }
+  async setAnniversaries(anniversaries: Anniversary[]): Promise<void> {
+    await this.local.setAnniversaries(anniversaries);
+    this.requestSync("anniversaries");
+  }
+
+  async getHighlights(): Promise<Highlight[]> {
+    return this.local.getHighlights();
+  }
+  async createHighlight(
+    highlight: Omit<Highlight, "id" | "createdAt">
+  ): Promise<Highlight> {
+    const created = await this.local.createHighlight(highlight);
+    this.requestSync("highlights", created.id);
+    return created;
+  }
+  async deleteHighlight(id: string): Promise<void> {
+    await this.local.deleteHighlight(id);
+    this.requestSync("highlights", id);
+  }
+  async setHighlights(highlights: Highlight[]): Promise<void> {
+    await this.local.setHighlights(highlights);
+    this.requestSync("highlights");
+  }
+
+  async getDecisions(): Promise<DecisionMemory[]> {
+    return this.local.getDecisions();
+  }
+  async createDecision(
+    decision: Omit<DecisionMemory, "id" | "createdAt" | "updatedAt">
+  ): Promise<DecisionMemory> {
+    const created = await this.local.createDecision(decision);
+    this.requestSync("decisions", created.id);
+    return created;
+  }
+  async updateDecision(
+    id: string,
+    updates: Partial<Omit<DecisionMemory, "id" | "createdAt">>
+  ): Promise<DecisionMemory> {
+    const updated = await this.local.updateDecision(id, updates);
+    this.requestSync("decisions", id);
+    return updated;
+  }
+  async deleteDecision(id: string): Promise<void> {
+    await this.local.deleteDecision(id);
+    this.requestSync("decisions", id);
+  }
+  async setDecisions(decisions: DecisionMemory[]): Promise<void> {
+    await this.local.setDecisions(decisions);
+    this.requestSync("decisions");
   }
 }
 

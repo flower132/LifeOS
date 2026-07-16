@@ -638,3 +638,165 @@ export type TemplateCreateInput = Omit<
 export type TemplateUpdateInput = Partial<Omit<Template, "id" | "createdAt">>;
 
 export type WithRequired<T, K extends keyof T> = T & Required<Pick<T, K>>;
+
+// ── Long-term Memory ────────────────────────────────────────────────────────
+// 长期记忆基础设施：为年度回顾、人生章节、时间旅行、决策模式、AI 深度洞察
+// 提供统一的数据基础。所有派生实体由 lib/services 下的引擎自动维护。
+
+export type Season = "spring" | "summer" | "autumn" | "winter";
+
+/** 由 TimeEngine 为每条记忆自动计算的时间分面。禁止页面自行计算。 */
+export interface TimeFacets {
+  day: string; // YYYY-MM-DD local day
+  week: string; // ISO week key, e.g. "2026-W29"
+  month: string; // YYYY-MM
+  quarter: string; // e.g. "2026-Q3"
+  year: number;
+  weekday: number; // 0-6, Sunday = 0
+  hour: number; // 0-23, local hour
+  season: Season;
+}
+
+/** 一天中的叙事时段。 */
+export type Daypart = "earlyMorning" | "morning" | "afternoon" | "evening" | "night";
+
+export type MemoryRecordKind =
+  | "note"
+  | "objectMemory"
+  | "moment"
+  | "decision"
+  | "reflection";
+
+/**
+ * 统一记忆视图：把 Note、ObjectMemory、Moment、Decision、Reflection
+ * 归一化为带时间分面的 MemoryRecord，供 Timeline / History / Search 使用。
+ * MemoryRecord 是虚拟视图，不单独持久化。
+ */
+export interface MemoryRecord {
+  id: string; // stable view id, e.g. "note:<id>"
+  kind: MemoryRecordKind;
+  content: string;
+  sourceId: string; // original entity id
+  objectId?: string | null;
+  objectName?: string;
+  createdAt: string; // ISO
+  facets: TimeFacets;
+}
+
+// ── Memory Moments（重要人生时刻） ───────────────────────────────────────────
+
+export type MomentKind =
+  | "first_meeting" // 第一次认识某人
+  | "first_goal" // 第一次创建目标
+  | "first_travel" // 第一次旅行
+  | "first_move" // 第一次搬家
+  | "first_goal_completed" // 第一次完成目标
+  | "first_job_change" // 第一次换工作
+  | "first_venture" // 第一次创业
+  | "first_graduation" // 第一次毕业
+  | "milestone"; // 其他重要时刻
+
+/** Moment 不是 Tag，Moment 是一种特殊的 Memory。 */
+export interface MemoryMoment {
+  id: string;
+  kind: MomentKind;
+  /** 引擎幂等键：同一来源的 Moment 重复检测时保持稳定，例如 "first_meeting:<personId>" */
+  dedupeKey: string;
+  title: string;
+  description?: string;
+  memoryIds: string[]; // related MemoryRecord ids
+  objectIds: string[]; // related LifeObject ids
+  occurredAt: string; // ISO, when the moment happened
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ── Life Chapters（人生章节） ────────────────────────────────────────────────
+
+export interface LifeChapter {
+  id: string;
+  /** 引擎幂等键：以章节起点标识，例如 "chapter:2025-03-01" */
+  dedupeKey: string;
+  title: string;
+  description: string;
+  startDate: string; // ISO
+  endDate?: string; // ISO; undefined = ongoing
+  people: string[]; // LifeObject ids (person)
+  goals: string[]; // LifeObject ids (goal)
+  places: string[]; // free-form place names
+  representativeMemoryIds: string[]; // MemoryRecord ids
+  status: "active" | "closed";
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ── Memory Connections（记忆关联） ───────────────────────────────────────────
+
+export interface MemoryRelationEdge {
+  id: string;
+  sourceMemoryId: string; // MemoryRecord id
+  targetMemoryId: string; // MemoryRecord id
+  reason: string; // why the two memories are connected
+  confidence: number; // 0-1
+  createdAt: string;
+}
+
+// ── Anniversaries（周年） ───────────────────────────────────────────────────
+
+export type AnniversarySourceType = "person" | "goal" | "project" | "event" | "moment";
+
+export interface Anniversary {
+  id: string;
+  title: string; // e.g. "认识 Alice"
+  sourceType: AnniversarySourceType;
+  sourceId: string; // LifeObject id or MemoryMoment id
+  originalDate: string; // ISO of the original event
+  monthDay: string; // "MM-DD" — used for "去年今天" matching
+  createdAt: string;
+}
+
+// ── Highlights（年度亮点） ───────────────────────────────────────────────────
+
+export type HighlightCategory =
+  | "most_important" // 今年最重要的 Memory
+  | "most_growth" // 成长最大的 Memory
+  | "happiest" // 最快乐
+  | "hardest" // 最困难
+  | "key_decision" // 最重要决定
+  | "relationship_change"; // 关系变化最大
+
+export interface Highlight {
+  id: string;
+  year: number;
+  category: HighlightCategory;
+  title: string;
+  memoryId?: string; // MemoryRecord id
+  objectId?: string; // LifeObject id
+  score: number; // engine-computed importance, 0-1
+  createdAt: string;
+}
+
+// ── Decision Memory（决策记忆） ──────────────────────────────────────────────
+
+export interface DecisionMemory {
+  id: string;
+  decision: string;
+  context: string;
+  emotion: string;
+  reason: string;
+  outcome?: string;
+  review?: string;
+  objectIds: string[]; // related LifeObject ids
+  decidedAt: string; // ISO, when the decision was made
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type DecisionMemoryCreateInput = Omit<
+  DecisionMemory,
+  "id" | "createdAt" | "updatedAt"
+>;
+
+export type DecisionMemoryUpdateInput = Partial<
+  Omit<DecisionMemory, "id" | "createdAt">
+>;

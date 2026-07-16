@@ -47,6 +47,12 @@ export async function buildLocalSnapshot(): Promise<SyncSnapshot> {
     templates,
     settings,
     aiAnalysisHistory,
+    moments,
+    chapters,
+    memoryRelations,
+    anniversaries,
+    highlights,
+    decisions,
   ] = await Promise.all([
     adapter.getObjects(),
     adapter.getNotes(),
@@ -55,6 +61,12 @@ export async function buildLocalSnapshot(): Promise<SyncSnapshot> {
     adapter.getTemplates(),
     adapter.getSettings(),
     adapter.getAIAnalysisHistory(),
+    adapter.getMoments(),
+    adapter.getChapters(),
+    adapter.getMemoryRelations(),
+    adapter.getAnniversaries(),
+    adapter.getHighlights(),
+    adapter.getDecisions(),
   ]);
   return {
     objects,
@@ -64,6 +76,12 @@ export async function buildLocalSnapshot(): Promise<SyncSnapshot> {
     templates,
     settings,
     aiAnalysisHistory,
+    moments,
+    chapters,
+    memoryRelations,
+    anniversaries,
+    highlights,
+    decisions,
   };
 }
 
@@ -78,6 +96,12 @@ export async function buildRemoteSnapshot(): Promise<SyncSnapshot> {
     templates,
     settings,
     aiAnalysisHistory,
+    moments,
+    chapters,
+    memoryRelations,
+    anniversaries,
+    highlights,
+    decisions,
   ] = await Promise.all([
     adapter.getObjects(),
     adapter.getNotes(),
@@ -86,6 +110,12 @@ export async function buildRemoteSnapshot(): Promise<SyncSnapshot> {
     adapter.getTemplates(),
     adapter.getSettings(),
     adapter.getAIAnalysisHistory(),
+    adapter.getMoments(),
+    adapter.getChapters(),
+    adapter.getMemoryRelations(),
+    adapter.getAnniversaries(),
+    adapter.getHighlights(),
+    adapter.getDecisions(),
   ]);
   return {
     objects,
@@ -95,6 +125,12 @@ export async function buildRemoteSnapshot(): Promise<SyncSnapshot> {
     templates,
     settings,
     aiAnalysisHistory,
+    moments,
+    chapters,
+    memoryRelations,
+    anniversaries,
+    highlights,
+    decisions,
   };
 }
 
@@ -207,6 +243,12 @@ export async function resolveConflict(strategy: ConflictStrategy): Promise<void>
       adapter.setTemplates(merged.templates),
       adapter.setSettings(merged.settings),
       adapter.setAIAnalysisHistory(merged.aiAnalysisHistory),
+      adapter.setMoments(merged.moments),
+      adapter.setChapters(merged.chapters),
+      adapter.setMemoryRelations(merged.memoryRelations),
+      adapter.setAnniversaries(merged.anniversaries),
+      adapter.setHighlights(merged.highlights),
+      adapter.setDecisions(merged.decisions),
     ]);
 
     await localStorageAdapter.setObjects(merged.objects);
@@ -216,6 +258,12 @@ export async function resolveConflict(strategy: ConflictStrategy): Promise<void>
     await localStorageAdapter.setTemplates(merged.templates);
     await localStorageAdapter.setSettings(merged.settings);
     await localStorageAdapter.setAIAnalysisHistory(merged.aiAnalysisHistory);
+    await localStorageAdapter.setMoments(merged.moments);
+    await localStorageAdapter.setChapters(merged.chapters);
+    await localStorageAdapter.setMemoryRelations(merged.memoryRelations);
+    await localStorageAdapter.setAnniversaries(merged.anniversaries);
+    await localStorageAdapter.setHighlights(merged.highlights);
+    await localStorageAdapter.setDecisions(merged.decisions);
 
     syncService.setConflictStrategy("merge");
   }

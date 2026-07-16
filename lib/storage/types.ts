@@ -13,6 +13,12 @@ import {
   IntelligenceTodayStory,
   QuietModeSettings,
   CompanionMeta,
+  MemoryMoment,
+  LifeChapter,
+  MemoryRelationEdge,
+  Anniversary,
+  Highlight,
+  DecisionMemory,
 } from "@/lib/types";
 
 import { AIProviderId } from "@/lib/ai/types";
@@ -128,6 +134,40 @@ export interface StorageAdapter {
   // Daily Companion meta
   getCompanionMeta(): Promise<CompanionMeta>;
   setCompanionMeta(meta: CompanionMeta): Promise<void>;
+
+  // Long-term Memory（长期记忆：Moments / Chapters / Relations / Anniversaries / Highlights / Decisions）
+  getMoments(): Promise<MemoryMoment[]>;
+  createMoment(moment: Omit<MemoryMoment, "id" | "createdAt" | "updatedAt">): Promise<MemoryMoment>;
+  updateMoment(id: string, updates: Partial<Omit<MemoryMoment, "id" | "createdAt">>): Promise<MemoryMoment>;
+  deleteMoment(id: string): Promise<void>;
+  setMoments(moments: MemoryMoment[]): Promise<void>;
+
+  getChapters(): Promise<LifeChapter[]>;
+  createChapter(chapter: Omit<LifeChapter, "id" | "createdAt" | "updatedAt">): Promise<LifeChapter>;
+  updateChapter(id: string, updates: Partial<Omit<LifeChapter, "id" | "createdAt">>): Promise<LifeChapter>;
+  deleteChapter(id: string): Promise<void>;
+  setChapters(chapters: LifeChapter[]): Promise<void>;
+
+  getMemoryRelations(): Promise<MemoryRelationEdge[]>;
+  createMemoryRelation(edge: Omit<MemoryRelationEdge, "id" | "createdAt">): Promise<MemoryRelationEdge>;
+  deleteMemoryRelation(id: string): Promise<void>;
+  setMemoryRelations(edges: MemoryRelationEdge[]): Promise<void>;
+
+  getAnniversaries(): Promise<Anniversary[]>;
+  createAnniversary(anniversary: Omit<Anniversary, "id" | "createdAt">): Promise<Anniversary>;
+  deleteAnniversary(id: string): Promise<void>;
+  setAnniversaries(anniversaries: Anniversary[]): Promise<void>;
+
+  getHighlights(): Promise<Highlight[]>;
+  createHighlight(highlight: Omit<Highlight, "id" | "createdAt">): Promise<Highlight>;
+  deleteHighlight(id: string): Promise<void>;
+  setHighlights(highlights: Highlight[]): Promise<void>;
+
+  getDecisions(): Promise<DecisionMemory[]>;
+  createDecision(decision: Omit<DecisionMemory, "id" | "createdAt" | "updatedAt">): Promise<DecisionMemory>;
+  updateDecision(id: string, updates: Partial<Omit<DecisionMemory, "id" | "createdAt">>): Promise<DecisionMemory>;
+  deleteDecision(id: string): Promise<void>;
+  setDecisions(decisions: DecisionMemory[]): Promise<void>;
 }
 
 export interface StorageConfig {

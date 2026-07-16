@@ -5,6 +5,7 @@ import { useTagStore } from "./tagStore";
 import { useTemplateStore } from "./templateStore";
 import { useSettingsStore } from "./settingsStore";
 import { useIntelligenceStore } from "./intelligenceStore";
+import { useLongTermMemoryStore } from "./longTermMemoryStore";
 
 /**
  * Rehydrate all stores from persistent storage.
@@ -19,6 +20,7 @@ export async function hydrateStores(): Promise<void> {
     useTemplateStore.getState().hydrate(),
     useSettingsStore.getState().hydrate(),
     useIntelligenceStore.getState().hydrate(),
+    useLongTermMemoryStore.getState().hydrate(),
   ]);
 }
 
@@ -35,4 +37,5 @@ export function persistStores(): void {
   useTemplateStore.getState().persist();
   useSettingsStore.getState().persist();
   useIntelligenceStore.getState().persist();
+  useLongTermMemoryStore.getState().persist();
 }

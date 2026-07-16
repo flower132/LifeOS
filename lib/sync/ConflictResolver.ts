@@ -5,6 +5,12 @@ import {
   Tag,
   Template,
   AIAnalysisHistoryEntry,
+  MemoryMoment,
+  LifeChapter,
+  MemoryRelationEdge,
+  Anniversary,
+  Highlight,
+  DecisionMemory,
 } from "@/lib/types";
 import { AppSettings } from "@/lib/storage/types";
 import {
@@ -38,6 +44,14 @@ function getSyncTimestamp(
     case "templates":
       return getTimestamp(item.updatedAt);
     case "aiAnalysisHistory":
+      return getTimestamp(item.createdAt);
+    case "moments":
+    case "chapters":
+    case "decisions":
+      return getTimestamp(item.updatedAt);
+    case "memoryRelations":
+    case "anniversaries":
+    case "highlights":
       return getTimestamp(item.createdAt);
     case "settings":
       return 0;
@@ -125,6 +139,20 @@ export function mergeSnapshots(
     local.aiAnalysisHistory,
     remote.aiAnalysisHistory
   );
+  const momentsMerge = mergeList<MemoryMoment>("moments", local.moments, remote.moments);
+  const chaptersMerge = mergeList<LifeChapter>("chapters", local.chapters, remote.chapters);
+  const memoryRelationsMerge = mergeList<MemoryRelationEdge>(
+    "memoryRelations",
+    local.memoryRelations,
+    remote.memoryRelations
+  );
+  const anniversariesMerge = mergeList<Anniversary>(
+    "anniversaries",
+    local.anniversaries,
+    remote.anniversaries
+  );
+  const highlightsMerge = mergeList<Highlight>("highlights", local.highlights, remote.highlights);
+  const decisionsMerge = mergeList<DecisionMemory>("decisions", local.decisions, remote.decisions);
 
   const snapshot: SyncSnapshot = {
     objects: objectsMerge.merged,
@@ -134,6 +162,12 @@ export function mergeSnapshots(
     templates: templatesMerge.merged,
     settings: mergeSettings(local.settings, remote.settings, settingsStrategy),
     aiAnalysisHistory: historyMerge.merged,
+    moments: momentsMerge.merged,
+    chapters: chaptersMerge.merged,
+    memoryRelations: memoryRelationsMerge.merged,
+    anniversaries: anniversariesMerge.merged,
+    highlights: highlightsMerge.merged,
+    decisions: decisionsMerge.merged,
   };
 
   const keptLocalCount =
@@ -142,7 +176,13 @@ export function mergeSnapshots(
     relationsMerge.keptLocal +
     tagsMerge.keptLocal +
     templatesMerge.keptLocal +
-    historyMerge.keptLocal;
+    historyMerge.keptLocal +
+    momentsMerge.keptLocal +
+    chaptersMerge.keptLocal +
+    memoryRelationsMerge.keptLocal +
+    anniversariesMerge.keptLocal +
+    highlightsMerge.keptLocal +
+    decisionsMerge.keptLocal;
 
   const keptRemoteCount =
     objectsMerge.keptRemote +
@@ -150,7 +190,13 @@ export function mergeSnapshots(
     relationsMerge.keptRemote +
     tagsMerge.keptRemote +
     templatesMerge.keptRemote +
-    historyMerge.keptRemote;
+    historyMerge.keptRemote +
+    momentsMerge.keptRemote +
+    chaptersMerge.keptRemote +
+    memoryRelationsMerge.keptRemote +
+    anniversariesMerge.keptRemote +
+    highlightsMerge.keptRemote +
+    decisionsMerge.keptRemote;
 
   const mergedCount =
     objectsMerge.mergedCount +
@@ -158,7 +204,13 @@ export function mergeSnapshots(
     relationsMerge.mergedCount +
     tagsMerge.mergedCount +
     templatesMerge.mergedCount +
-    historyMerge.mergedCount;
+    historyMerge.mergedCount +
+    momentsMerge.mergedCount +
+    chaptersMerge.mergedCount +
+    memoryRelationsMerge.mergedCount +
+    anniversariesMerge.mergedCount +
+    highlightsMerge.mergedCount +
+    decisionsMerge.mergedCount;
 
   const totalCount =
     snapshot.objects.length +
@@ -166,7 +218,13 @@ export function mergeSnapshots(
     snapshot.relations.length +
     snapshot.tags.length +
     snapshot.templates.length +
-    snapshot.aiAnalysisHistory.length;
+    snapshot.aiAnalysisHistory.length +
+    snapshot.moments.length +
+    snapshot.chapters.length +
+    snapshot.memoryRelations.length +
+    snapshot.anniversaries.length +
+    snapshot.highlights.length +
+    snapshot.decisions.length;
 
   return {
     snapshot,

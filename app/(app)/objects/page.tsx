@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { Search, PlusCircle, ArrowUpDown, X } from "lucide-react";
+import { Search, PlusCircle, ArrowUpDown, X, Clock } from "lucide-react";
 import { useMemo, useState } from "react";
 import { LIFE_OBJECT_TYPES, LifeObjectType } from "@/lib/types";
 import { useObjectStore } from "@/stores/objectStore";
+import { useLongTermMemoryStore } from "@/stores/longTermMemoryStore";
 import {
   useObjectDeletionUndoStore,
   isUndoAvailable,
@@ -17,6 +18,8 @@ import { ObjectUndoBanner } from "@/components/object/manage/ObjectUndoBanner";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/lib/useTranslation";
 import { SkeletonBlock } from "@/components/ui/Skeleton";
+import { parseTimeQuery } from "@/lib/services/searchTime";
+import { inRange } from "@/lib/services/timeEngine";
 
 const filterTabs: ("all" | LifeObjectType)[] = ["all", ...LIFE_OBJECT_TYPES];
 
@@ -28,6 +31,7 @@ import { WorkspaceLayout } from "@/components/layout/WorkspaceLayout";
 
 export default function ObjectsPage() {
   const { objects, loaded } = useObjectStore();
+  const { chapters, moments } = useLongTermMemoryStore();
   const { t } = useTranslation();
   const [filter, setFilter] = useState<"all" | LifeObjectType>("all");
   const [query, setQuery] = useState("");
@@ -64,12 +68,62 @@ export default function ObjectsPage() {
     [objects]
   );
 
+  // Search Time：自然语言时间查询由 Time Engine 统一解析
+  const timeQuery = useMemo(
+    () =>
+      parseTimeQuery(query, {
+        chapterTitles: chapters.map((c) => c.title),
+      }),
+    [query, chapters]
+  );
+
   const filtered = useMemo(() => {
     const queryLower = query.toLowerCase();
-    return objects
-      .filter((obj) => (filter === "all" ? true : obj.type === filter))
-      .filter((obj) => obj.name.toLowerCase().includes(queryLower));
-  }, [objects, filter, query]);
+    const byTab = objects.filter((obj) =>
+      filter === "all" ? true : obj.type === filter
+    );
+
+    // 时间区间查询："去年冬天 / 去年今天 / 2024 年…"
+    if (timeQuery?.kind === "range" && timeQuery.range) {
+      const range = timeQuery.range;
+      return byTab.filter(
+        (obj) => inRange(obj.created_at, range) || inRange(obj.updated_at, range)
+      );
+    }
+
+    // 时刻查询："第一次见 Alice / 第一次旅行…"
+    if (timeQuery?.kind === "moment" && timeQuery.momentQuery) {
+      const { personName, kind } = timeQuery.momentQuery;
+      if (personName) {
+        return byTab.filter((obj) =>
+          obj.name.toLowerCase().includes(personName.toLowerCase())
+        );
+      }
+      if (kind) {
+        const objectIds = new Set(
+          moments.filter((m) => m.kind === kind).flatMap((m) => m.objectIds)
+        );
+        return byTab.filter((obj) => objectIds.has(obj.id));
+      }
+    }
+
+    // 章节查询："研究生时期 / 上海时期…"
+    if (timeQuery?.kind === "chapter" && timeQuery.chapterKeyword) {
+      const keyword = timeQuery.chapterKeyword.toLowerCase();
+      const chapter = chapters.find(
+        (c) =>
+          c.title.toLowerCase().includes(keyword) ||
+          keyword.includes(c.title.toLowerCase())
+      );
+      if (chapter) {
+        const ids = new Set([...chapter.people, ...chapter.goals]);
+        return byTab.filter((obj) => ids.has(obj.id));
+      }
+      return byTab.filter((obj) => obj.name.toLowerCase().includes(queryLower));
+    }
+
+    return byTab.filter((obj) => obj.name.toLowerCase().includes(queryLower));
+  }, [objects, filter, query, timeQuery, chapters, moments]);
 
   const sorted = useMemo(() => {
     const list = [...filtered];
@@ -190,7 +244,7 @@ export default function ObjectsPage() {
             ))}
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className={cn("flex items-center gap-3", timeQuery && "pb-5")}>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <input
@@ -200,6 +254,12 @@ export default function ObjectsPage() {
                 placeholder={t("searchObjects")}
                 className="w-full rounded-lg border border-input bg-background py-2 pl-9 pr-3 text-sm text-foreground outline-none focus:border-accent focus:ring-2 focus:ring-accent"
               />
+              {timeQuery && (
+                <span className="absolute left-0 top-full mt-1 inline-flex items-center gap-1 whitespace-nowrap text-xs text-muted-foreground">
+                  <Clock className="h-3 w-3" />
+                  {timeQuery.label}
+                </span>
+              )}
             </div>
 
             <div className="relative">

@@ -67,6 +67,12 @@ const STORAGE_METHODS: (keyof StorageAdapter)[] = [
   "getIntelligenceCache", "setIntelligenceCache", "getIntelligenceMeta", "setIntelligenceMeta",
   "getTodayStory", "createTodayStory",
   "getCompanionMeta", "setCompanionMeta",
+  "getMoments", "createMoment", "updateMoment", "deleteMoment", "setMoments",
+  "getChapters", "createChapter", "updateChapter", "deleteChapter", "setChapters",
+  "getMemoryRelations", "createMemoryRelation", "deleteMemoryRelation", "setMemoryRelations",
+  "getAnniversaries", "createAnniversary", "deleteAnniversary", "setAnniversaries",
+  "getHighlights", "createHighlight", "deleteHighlight", "setHighlights",
+  "getDecisions", "createDecision", "updateDecision", "deleteDecision", "setDecisions",
 ];
 
 const storageProxy = {} as StorageAdapter;

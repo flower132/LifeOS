@@ -14,6 +14,12 @@ import {
   IntelligenceMeta,
   IntelligenceTodayStory,
   CompanionMeta,
+  MemoryMoment,
+  LifeChapter,
+  MemoryRelationEdge,
+  Anniversary,
+  Highlight,
+  DecisionMemory,
 } from "@/lib/types";
 import {
   isValidLifeObject,
@@ -26,6 +32,12 @@ import {
   isValidIntelligenceMeta,
   isValidIntelligenceTodayStory,
   isValidCompanionMeta,
+  isValidMemoryMoment,
+  isValidLifeChapter,
+  isValidMemoryRelationEdge,
+  isValidAnniversary,
+  isValidHighlight,
+  isValidDecisionMemory,
   validateInputObject,
   validateInputNote,
   validateInputRelation,
@@ -60,6 +72,13 @@ const KEYS = {
   intelligenceMeta: "lifeos_intelligence_meta",
   todayStories: "lifeos_today_stories",
   companionMeta: "lifeos_companion_meta",
+  // Long-term Memory
+  moments: "lifeos_moments",
+  chapters: "lifeos_chapters",
+  memoryRelations: "lifeos_memory_relations",
+  anniversaries: "lifeos_anniversaries",
+  highlights: "lifeos_highlights",
+  decisions: "lifeos_decisions",
 };
 
 const DEFAULT_INTELLIGENCE_CACHE: IntelligenceCache = {
@@ -1205,6 +1224,243 @@ export class LocalStorageAdapter implements StorageAdapter {
     const next = [created, ...valid.filter((s) => s.date !== story.date)].slice(0, 30);
     safeSetItem(KEYS.todayStories, next);
     return created;
+  }
+
+  // ── Long-term Memory: Moments ──────────────────────────────────────────────
+  async getMoments(): Promise<MemoryMoment[]> {
+    const items = safeGetItem<unknown[]>(KEYS.moments, []);
+    return filterValid(items, isValidMemoryMoment, "moment");
+  }
+
+  async createMoment(
+    moment: Omit<MemoryMoment, "id" | "createdAt" | "updatedAt">
+  ): Promise<MemoryMoment> {
+    const moments = await this.getMoments();
+    const created: MemoryMoment = {
+      ...moment,
+      id: uuidv4(),
+      createdAt: now(),
+      updatedAt: now(),
+    };
+    maybeBackup(KEYS.moments);
+    safeSetItem(KEYS.moments, [...moments, created]);
+    return created;
+  }
+
+  async updateMoment(
+    id: string,
+    updates: Partial<Omit<MemoryMoment, "id" | "createdAt">>
+  ): Promise<MemoryMoment> {
+    const moments = await this.getMoments();
+    const index = moments.findIndex((m) => m.id === id);
+    if (index === -1) throw new StorageError("Moment not found", "validation");
+    const updated: MemoryMoment = { ...moments[index], ...updates, updatedAt: now() };
+    moments[index] = updated;
+    maybeBackup(KEYS.moments);
+    safeSetItem(KEYS.moments, moments);
+    return updated;
+  }
+
+  async deleteMoment(id: string): Promise<void> {
+    const moments = (await this.getMoments()).filter((m) => m.id !== id);
+    maybeBackup(KEYS.moments);
+    safeSetItem(KEYS.moments, moments);
+  }
+
+  async setMoments(moments: MemoryMoment[]): Promise<void> {
+    const valid = filterValid(moments, isValidMemoryMoment, "moment");
+    maybeBackup(KEYS.moments);
+    safeSetItem(KEYS.moments, valid);
+  }
+
+  // ── Long-term Memory: Chapters ─────────────────────────────────────────────
+  async getChapters(): Promise<LifeChapter[]> {
+    const items = safeGetItem<unknown[]>(KEYS.chapters, []);
+    return filterValid(items, isValidLifeChapter, "chapter");
+  }
+
+  async createChapter(
+    chapter: Omit<LifeChapter, "id" | "createdAt" | "updatedAt">
+  ): Promise<LifeChapter> {
+    const chapters = await this.getChapters();
+    const created: LifeChapter = {
+      ...chapter,
+      id: uuidv4(),
+      createdAt: now(),
+      updatedAt: now(),
+    };
+    maybeBackup(KEYS.chapters);
+    safeSetItem(KEYS.chapters, [...chapters, created]);
+    return created;
+  }
+
+  async updateChapter(
+    id: string,
+    updates: Partial<Omit<LifeChapter, "id" | "createdAt">>
+  ): Promise<LifeChapter> {
+    const chapters = await this.getChapters();
+    const index = chapters.findIndex((c) => c.id === id);
+    if (index === -1) throw new StorageError("Chapter not found", "validation");
+    const updated: LifeChapter = { ...chapters[index], ...updates, updatedAt: now() };
+    chapters[index] = updated;
+    maybeBackup(KEYS.chapters);
+    safeSetItem(KEYS.chapters, chapters);
+    return updated;
+  }
+
+  async deleteChapter(id: string): Promise<void> {
+    const chapters = (await this.getChapters()).filter((c) => c.id !== id);
+    maybeBackup(KEYS.chapters);
+    safeSetItem(KEYS.chapters, chapters);
+  }
+
+  async setChapters(chapters: LifeChapter[]): Promise<void> {
+    const valid = filterValid(chapters, isValidLifeChapter, "chapter");
+    maybeBackup(KEYS.chapters);
+    safeSetItem(KEYS.chapters, valid);
+  }
+
+  // ── Long-term Memory: Memory Relations ─────────────────────────────────────
+  async getMemoryRelations(): Promise<MemoryRelationEdge[]> {
+    const items = safeGetItem<unknown[]>(KEYS.memoryRelations, []);
+    return filterValid(items, isValidMemoryRelationEdge, "memoryRelation");
+  }
+
+  async createMemoryRelation(
+    edge: Omit<MemoryRelationEdge, "id" | "createdAt">
+  ): Promise<MemoryRelationEdge> {
+    const edges = await this.getMemoryRelations();
+    const created: MemoryRelationEdge = {
+      ...edge,
+      id: uuidv4(),
+      createdAt: now(),
+    };
+    maybeBackup(KEYS.memoryRelations);
+    safeSetItem(KEYS.memoryRelations, [...edges, created]);
+    return created;
+  }
+
+  async deleteMemoryRelation(id: string): Promise<void> {
+    const edges = (await this.getMemoryRelations()).filter((e) => e.id !== id);
+    maybeBackup(KEYS.memoryRelations);
+    safeSetItem(KEYS.memoryRelations, edges);
+  }
+
+  async setMemoryRelations(edges: MemoryRelationEdge[]): Promise<void> {
+    const valid = filterValid(edges, isValidMemoryRelationEdge, "memoryRelation");
+    maybeBackup(KEYS.memoryRelations);
+    safeSetItem(KEYS.memoryRelations, valid);
+  }
+
+  // ── Long-term Memory: Anniversaries ────────────────────────────────────────
+  async getAnniversaries(): Promise<Anniversary[]> {
+    const items = safeGetItem<unknown[]>(KEYS.anniversaries, []);
+    return filterValid(items, isValidAnniversary, "anniversary");
+  }
+
+  async createAnniversary(
+    anniversary: Omit<Anniversary, "id" | "createdAt">
+  ): Promise<Anniversary> {
+    const anniversaries = await this.getAnniversaries();
+    const created: Anniversary = {
+      ...anniversary,
+      id: uuidv4(),
+      createdAt: now(),
+    };
+    maybeBackup(KEYS.anniversaries);
+    safeSetItem(KEYS.anniversaries, [...anniversaries, created]);
+    return created;
+  }
+
+  async deleteAnniversary(id: string): Promise<void> {
+    const anniversaries = (await this.getAnniversaries()).filter((a) => a.id !== id);
+    maybeBackup(KEYS.anniversaries);
+    safeSetItem(KEYS.anniversaries, anniversaries);
+  }
+
+  async setAnniversaries(anniversaries: Anniversary[]): Promise<void> {
+    const valid = filterValid(anniversaries, isValidAnniversary, "anniversary");
+    maybeBackup(KEYS.anniversaries);
+    safeSetItem(KEYS.anniversaries, valid);
+  }
+
+  // ── Long-term Memory: Highlights ───────────────────────────────────────────
+  async getHighlights(): Promise<Highlight[]> {
+    const items = safeGetItem<unknown[]>(KEYS.highlights, []);
+    return filterValid(items, isValidHighlight, "highlight");
+  }
+
+  async createHighlight(
+    highlight: Omit<Highlight, "id" | "createdAt">
+  ): Promise<Highlight> {
+    const highlights = await this.getHighlights();
+    const created: Highlight = {
+      ...highlight,
+      id: uuidv4(),
+      createdAt: now(),
+    };
+    maybeBackup(KEYS.highlights);
+    safeSetItem(KEYS.highlights, [...highlights, created]);
+    return created;
+  }
+
+  async deleteHighlight(id: string): Promise<void> {
+    const highlights = (await this.getHighlights()).filter((h) => h.id !== id);
+    maybeBackup(KEYS.highlights);
+    safeSetItem(KEYS.highlights, highlights);
+  }
+
+  async setHighlights(highlights: Highlight[]): Promise<void> {
+    const valid = filterValid(highlights, isValidHighlight, "highlight");
+    maybeBackup(KEYS.highlights);
+    safeSetItem(KEYS.highlights, valid);
+  }
+
+  // ── Long-term Memory: Decisions ────────────────────────────────────────────
+  async getDecisions(): Promise<DecisionMemory[]> {
+    const items = safeGetItem<unknown[]>(KEYS.decisions, []);
+    return filterValid(items, isValidDecisionMemory, "decision");
+  }
+
+  async createDecision(
+    decision: Omit<DecisionMemory, "id" | "createdAt" | "updatedAt">
+  ): Promise<DecisionMemory> {
+    const decisions = await this.getDecisions();
+    const created: DecisionMemory = {
+      ...decision,
+      id: uuidv4(),
+      createdAt: now(),
+      updatedAt: now(),
+    };
+    maybeBackup(KEYS.decisions);
+    safeSetItem(KEYS.decisions, [created, ...decisions]);
+    return created;
+  }
+
+  async updateDecision(
+    id: string,
+    updates: Partial<Omit<DecisionMemory, "id" | "createdAt">>
+  ): Promise<DecisionMemory> {
+    const decisions = await this.getDecisions();
+    const index = decisions.findIndex((d) => d.id === id);
+    if (index === -1) throw new StorageError("Decision not found", "validation");
+    const updated: DecisionMemory = { ...decisions[index], ...updates, updatedAt: now() };
+    decisions[index] = updated;
+    maybeBackup(KEYS.decisions);
+    safeSetItem(KEYS.decisions, decisions);
+    return updated;
+  }
+
+  async deleteDecision(id: string): Promise<void> {
+    const decisions = (await this.getDecisions()).filter((d) => d.id !== id);
+    maybeBackup(KEYS.decisions);
+    safeSetItem(KEYS.decisions, decisions);
+  }
+
+  async setDecisions(decisions: DecisionMemory[]): Promise<void> {
+    const valid = filterValid(decisions, isValidDecisionMemory, "decision");
+    maybeBackup(KEYS.decisions);
+    safeSetItem(KEYS.decisions, valid);
   }
 }
 

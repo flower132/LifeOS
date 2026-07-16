@@ -5,6 +5,12 @@ import {
   Tag,
   Template,
   AIAnalysisHistoryEntry,
+  MemoryMoment,
+  LifeChapter,
+  MemoryRelationEdge,
+  Anniversary,
+  Highlight,
+  DecisionMemory,
 } from "@/lib/types";
 import { AppSettings } from "@/lib/storage/types";
 
@@ -15,7 +21,13 @@ export type SyncEntity =
   | "tags"
   | "templates"
   | "settings"
-  | "aiAnalysisHistory";
+  | "aiAnalysisHistory"
+  | "moments"
+  | "chapters"
+  | "memoryRelations"
+  | "anniversaries"
+  | "highlights"
+  | "decisions";
 
 export type SyncStatus = "idle" | "syncing" | "synced" | "pending" | "error";
 
@@ -29,6 +41,12 @@ export interface SyncSnapshot {
   templates: Template[];
   settings: Partial<AppSettings>;
   aiAnalysisHistory: AIAnalysisHistoryEntry[];
+  moments: MemoryMoment[];
+  chapters: LifeChapter[];
+  memoryRelations: MemoryRelationEdge[];
+  anniversaries: Anniversary[];
+  highlights: Highlight[];
+  decisions: DecisionMemory[];
 }
 
 export interface QueueItem {
@@ -48,6 +66,12 @@ export interface RemoteSummary {
   templates: number;
   settings: number;
   aiAnalysisHistory: number;
+  moments: number;
+  chapters: number;
+  memoryRelations: number;
+  anniversaries: number;
+  highlights: number;
+  decisions: number;
   hasData: boolean;
 }
 
