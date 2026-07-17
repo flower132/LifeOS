@@ -5,18 +5,34 @@ export type Language = "zh" | "en";
 /**
  * Provider identifiers known to the AI infrastructure.
  *
- * Only "deepseek" is implemented server-side today; "claude" / "openai" /
- * "gemini" are reserved (their providers throw `not_implemented`). "mock" is
- * the client-side offline provider. "server" is used in logs when the actual
- * provider is resolved by the server router.
+ * Only "deepseek" is fully enabled today; "kimi" / "gemini" / "openai" /
+ * "claude" are code-complete and activate the moment their env API key is
+ * configured. "mock" is the client-side offline provider. "server" is used in
+ * logs when the actual provider is resolved by the server router.
  */
 export type AIProviderId =
   | "mock"
   | "deepseek"
-  | "claude"
-  | "openai"
+  | "kimi"
   | "gemini"
+  | "openai"
+  | "claude"
   | "server";
+
+/**
+ * Capabilities a model/provider can support. The Capability Matrix
+ * (lib/ai/models.ts) declares these per model; the router checks them before
+ * dispatching and degrades automatically when unsupported.
+ */
+export type AICapability =
+  | "chat"
+  | "vision"
+  | "file"
+  | "audio"
+  | "reasoning"
+  | "longContext"
+  | "toolCalling"
+  | "embedding";
 
 /**
  * AI Tasks — the ONLY way business code refers to AI capabilities.
@@ -100,7 +116,7 @@ export type AIErrorCode =
   | "invalid_key"
   | "quota_exceeded"
   | "validation"
-  | "not_implemented"
+  | "not_supported"
   | "model_not_found"
   | "json_parse"
   | "unknown";

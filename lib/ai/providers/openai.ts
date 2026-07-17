@@ -1,35 +1,22 @@
 import "server-only";
 
-import {
-  AIProviderError,
-  AIProviderV2,
-} from "../provider";
+import { AIProvider } from "../provider";
+import { createOpenAICompatibleProvider } from "./openaiCompatible";
 
 /**
- * OpenAI provider — RESERVED.
+ * OpenAI provider — code-ready, disabled until keyed.
  *
- * To activate: implement generate()/chat() against the OpenAI Chat
- * Completions API (key from process.env.OPENAI_API_KEY) and repoint tasks
- * in TASK_ROUTING (lib/ai/models.ts).
+ * Reserved surface per architecture: chat / vision / audio / file /
+ * reasoning. Chat and vision are wired today; audio (transcribe) and file
+ * upload return controlled NotSupported results until wired.
+ *
+ * Enable: set OPENAI_API_KEY in the server environment.
  */
-class OpenAIProvider implements AIProviderV2 {
-  readonly id = "openai" as const;
-
-  async generate(): Promise<never> {
-    throw new AIProviderError("not_implemented", "Not Implemented");
-  }
-
-  async chat(): Promise<never> {
-    throw new AIProviderError("not_implemented", "Not Implemented");
-  }
-
-  async stream(): Promise<never> {
-    throw new AIProviderError("not_implemented", "Not Implemented");
-  }
-
-  async embedding(): Promise<never> {
-    throw new AIProviderError("not_implemented", "Not Implemented");
-  }
-}
-
-export const openaiProvider = new OpenAIProvider();
+export const openaiProvider: AIProvider = createOpenAICompatibleProvider({
+  id: "openai",
+  label: "OpenAI",
+  defaultBaseUrl: "https://api.openai.com/v1",
+  baseUrlEnv: "OPENAI_BASE_URL",
+  apiKeyEnv: ["OPENAI_API_KEY"],
+  supportsVisionRequests: true,
+});

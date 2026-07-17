@@ -1,13 +1,14 @@
 import "server-only";
 
 import { AITask } from "./types";
+import { getPlanConfig } from "./plans";
 
 // ---------------------------------------------------------------------------
 // Quota layer — interface stable for the future membership system.
 //
-// Limits are effectively disabled today (default daily cap is 100k calls);
-// wire real tiers by overriding AI_DAILY_QUOTA or replacing the counter with
-// a Supabase-backed one — the canUse/consume/restore contract stays.
+// The daily limit comes from the active plan (plans.ts); AI_DAILY_QUOTA can
+// override it for ops. When memberships ship, plans resolve per user and this
+// file does not change.
 // ---------------------------------------------------------------------------
 
 interface QuotaBucket {
@@ -21,7 +22,8 @@ const buckets = new Map<string, QuotaBucket>();
 function dailyLimit(): number {
   const raw = process.env.AI_DAILY_QUOTA;
   const parsed = raw ? Number.parseInt(raw, 10) : NaN;
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : 100_000;
+  if (Number.isFinite(parsed) && parsed > 0) return parsed;
+  return getPlanConfig().dailyQuota;
 }
 
 function todayUtc(): string {

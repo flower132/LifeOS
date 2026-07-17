@@ -8,16 +8,30 @@ import {
 } from "./types";
 
 // ---------------------------------------------------------------------------
-// Unified server-side provider interface.
+// Unified provider interface — every provider (DeepSeek today; Kimi / Gemini /
+// OpenAI / Claude code-ready) implements this exact shape. The router only
+// ever talks to AIProvider; adding a provider never changes router or
+// business code.
 //
-// Every provider (DeepSeek today; Claude / OpenAI / Gemini reserved) MUST
-// implement this exact shape. The router only ever talks to AIProviderV2 —
-// adding a provider never changes router or business code.
+// Capability contract: a method whose capability the provider does NOT offer
+// must reject via notSupported() — a controlled NotSupported result, never an
+// unhandled crash. The router checks the Capability Matrix first, so these
+// paths are only reached as a safety net.
 // ---------------------------------------------------------------------------
 
 export interface AIChatMessage {
   role: "system" | "user" | "assistant";
   content: string;
+}
+
+export interface AIChatParams {
+  messages: AIChatMessage[];
+  images?: AIImageInput[];
+  temperature: number;
+  maxTokens: number;
+  jsonMode: boolean;
+  /** Reserved: tool/function-calling definitions. */
+  tools?: unknown[];
 }
 
 export interface AIGenerateParams {
@@ -29,12 +43,9 @@ export interface AIGenerateParams {
   jsonMode: boolean;
 }
 
-export interface AIChatParams {
-  messages: AIChatMessage[];
-  images?: AIImageInput[];
-  temperature: number;
-  maxTokens: number;
-  jsonMode: boolean;
+export interface AITranscribeParams {
+  audio: { mimeType: string; base64Data: string };
+  language?: string;
 }
 
 export interface AIProviderResult {
@@ -42,18 +53,22 @@ export interface AIProviderResult {
   usage: AITokenUsage;
 }
 
-export interface AIProviderV2 {
-  readonly id: AIProviderId;
-  /** Single-turn generation (system + user prompt). */
-  generate(model: string, params: AIGenerateParams): Promise<AIProviderResult>;
-  /** Multi-turn chat completion. */
+export interface AIProvider {
+  readonly id: Exclude<AIProviderId, "mock" | "server">;
+  /** Multi-turn chat completion — the core method every provider implements. */
   chat(model: string, params: AIChatParams): Promise<AIProviderResult>;
-  /** Streaming — reserved. */
-  stream(model: string, params: AIGenerateParams): Promise<unknown>;
-  /** Embeddings — reserved. */
+  /** Image understanding. */
+  vision(model: string, params: AIGenerateParams): Promise<AIProviderResult>;
+  /** Text embeddings. */
   embedding(model: string, input: string[]): Promise<number[][]>;
-  /** Summarization helper — optional convenience over generate(). */
-  summary?(model: string, params: AIGenerateParams): Promise<AIProviderResult>;
+  /** Summarization. */
+  summarize(model: string, params: AIGenerateParams): Promise<AIProviderResult>;
+  /** Structured extraction (JSON output). */
+  extract(model: string, params: AIGenerateParams): Promise<AIProviderResult>;
+  /** Deep analysis (JSON output). */
+  analyze(model: string, params: AIGenerateParams): Promise<AIProviderResult>;
+  /** Audio transcription. */
+  transcribe(model: string, params: AITranscribeParams): Promise<AIProviderResult>;
 }
 
 /**
@@ -71,6 +86,18 @@ export class AIProviderError extends Error {
     this.code = code;
     this.status = status;
   }
+}
+
+/**
+ * Controlled NotSupported result — providers return this (as a rejection)
+ * for any capability they do not offer, so business code never crashes on an
+ * unsupported call.
+ */
+export function notSupported(provider: string, method: string): AIProviderError {
+  return new AIProviderError(
+    "not_supported",
+    `${provider} does not support ${method}`
+  );
 }
 
 /** Map an upstream HTTP status to a unified error code. */

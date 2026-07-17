@@ -94,7 +94,7 @@ export const ai = {
 
   /** Streaming — reserved. */
   async stream(): Promise<never> {
-    throw new AIClientError("not_implemented", "Not Implemented");
+    throw new AIClientError("not_supported", "Not Supported");
   },
 
   /** Verify the server-side AI configuration end to end. */

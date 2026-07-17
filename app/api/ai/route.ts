@@ -2,7 +2,7 @@ import { z } from "zod";
 
 import { AITASKS, AIErrorCode, AIServerResponse } from "@/lib/ai/types";
 import { AIProviderError } from "@/lib/ai/provider";
-import { assertVisionSupport, resolveTask } from "@/lib/ai/router";
+import { executeTask } from "@/lib/ai/router";
 import { canUse, consume, restore } from "@/lib/ai/quota";
 import { recordUsage } from "@/lib/ai/usage";
 
@@ -43,14 +43,6 @@ const requestSchema = z.object({
   sessionToken: z.string().optional(),
 });
 
-const BASE_SYSTEM_PROMPT =
-  "You are a structured understanding engine for a personal life OS. Respond only with valid JSON matching the requested shape.";
-
-function buildSystemPrompt(schemaHint?: string): string {
-  if (!schemaHint) return BASE_SYSTEM_PROMPT;
-  return `${BASE_SYSTEM_PROMPT}\n\nExpected output shape:\n${schemaHint}`;
-}
-
 function statusForErrorCode(code: AIErrorCode): number {
   switch (code) {
     case "validation":
@@ -60,7 +52,7 @@ function statusForErrorCode(code: AIErrorCode): number {
     case "quota_exceeded":
     case "rate_limit":
       return 429;
-    case "not_implemented":
+    case "not_supported":
       return 501;
     case "timeout":
       return 504;
@@ -142,24 +134,9 @@ export async function POST(request: Request): Promise<Response> {
   let model: string | undefined;
 
   try {
-    const route = resolveTask(task);
-    providerId = route.providerId;
-    model = route.model;
-
-    assertVisionSupport(route, images);
-
-    const jsonMode = (options?.jsonMode ?? true) && route.supportsJsonMode;
-
-    const result = await route.provider.generate(route.model, {
-      prompt,
-      systemPrompt: buildSystemPrompt(options?.schemaHint),
-      images,
-      temperature: options?.temperature ?? route.temperature,
-      maxTokens: options?.maxTokens
-        ? Math.min(options.maxTokens, route.maxTokens)
-        : route.maxTokens,
-      jsonMode,
-    });
+    const result = await executeTask({ task, prompt, images, options });
+    providerId = result.providerId;
+    model = result.model;
 
     const latency = elapsed(start);
     consume(userId, task);
@@ -167,8 +144,8 @@ export async function POST(request: Request): Promise<Response> {
       userId,
       timestamp: new Date().toISOString(),
       task,
-      provider: route.providerId,
-      model: route.model,
+      provider: result.providerId,
+      model: result.model,
       promptTokens: result.usage.promptTokens,
       completionTokens: result.usage.completionTokens,
       totalTokens: result.usage.totalTokens,
@@ -180,8 +157,8 @@ export async function POST(request: Request): Promise<Response> {
       success: true,
       content: result.content,
       usage: result.usage,
-      provider: route.providerId,
-      model: route.model,
+      provider: result.providerId,
+      model: result.model,
       latency,
       cached: false,
     };
