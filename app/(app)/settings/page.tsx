@@ -25,6 +25,10 @@ import { AIProviderId } from "@/lib/ai/types";
 import { aiService, AITestResult, getAILogs, clearAILogs } from "@/lib/ai";
 import { AIUsageLog } from "@/lib/ai/types";
 import {
+  ACCENT_COLOR_IDS,
+  ACCENT_COLORS,
+} from "@/lib/theme/accentColors";
+import {
   exportAllData,
   downloadJson,
   exportAllDataAsMarkdown,
@@ -286,7 +290,7 @@ export default function SettingsPage() {
                 {t("accentColor")}
               </label>
               <div className="grid grid-cols-4 gap-3">
-                {(["blue", "green", "purple", "orange"] as const).map((color) => (
+                {ACCENT_COLOR_IDS.map((color) => (
                   <button
                     key={color}
                     type="button"
@@ -299,16 +303,7 @@ export default function SettingsPage() {
                   >
                     <span
                       className="h-6 w-6 rounded-full"
-                      style={{
-                        backgroundColor:
-                          color === "blue"
-                            ? "#3b82f6"
-                            : color === "green"
-                            ? "#22c55e"
-                            : color === "purple"
-                            ? "#8b5cf6"
-                            : "#f97316",
-                      }}
+                      style={{ backgroundColor: ACCENT_COLORS[color].swatch }}
                     />
                     <span>{t(color)}</span>
                   </button>

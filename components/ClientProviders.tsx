@@ -7,6 +7,11 @@ import { storage } from "@/lib/storage";
 import { syncService } from "@/lib/sync/SyncService";
 import { companionScheduler } from "@/lib/companion/scheduler";
 import { longTermMemoryService } from "@/lib/services";
+import {
+  DEFAULT_ACCENT_COLOR,
+  getAccentCssVariables,
+  isAccentColorId,
+} from "@/lib/theme/accentColors";
 import { DevTools } from "./DevTools";
 import { Spinner } from "@/components/ui/Spinner";
 
@@ -33,15 +38,21 @@ function applyTheme(themeColor: "light" | "dark"): void {
   html.setAttribute("data-theme", themeColor);
 }
 
-function applyAccentColor(accentColor: "blue" | "green" | "purple" | "orange"): void {
-  const values: Record<typeof accentColor, string> = {
-    blue: "217 91% 60%",
-    green: "142 71% 45%",
-    purple: "#7C5CFF",
-    orange: "24 95% 53%",
-  };
-  document.documentElement.style.setProperty("--accent", values[accentColor]);
-  document.documentElement.style.setProperty("--accent-foreground", "0 0% 100%");
+/**
+ * 写入整套 Accent CSS 变量（--accent / --accent-soft /
+ * --accent-foreground / --shadow-focus），按明暗模式取变体。
+ * 变量值统一来自 lib/theme/accentColors，禁止写死。
+ */
+function applyAccentColor(
+  accentColor: string,
+  mode: "light" | "dark"
+): void {
+  const id = isAccentColorId(accentColor) ? accentColor : DEFAULT_ACCENT_COLOR;
+  const variables = getAccentCssVariables(id, mode);
+  const style = document.documentElement.style;
+  for (const [name, value] of Object.entries(variables)) {
+    style.setProperty(name, value);
+  }
 }
 
 function applyLanguage(language: "zh" | "en"): void {
@@ -51,7 +62,7 @@ function applyLanguage(language: "zh" | "en"): void {
 function applySettings(settings: ReturnType<typeof useSettingsStore.getState>): void {
   const themeColor = getEffectiveThemeColor(settings.theme);
   applyTheme(themeColor);
-  applyAccentColor(settings.accentColor);
+  applyAccentColor(settings.accentColor, themeColor);
   applyLanguage(settings.language);
 }
 

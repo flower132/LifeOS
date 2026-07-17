@@ -22,6 +22,7 @@ import {
 } from "@/lib/types";
 
 import { AIProviderId } from "@/lib/ai/types";
+import { AccentColorId } from "@/lib/theme/accentColors";
 
 export type DateFormat = "YYYY-MM-DD" | "MM/DD/YYYY" | "DD/MM/YYYY";
 export type TimeFormat = "24h" | "12h";
@@ -30,7 +31,7 @@ export type AppSettings = {
   language: "zh" | "en";
   theme: "light" | "dark" | "system";
   themeColor: "light" | "dark";
-  accentColor: "blue" | "green" | "purple" | "orange";
+  accentColor: AccentColorId;
   dateFormat: DateFormat;
   timeFormat: TimeFormat;
   aiEnabled: boolean;

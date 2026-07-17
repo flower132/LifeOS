@@ -6,6 +6,10 @@ import {
   DEFAULT_PROVIDER_CONFIGS,
   isValidAIProviderId,
 } from "@/lib/ai/types";
+import {
+  DEFAULT_ACCENT_COLOR,
+  isAccentColorId,
+} from "@/lib/theme/accentColors";
 
 export type Language = AppSettings["language"];
 export type Theme = AppSettings["theme"];
@@ -79,8 +83,9 @@ function coerceThemeColor(value: string): AppSettings["themeColor"] {
 }
 
 function coerceAccentColor(value: string): AccentColor {
-  if (value === "green" || value === "purple" || value === "orange") return value;
-  return "purple";
+  // 统一由 accentColors 配置守卫：新增颜色无需改这里，
+  // 且不会再把合法颜色（如 blue）强制重置为 purple。
+  return isAccentColorId(value) ? value : DEFAULT_ACCENT_COLOR;
 }
 
 function coerceDateFormat(value: string): DateFormat {

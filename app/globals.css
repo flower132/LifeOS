@@ -233,6 +233,27 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Accent color transitions — 主题色切换丝滑过渡，不闪屏。
+   以最低特异性兜底：带 Tailwind / CSS transition 类的元素
+   （transition-colors / transition-all / .step-content 等）特异性更高，
+   保持自身规则；其余元素获得 250ms 颜色过渡。
+   prefers-reduced-motion 下由既有媒体查询统一禁用。 */
+*,
+*::before,
+*::after {
+  transition-property:
+    background-color,
+    border-color,
+    color,
+    box-shadow,
+    outline-color,
+    text-decoration-color,
+    fill,
+    stroke;
+  transition-duration: 250ms;
+  transition-timing-function: ease;
+}
+
 /* Note content minimal markdown styling — uses LifeOS tokens */
 .note-content h1,
 .note-content h2,
