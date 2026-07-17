@@ -43,6 +43,8 @@ export interface AIExecuteInput {
   task: AITask;
   prompt: string;
   images?: AIImageInput[];
+  /** Serialized LifeOS context block from the client Context Engine. */
+  context?: string;
   options?: {
     temperature?: number;
     maxTokens?: number;
@@ -62,9 +64,28 @@ export interface AIExecuteOutput {
 const BASE_SYSTEM_PROMPT =
   "You are a structured understanding engine for a personal life OS. Respond only with valid JSON matching the requested shape.";
 
+/** Hard server-side cap on injected context (chars). */
+const MAX_CONTEXT_CHARS = 40_000;
+
 function buildSystemPrompt(schemaHint?: string): string {
   if (!schemaHint) return BASE_SYSTEM_PROMPT;
   return `${BASE_SYSTEM_PROMPT}\n\nExpected output shape:\n${schemaHint}`;
+}
+
+/**
+ * Context Engine injection point: the user's life context becomes part of
+ * the system prompt, so the model answers from LifeOS data — and is told to
+ * be honest when the data is insufficient.
+ */
+function withLifeContext(systemPrompt: string, context?: string): string {
+  if (!context || !context.trim()) return systemPrompt;
+  const trimmed = context.slice(0, MAX_CONTEXT_CHARS);
+  return `${systemPrompt}
+
+以下是用户的人生上下文（LifeOS Context）：
+${trimmed}
+
+请基于这些信息回答。不要编造。如果信息不足，请如实说明。`;
 }
 
 /** Image-bearing requests always require the vision capability. */
@@ -171,7 +192,13 @@ export async function executeTask(input: AIExecuteInput): Promise<AIExecuteOutpu
 
   const params: AIGenerateParams = {
     prompt: input.prompt,
-    systemPrompt: buildSystemPrompt(input.options?.schemaHint),
+    systemPrompt:
+      input.task === "HEALTH_CHECK"
+        ? buildSystemPrompt(input.options?.schemaHint)
+        : withLifeContext(
+            buildSystemPrompt(input.options?.schemaHint),
+            input.context
+          ),
     images: input.images,
     temperature: input.options?.temperature ?? rule.temperature,
     maxTokens: Math.min(

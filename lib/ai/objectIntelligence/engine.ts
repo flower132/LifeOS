@@ -15,6 +15,8 @@ export interface AnalyzeObjectOptions {
   providerId: import("@/lib/ai/types").AIProviderId;
   model: string;
   language: Language;
+  /** Context Engine hint: the existing object being updated, if any. */
+  contextHint?: import("@/lib/ai/types").AIContextHint;
 }
 
 /**
@@ -52,6 +54,7 @@ export class ObjectIntelligenceEngine {
         prompt,
         images: input.images.length > 0 ? input.images : undefined,
         objectType: type,
+        contextHint: options.contextHint,
       };
 
       const text = await this.generateStructured(options.provider, request);

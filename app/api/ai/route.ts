@@ -40,6 +40,18 @@ const requestSchema = z.object({
       objectType: z.string().max(50).optional(),
     })
     .optional(),
+  context: z.string().max(40_000).optional(),
+  contextSources: z
+    .array(
+      z.object({
+        kind: z.enum(["memory", "note", "object", "relation", "insight", "goal", "profile"]),
+        id: z.string().min(1).max(120),
+        label: z.string().max(200),
+        date: z.string().max(40).optional(),
+      })
+    )
+    .max(20)
+    .optional(),
   sessionToken: z.string().optional(),
 });
 
@@ -99,7 +111,7 @@ export async function POST(request: Request): Promise<Response> {
     );
   }
 
-  const { task, images, options } = parsed.data;
+  const { task, images, options, context, contextSources } = parsed.data;
   // HEALTH_CHECK uses a server-side canned prompt; everything else requires
   // the client-built prompt.
   const prompt = task === "HEALTH_CHECK" ? "Reply OK" : parsed.data.prompt;
@@ -134,7 +146,7 @@ export async function POST(request: Request): Promise<Response> {
   let model: string | undefined;
 
   try {
-    const result = await executeTask({ task, prompt, images, options });
+    const result = await executeTask({ task, prompt, images, context, options });
     providerId = result.providerId;
     model = result.model;
 
@@ -161,6 +173,7 @@ export async function POST(request: Request): Promise<Response> {
       model: result.model,
       latency,
       cached: false,
+      sources: contextSources,
     };
     return Response.json(body, { status: 200 });
   } catch (err) {

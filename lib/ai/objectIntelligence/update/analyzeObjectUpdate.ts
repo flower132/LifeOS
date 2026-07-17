@@ -90,6 +90,7 @@ export async function analyzeObjectUpdate(
         providerId: selected.providerId,
         model: selected.model,
         language,
+        contextHint: { objectId: object.id },
       }
     );
 

@@ -157,7 +157,15 @@ export function createOpenAICompatibleProvider(
       );
     }
 
-    const data = (await response.json()) as ChatCompletionResponse;
+    let data: ChatCompletionResponse;
+    try {
+      data = (await response.json()) as ChatCompletionResponse;
+    } catch {
+      throw new AIProviderError(
+        "provider_error",
+        `${config.label} returned an unreadable response`
+      );
+    }
     const content = data.choices?.[0]?.message?.content;
     if (!content) {
       throw new AIProviderError(

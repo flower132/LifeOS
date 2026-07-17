@@ -93,6 +93,26 @@ export interface AIStructuredGenerationRequest {
   schemaHint?: string;
   /** The target LifeObjectType, used by the mock provider to return a type-safe shape. */
   objectType?: LifeObjectType;
+  /**
+   * Optional hints for the Context Engine: which object is being discussed
+   * and what the user is asking. Used to retrieve relevant memories.
+   */
+  contextHint?: AIContextHint;
+}
+
+/** Hints guiding the Context Engine's retrieval (see lib/ai/context). */
+export interface AIContextHint {
+  objectId?: string;
+  query?: string;
+}
+
+/** A citable origin of injected context, echoed back for source transparency. */
+export interface AIContextSource {
+  kind: "memory" | "note" | "object" | "relation" | "insight" | "goal" | "profile";
+  id: string;
+  /** Short human-readable preview (e.g. first 60 chars). */
+  label: string;
+  date?: string;
 }
 
 /**
@@ -195,6 +215,15 @@ export interface AIServerRequest {
   prompt?: string;
   images?: AIImageInput[];
   options?: AIGenerateOptions;
+  /**
+   * Serialized LifeOS context block (built client-side by the Context
+   * Engine), injected into the system prompt by the server router.
+   */
+  context?: string;
+  /** Origins of the context block, echoed back in the response. */
+  contextSources?: AIContextSource[];
+  /** Context Engine hints used when `context` is not supplied. */
+  contextHint?: AIContextHint;
   /** Reserved for future Supabase session forwarding. */
   sessionToken?: string;
 }
@@ -213,6 +242,8 @@ export interface AIServerSuccess {
   model: string;
   latency: number;
   cached: boolean;
+  /** Sources of the injected context, for output transparency. */
+  sources?: AIContextSource[];
 }
 
 export interface AIServerFailure {

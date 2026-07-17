@@ -116,7 +116,8 @@ async function runAdvisorGeneration<T>(
   context: AdvisorContext,
   buildPrompt: (language: Language) => string,
   normalize: (raw: unknown) => T,
-  forceMock?: boolean
+  forceMock?: boolean,
+  query?: string
 ): Promise<T> {
   const selected = selectProviderForTask(task, { forceMock });
 
@@ -134,6 +135,7 @@ async function runAdvisorGeneration<T>(
     schemaHint:
       '{"context":{"content":"string","evidence":[{"quote":"string","source":"string"}]},"whatINotice":{...},"suggestion":{...},"why":{...}}',
     objectType: context.object.type,
+    contextHint: { objectId: context.object.id, query },
   };
 
   // Server calls are logged centrally by the /api/ai client proxy.
@@ -157,7 +159,8 @@ class AdvisorService {
       context,
       () => buildAdvisorPrompt(context, question, getLanguage()),
       normalizeAdvisorResult,
-      false
+      false,
+      question
     );
 
     return {

@@ -94,6 +94,7 @@ export async function analyzePersonUpdate(
       prompt,
       images: newInput.images.length > 0 ? newInput.images : undefined,
       objectType: "person",
+      contextHint: { objectId: object.id },
     });
 
     const parsed = parseJsonResponse(text);

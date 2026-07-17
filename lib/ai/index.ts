@@ -57,6 +57,8 @@ export interface AIGenerateRequest {
   prompt: string;
   images?: AIImageInput[];
   options?: AIGenerateOptions;
+  /** Context Engine hint: current object / user question for retrieval. */
+  contextHint?: import("./types").AIContextHint;
 }
 
 export interface AIChatRequest {
@@ -73,6 +75,7 @@ export const ai = {
       prompt: request.prompt,
       images: request.images,
       options: request.options,
+      contextHint: request.contextHint,
     });
   },
 
