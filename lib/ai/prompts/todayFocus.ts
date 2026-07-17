@@ -1,5 +1,5 @@
-import { CompanionContext, FocusCandidate } from "../types";
-import { FocusOutput } from "../schemas";
+import { CompanionContext, FocusCandidate } from "@/lib/companion/types";
+import { FocusOutput } from "@/lib/companion/schemas";
 
 function serializeNotes(notes: { id: string; created_at: string; content: string }[]): string {
   if (notes.length === 0) return "（没有相关 Memory）";

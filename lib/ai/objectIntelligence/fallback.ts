@@ -1,68 +1,53 @@
-import { AIProvider, AIProviderConfig, AIProviderId } from "@/lib/ai/types";
-import { registry } from "@/lib/ai/registry";
+import { AIProvider, AIProviderId, AITask } from "@/lib/ai/types";
+import { createMockProvider } from "@/lib/ai/mock";
+import { createServerTaskProvider } from "@/lib/ai/serverProxy";
 import { useSettingsStore } from "@/stores/settingsStore";
 
 export interface SelectedProvider {
   provider: AIProvider;
   providerId: AIProviderId;
   model: string;
-  /** True when privacy mode, AI disabled, missing key, or explicit mock selected. */
+  /** True when privacy mode, AI disabled, SSR, or an explicit mock request. */
   isMock: boolean;
 }
 
 /**
- * Determine which provider should be used for an analysis request.
+ * Determine which provider should serve an AI task.
  *
- * This function lives outside ObjectIntelligenceEngine so the engine stays
- * provider-agnostic. It respects:
- *   - AI disabled state
- *   - Privacy mode
- *   - Missing API key
- *   - Explicit mock selection
+ * Mock stays 100% client-side (zero network calls) and is selected when:
+ *   - rendering on the server (no settings available)
+ *   - AI is disabled or privacy mode is on
+ *   - the caller explicitly requests a mock run
+ *
+ * Otherwise a server task proxy is returned: generation goes through
+ * /api/ai, and the router there resolves task → provider → model. A missing
+ * server key surfaces as the unified `invalid_key` error through the
+ * engines' existing error paths.
  */
-export function selectProviderForAnalysis(config?: AIProviderConfig): SelectedProvider {
-  if (typeof window === "undefined") {
+export function selectProviderForTask(
+  task: AITask,
+  opts?: { forceMock?: boolean }
+): SelectedProvider {
+  if (typeof window === "undefined" || opts?.forceMock) {
     return createMockSelection();
   }
 
   const state = useSettingsStore.getState();
-
   if (!state.aiEnabled || state.aiPrivacyMode) {
     return createMockSelection();
   }
 
-  const effectiveConfig: AIProviderConfig = config ?? {
-    provider: state.aiProvider,
-    apiKey: state.aiApiKey,
-    baseUrl: state.aiBaseUrl,
-    model: state.aiModel,
-  };
-
-  if (
-    effectiveConfig.provider === "mock" ||
-    !effectiveConfig.apiKey.trim()
-  ) {
-    return createMockSelection();
-  }
-
   return {
-    provider: registry.create(effectiveConfig.provider, effectiveConfig),
-    providerId: effectiveConfig.provider,
-    model: effectiveConfig.model,
+    provider: createServerTaskProvider(task),
+    providerId: "server",
+    model: "",
     isMock: false,
   };
 }
 
 function createMockSelection(): SelectedProvider {
-  const mockConfig: AIProviderConfig = {
-    provider: "mock",
-    apiKey: "",
-    baseUrl: "",
-    model: "mock",
-  };
-
   return {
-    provider: registry.create("mock", mockConfig),
+    provider: createMockProvider(),
     providerId: "mock",
     model: "mock",
     isMock: true,

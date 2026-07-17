@@ -2,23 +2,63 @@ import { LifeObjectType } from "@/lib/types";
 
 export type Language = "zh" | "en";
 
+/**
+ * Provider identifiers known to the AI infrastructure.
+ *
+ * Only "deepseek" is implemented server-side today; "claude" / "openai" /
+ * "gemini" are reserved (their providers throw `not_implemented`). "mock" is
+ * the client-side offline provider. "server" is used in logs when the actual
+ * provider is resolved by the server router.
+ */
 export type AIProviderId =
   | "mock"
-  | "openai"
-  | "anthropic"
   | "deepseek"
-  | "kimi"
+  | "claude"
+  | "openai"
   | "gemini"
-  | "openrouter"
-  | "siliconflow"
-  | "ollama"
-  | "custom";
+  | "server";
 
-export interface AIProviderConfig {
-  provider: AIProviderId;
-  apiKey: string;
-  baseUrl: string;
-  model: string;
+/**
+ * AI Tasks — the ONLY way business code refers to AI capabilities.
+ *
+ * Business code always passes a task, never a model name. The server-side
+ * router (lib/ai/router.ts + lib/ai/models.ts) maps each task to a concrete
+ * provider + model, so swapping "reflection" from DeepSeek to Claude later is
+ * a one-line change in TASK_ROUTING with zero business-code edits.
+ */
+export const AITASKS = [
+  // Infrastructure
+  "HEALTH_CHECK",
+  // Object intelligence
+  "OBJECT_ANALYSIS",
+  "OBJECT_UPDATE",
+  "PERSON_UPDATE",
+  "EXTRACTION",
+  "IMPORT_CLASSIFY",
+  // Daily companion
+  "TODAY_FOCUS",
+  "REFLECTION",
+  "REMINDER",
+  "WEEKLY_REVIEW",
+  "MONTHLY_STORY",
+  // Intelligence
+  "PATTERN",
+  "TODAY_STORY",
+  "MEMORY_UNDERSTANDING",
+  // Advisor
+  "RELATIONSHIP",
+  "WORKSPACE",
+  // Reserved for future features (no call sites yet)
+  "CHAT",
+  "CONVERSATION",
+  "SUMMARY",
+  "SEARCH",
+] as const;
+
+export type AITask = (typeof AITASKS)[number];
+
+export function isAITask(value: unknown): value is AITask {
+  return typeof value === "string" && (AITASKS as readonly string[]).includes(value);
 }
 
 export interface AIImageInput {
@@ -39,6 +79,11 @@ export interface AIStructuredGenerationRequest {
   objectType?: LifeObjectType;
 }
 
+/**
+ * Legacy client-side provider interface implemented by the mock provider and
+ * by the server proxy (lib/ai/serverProxy.ts). Engines keep calling this
+ * shape; the implementation behind it now routes through /api/ai.
+ */
 export interface AIProvider {
   generate(prompt: string): Promise<string>;
   generateWithImages?(prompt: string, images: AIImageInput[]): Promise<string>;
@@ -48,14 +93,16 @@ export interface AIProvider {
 }
 
 export type AIErrorCode =
-  | "invalid_key"
-  | "model_not_found"
-  | "rate_limit"
   | "network"
-  | "cors"
-  | "mixed_content"
-  | "json_parse"
+  | "provider_error"
+  | "rate_limit"
   | "timeout"
+  | "invalid_key"
+  | "quota_exceeded"
+  | "validation"
+  | "not_implemented"
+  | "model_not_found"
+  | "json_parse"
   | "unknown";
 
 export interface AIInsightResult<T> {
@@ -92,7 +139,8 @@ export interface AIAnalysisRunResult<T = unknown> {
 export interface AIUsageLog {
   id: string;
   timestamp: string;
-  provider: AIProviderId;
+  /** Free-form: historical entries may contain retired provider ids. */
+  provider: string;
   model: string;
   durationMs: number;
   status: "success" | "error";
@@ -105,41 +153,91 @@ export interface AITestResult {
   message?: string;
   error?: string;
   errorCode?: AIErrorCode;
-  provider: AIProviderId;
+  provider: string;
   model: string;
   durationMs: number;
 }
 
-export const DEFAULT_PROVIDER_CONFIGS: Record<
-  AIProviderId,
-  { baseUrl: string; model: string }
-> = {
-  mock: { baseUrl: "", model: "mock" },
-  openai: { baseUrl: "https://api.openai.com/v1", model: "gpt-4.1-mini" },
-  anthropic: {
-    baseUrl: "https://api.anthropic.com/v1",
-    model: "claude-sonnet-4-6-20251001",
-  },
-  deepseek: { baseUrl: "https://api.deepseek.com/v1", model: "deepseek-chat" },
-  kimi: { baseUrl: "https://api.moonshot.cn/v1", model: "moonshot-v1-8k" },
-  gemini: {
-    baseUrl: "https://generativelanguage.googleapis.com/v1beta",
-    model: "gemini-2.5-flash",
-  },
-  openrouter: {
-    baseUrl: "https://openrouter.ai/api/v1",
-    model: "openai/gpt-4o-mini",
-  },
-  siliconflow: {
-    baseUrl: "https://api.siliconflow.cn/v1",
-    model: "Qwen/Qwen2.5-7B-Instruct",
-  },
-  ollama: { baseUrl: "http://localhost:11434/api", model: "llama3.1" },
-  custom: { baseUrl: "", model: "" },
-};
+// ---------------------------------------------------------------------------
+// Client ↔ Server contract (POST /api/ai)
+// ---------------------------------------------------------------------------
 
-export function isValidAIProviderId(value: string): value is AIProviderId {
-  return value in DEFAULT_PROVIDER_CONFIGS;
+export interface AIGenerateOptions {
+  temperature?: number;
+  maxTokens?: number;
+  /** Defaults to true — providers respond with a JSON object. */
+  jsonMode?: boolean;
+  /** Embedded into the system prompt as the expected output shape. */
+  schemaHint?: string;
+  /** Metadata only — recorded in usage logs. */
+  objectType?: string;
 }
 
-// Legacy insight schemas have been removed in favor of ObjectAIProfile types.
+export interface AIServerRequest {
+  task: AITask;
+  /** Required for every task except HEALTH_CHECK. */
+  prompt?: string;
+  images?: AIImageInput[];
+  options?: AIGenerateOptions;
+  /** Reserved for future Supabase session forwarding. */
+  sessionToken?: string;
+}
+
+export interface AITokenUsage {
+  promptTokens: number;
+  completionTokens: number;
+  totalTokens: number;
+}
+
+export interface AIServerSuccess {
+  success: true;
+  content: string;
+  usage: AITokenUsage;
+  provider: string;
+  model: string;
+  latency: number;
+  cached: boolean;
+}
+
+export interface AIServerFailure {
+  success: false;
+  error: { code: AIErrorCode; message: string };
+  provider?: string;
+  model?: string;
+  latency: number;
+}
+
+export type AIServerResponse = AIServerSuccess | AIServerFailure;
+
+/**
+ * The single error type pages/engines ever handle. Produced by the client
+ * facade from unified server errors (or a synthesized `network` error when
+ * fetch("/api/ai") itself fails).
+ */
+export class AIClientError extends Error {
+  readonly code: AIErrorCode;
+  readonly provider?: string;
+  readonly model?: string;
+
+  constructor(
+    code: AIErrorCode,
+    message: string,
+    meta?: { provider?: string; model?: string }
+  ) {
+    super(message);
+    this.name = "AIClientError";
+    this.code = code;
+    this.provider = meta?.provider;
+    this.model = meta?.model;
+  }
+}
+
+/** True when the value carries a unified AI error code. */
+export function hasAIErrorCode(value: unknown): value is { code: AIErrorCode } {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "code" in value &&
+    typeof (value as { code: unknown }).code === "string"
+  );
+}

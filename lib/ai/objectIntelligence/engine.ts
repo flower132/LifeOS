@@ -3,10 +3,11 @@ import {
   AIErrorCode,
   AIProvider,
   AIStructuredGenerationRequest,
+  hasAIErrorCode,
 } from "@/lib/ai/types";
 import { LifeObjectType } from "@/lib/types";
 import { AIAnalysisInput, AIAnalysisRunResult } from "./types";
-import { buildObjectAnalysisPrompt } from "./promptBuilder";
+import { buildObjectAnalysisPrompt } from "@/lib/ai/prompts/objectAnalysis";
 import { mapObjectAnalysisResult } from "./mapper";
 
 export interface AnalyzeObjectOptions {
@@ -113,6 +114,8 @@ export class ObjectIntelligenceEngine {
   }
 
   private inferErrorCode(err: unknown): AIErrorCode {
+    // Unified errors from the AI service carry a stable code — trust it.
+    if (hasAIErrorCode(err)) return err.code;
     if (!(err instanceof Error)) return "unknown";
 
     const message = err.message.toLowerCase();
@@ -128,9 +131,6 @@ export class ObjectIntelligenceEngine {
     }
     if (message.includes("network") || message.includes("fetch") || message.includes("cors")) {
       return "network";
-    }
-    if (message.includes("mixed content")) {
-      return "mixed_content";
     }
     if (message.includes("timeout")) {
       return "timeout";

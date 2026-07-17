@@ -10,11 +10,10 @@ import {
   TodayFocus,
   IntelligenceEvidence,
 } from "@/lib/types";
-import { selectProviderForAnalysis } from "@/lib/ai/objectIntelligence/fallback";
+import { selectProviderForTask } from "@/lib/ai/objectIntelligence/fallback";
 import { AIStructuredGenerationRequest } from "@/lib/ai/types";
-import { addAILog } from "@/lib/ai/logs";
 import { daysBetween } from "./utils/date";
-import { buildFocusPrompt, buildMockFocusOutput } from "./prompts/focusPrompt";
+import { buildFocusPrompt, buildMockFocusOutput } from "@/lib/ai/prompts/todayFocus";
 import { focusOutputSchema } from "./schemas";
 import { applyPenalty } from "./learning";
 
@@ -297,13 +296,13 @@ async function generateFocusWithAI(
   whyNow: string;
   evidence: IntelligenceEvidence[];
 }> {
-  const selected = selectProviderForAnalysis();
+  const selected = selectProviderForTask("TODAY_FOCUS");
   if (selected.isMock) {
     return buildMockFocusOutput(candidate);
   }
 
   const prompt = buildFocusPrompt(context, candidate);
-  const start = performance.now();
+  // Server calls are logged centrally by the /api/ai client proxy.
   try {
     const raw = await callStructured(
       selected.provider,
@@ -315,23 +314,8 @@ async function generateFocusWithAI(
       console.error("[Companion Focus] Schema parse error:", parsed.error);
       return buildMockFocusOutput(candidate);
     }
-    const durationMs = Math.round(performance.now() - start);
-    addAILog({
-      provider: selected.providerId,
-      model: selected.model,
-      durationMs,
-      status: "success",
-    });
     return parsed.data;
-  } catch (err) {
-    const durationMs = Math.round(performance.now() - start);
-    addAILog({
-      provider: selected.providerId,
-      model: selected.model,
-      durationMs,
-      status: "error",
-      error: err instanceof Error ? err.message : String(err),
-    });
+  } catch {
     return buildMockFocusOutput(candidate);
   }
 }

@@ -1,15 +1,14 @@
 import { v4 as uuidv4 } from "uuid";
 import { CompanionContext } from "./types";
 import { ReflectionQuestion } from "@/lib/types";
-import { selectProviderForAnalysis } from "@/lib/ai/objectIntelligence/fallback";
+import { selectProviderForTask } from "@/lib/ai/objectIntelligence/fallback";
 import { AIStructuredGenerationRequest } from "@/lib/ai/types";
-import { addAILog } from "@/lib/ai/logs";
 import { reflectionOutputSchema } from "./schemas";
 import {
   buildReflectionPrompt,
   buildMockReflectionOutput,
   selectReflectionSeed,
-} from "./prompts/reflectionPrompt";
+} from "@/lib/ai/prompts/reflection";
 
 function now(): string {
   return new Date().toISOString();
@@ -38,7 +37,7 @@ export async function generateReflection(
   const seed = selectReflectionSeed(context, existing);
   if (!seed) return null;
 
-  const selected = selectProviderForAnalysis();
+  const selected = selectProviderForTask("REFLECTION");
   let output: {
     question: string;
     seedSource: ReflectionQuestion["seedSource"];
@@ -50,7 +49,7 @@ export async function generateReflection(
     output = buildMockReflectionOutput(seed);
   } else {
     const prompt = buildReflectionPrompt(context, seed);
-    const start = performance.now();
+    // Server calls are logged centrally by the /api/ai client proxy.
     try {
       const raw = await callStructured(
         selected.provider,
@@ -64,22 +63,7 @@ export async function generateReflection(
       } else {
         output = parsed.data;
       }
-      const durationMs = Math.round(performance.now() - start);
-      addAILog({
-        provider: selected.providerId,
-        model: selected.model,
-        durationMs,
-        status: "success",
-      });
-    } catch (err) {
-      const durationMs = Math.round(performance.now() - start);
-      addAILog({
-        provider: selected.providerId,
-        model: selected.model,
-        durationMs,
-        status: "error",
-        error: err instanceof Error ? err.message : String(err),
-      });
+    } catch {
       output = buildMockReflectionOutput(seed);
     }
   }

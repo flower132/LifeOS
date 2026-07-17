@@ -1,10 +1,10 @@
-import { CompanionContext } from "../types";
+import { CompanionContext } from "@/lib/companion/types";
 import {
   TimelineOutput,
   WeeklyReviewOutput,
   MonthlyStoryOutput,
-} from "../schemas";
-import { getISOWeekBounds, getMonthBounds } from "../utils/date";
+} from "@/lib/companion/schemas";
+import { getISOWeekBounds, getMonthBounds } from "@/lib/companion/utils/date";
 import { Note } from "@/lib/types";
 
 function serializeNotes(notes: Note[]): string {

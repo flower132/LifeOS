@@ -1,1 +1,0 @@
-export { createKimiProvider } from "../factory";

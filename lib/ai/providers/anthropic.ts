@@ -1,1 +1,0 @@
-export { createAnthropicProvider } from "../factory";

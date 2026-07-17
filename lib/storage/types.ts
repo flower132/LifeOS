@@ -21,7 +21,6 @@ import {
   DecisionMemory,
 } from "@/lib/types";
 
-import { AIProviderId } from "@/lib/ai/types";
 import { AccentColorId } from "@/lib/theme/accentColors";
 
 export type DateFormat = "YYYY-MM-DD" | "MM/DD/YYYY" | "DD/MM/YYYY";
@@ -36,17 +35,10 @@ export type AppSettings = {
   timeFormat: TimeFormat;
   aiEnabled: boolean;
   aiPrivacyMode: boolean;
-  aiProvider: AIProviderId;
-  aiModel: string;
-  aiBaseUrl: string;
-  aiApiKey: string;
   // Daily Companion settings
   companionEnabled: boolean;
   allowNotifications: boolean;
   quietMode: QuietModeSettings;
-  // Deprecated: kept for migration from old settings schema.
-  openaiKey?: string;
-  anthropicKey?: string;
 };
 
 export interface StorageAdapter {

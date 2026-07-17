@@ -2,11 +2,6 @@ import { create } from "zustand";
 import { storage } from "@/lib/storage";
 import { AppSettings } from "@/lib/storage/types";
 import {
-  AIProviderId,
-  DEFAULT_PROVIDER_CONFIGS,
-  isValidAIProviderId,
-} from "@/lib/ai/types";
-import {
   DEFAULT_ACCENT_COLOR,
   isAccentColorId,
 } from "@/lib/theme/accentColors";
@@ -16,7 +11,6 @@ export type Theme = AppSettings["theme"];
 export type AccentColor = AppSettings["accentColor"];
 export type DateFormat = AppSettings["dateFormat"];
 export type TimeFormat = AppSettings["timeFormat"];
-export type AIProvider = AppSettings["aiProvider"];
 
 const DEFAULT_SETTINGS: AppSettings = {
   language: "en",
@@ -27,12 +21,6 @@ const DEFAULT_SETTINGS: AppSettings = {
   timeFormat: "24h",
   aiEnabled: true,
   aiPrivacyMode: false,
-  aiProvider: "mock",
-  aiModel: DEFAULT_PROVIDER_CONFIGS.mock.model,
-  aiBaseUrl: DEFAULT_PROVIDER_CONFIGS.mock.baseUrl,
-  aiApiKey: "",
-  openaiKey: "",
-  anthropicKey: "",
   companionEnabled: true,
   allowNotifications: false,
   quietMode: {
@@ -59,10 +47,6 @@ interface SettingsState extends AppSettings {
   setTimeFormat: (timeFormat: TimeFormat) => Promise<void>;
   setAIEnabled: (enabled: boolean) => Promise<void>;
   setAIPrivacyMode: (enabled: boolean) => Promise<void>;
-  setAIProvider: (provider: AIProvider) => Promise<void>;
-  setAIModel: (model: string) => Promise<void>;
-  setAIBaseUrl: (baseUrl: string) => Promise<void>;
-  setAIApiKey: (apiKey: string) => Promise<void>;
   setCompanionEnabled: (enabled: boolean) => Promise<void>;
   setAllowNotifications: (enabled: boolean) => Promise<void>;
   setQuietMode: (quietMode: AppSettings["quietMode"]) => Promise<void>;
@@ -74,8 +58,7 @@ function coerceLanguage(value: string): Language {
 }
 
 function coerceTheme(value: string): Theme {
-  if (value === "dark" || value === "system") return value;
-  return "light";
+  return value === "dark" || value === "system" ? value : "light";
 }
 
 function coerceThemeColor(value: string): AppSettings["themeColor"] {
@@ -89,8 +72,7 @@ function coerceAccentColor(value: string): AccentColor {
 }
 
 function coerceDateFormat(value: string): DateFormat {
-  if (value === "MM/DD/YYYY" || value === "DD/MM/YYYY") return value;
-  return "YYYY-MM-DD";
+  return value === "MM/DD/YYYY" || value === "DD/MM/YYYY" ? value : "YYYY-MM-DD";
 }
 
 function coerceTimeFormat(value: string): TimeFormat {
@@ -123,82 +105,54 @@ function coerceQuietMode(
   };
 }
 
-function coerceAIProvider(value: string): AIProviderId {
-  return isValidAIProviderId(value) ? value : "mock";
-}
+/**
+ * Legacy BYOK keys (user-provided provider/apiKey/baseUrl/model) must not
+ * remain in browser storage: all AI traffic now goes through /api/ai with
+ * env-configured server keys. Writing undefined drops the keys on serialize.
+ */
+function stripLegacyBYOKSettings(raw: Partial<AppSettings>): void {
+  const legacy = raw as Record<string, unknown>;
+  const LEGACY_KEYS = [
+    "aiProvider",
+    "aiApiKey",
+    "aiModel",
+    "aiBaseUrl",
+    "openaiKey",
+    "anthropicKey",
+  ];
+  if (!LEGACY_KEYS.some((key) => key in legacy)) return;
 
-function migrateLegacyAISettings(raw: Partial<AppSettings>): Partial<AppSettings> {
-  const migrated: Partial<AppSettings> = { ...raw };
-
-  // If the new unified key is already set, nothing to migrate.
-  if (migrated.aiApiKey) return migrated;
-
-  const provider = coerceAIProvider(migrated.aiProvider ?? "mock");
-  const defaults = DEFAULT_PROVIDER_CONFIGS[provider];
-
-  if (provider === "openai" && migrated.openaiKey) {
-    migrated.aiApiKey = migrated.openaiKey;
-    migrated.aiBaseUrl = defaults.baseUrl;
-    migrated.aiModel =
-      migrated.aiModel && migrated.aiModel !== "default"
-        ? migrated.aiModel
-        : defaults.model;
-  } else if (provider === "anthropic" && migrated.anthropicKey) {
-    migrated.aiApiKey = migrated.anthropicKey;
-    migrated.aiBaseUrl = defaults.baseUrl;
-    migrated.aiModel =
-      migrated.aiModel && migrated.aiModel !== "default"
-        ? migrated.aiModel
-        : defaults.model;
-  }
-
-  return migrated;
+  const patch: Record<string, undefined> = {};
+  for (const key of LEGACY_KEYS) patch[key] = undefined;
+  void storage.setSettings(patch as Partial<AppSettings>).catch(() => {
+    // Best-effort cleanup; never block settings load.
+  });
 }
 
 function mergeWithDefaults(raw: Partial<AppSettings>): AppSettings {
-  const migrated = migrateLegacyAISettings(raw);
-  const provider = coerceAIProvider(migrated.aiProvider ?? DEFAULT_SETTINGS.aiProvider);
-  const defaults = DEFAULT_PROVIDER_CONFIGS[provider];
-
   return {
     ...DEFAULT_SETTINGS,
-    language: coerceLanguage(migrated.language ?? DEFAULT_SETTINGS.language),
-    theme: coerceTheme(migrated.theme ?? DEFAULT_SETTINGS.theme),
-    themeColor: coerceThemeColor(
-      migrated.themeColor ?? DEFAULT_SETTINGS.themeColor
-    ),
-    accentColor: coerceAccentColor(
-      migrated.accentColor ?? DEFAULT_SETTINGS.accentColor
-    ),
-    dateFormat: coerceDateFormat(migrated.dateFormat ?? DEFAULT_SETTINGS.dateFormat),
-    timeFormat: coerceTimeFormat(migrated.timeFormat ?? DEFAULT_SETTINGS.timeFormat),
+    language: coerceLanguage(raw.language ?? DEFAULT_SETTINGS.language),
+    theme: coerceTheme(raw.theme ?? DEFAULT_SETTINGS.theme),
+    themeColor: coerceThemeColor(raw.themeColor ?? DEFAULT_SETTINGS.themeColor),
+    accentColor: coerceAccentColor(raw.accentColor ?? DEFAULT_SETTINGS.accentColor),
+    dateFormat: coerceDateFormat(raw.dateFormat ?? DEFAULT_SETTINGS.dateFormat),
+    timeFormat: coerceTimeFormat(raw.timeFormat ?? DEFAULT_SETTINGS.timeFormat),
     aiEnabled:
-      migrated.aiEnabled !== undefined ? Boolean(migrated.aiEnabled) : DEFAULT_SETTINGS.aiEnabled,
+      raw.aiEnabled !== undefined ? Boolean(raw.aiEnabled) : DEFAULT_SETTINGS.aiEnabled,
     aiPrivacyMode:
-      migrated.aiPrivacyMode !== undefined
-        ? Boolean(migrated.aiPrivacyMode)
+      raw.aiPrivacyMode !== undefined
+        ? Boolean(raw.aiPrivacyMode)
         : DEFAULT_SETTINGS.aiPrivacyMode,
-    aiProvider: provider,
-    aiModel:
-      typeof migrated.aiModel === "string" && migrated.aiModel.length > 0
-        ? migrated.aiModel
-        : defaults.model,
-    aiBaseUrl:
-      typeof migrated.aiBaseUrl === "string" && migrated.aiBaseUrl.length > 0
-        ? migrated.aiBaseUrl
-        : defaults.baseUrl,
-    aiApiKey: typeof migrated.aiApiKey === "string" ? migrated.aiApiKey : DEFAULT_SETTINGS.aiApiKey,
-    openaiKey: typeof migrated.openaiKey === "string" ? migrated.openaiKey : DEFAULT_SETTINGS.openaiKey,
-    anthropicKey: typeof migrated.anthropicKey === "string" ? migrated.anthropicKey : DEFAULT_SETTINGS.anthropicKey,
     companionEnabled:
-      migrated.companionEnabled !== undefined
-        ? Boolean(migrated.companionEnabled)
+      raw.companionEnabled !== undefined
+        ? Boolean(raw.companionEnabled)
         : DEFAULT_SETTINGS.companionEnabled,
     allowNotifications:
-      migrated.allowNotifications !== undefined
-        ? Boolean(migrated.allowNotifications)
+      raw.allowNotifications !== undefined
+        ? Boolean(raw.allowNotifications)
         : DEFAULT_SETTINGS.allowNotifications,
-    quietMode: coerceQuietMode(migrated.quietMode),
+    quietMode: coerceQuietMode(raw.quietMode),
   };
 }
 
@@ -212,6 +166,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     set({ _loading: true, error: null });
     try {
       const raw = await storage.getSettings();
+      stripLegacyBYOKSettings(raw);
       const settings = mergeWithDefaults(raw);
       set({ ...settings, loaded: true, _loading: false });
     } catch (err) {
@@ -232,12 +187,6 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       timeFormat: state.timeFormat,
       aiEnabled: state.aiEnabled,
       aiPrivacyMode: state.aiPrivacyMode,
-      aiProvider: state.aiProvider,
-      aiModel: state.aiModel,
-      aiBaseUrl: state.aiBaseUrl,
-      aiApiKey: state.aiApiKey,
-      openaiKey: state.openaiKey,
-      anthropicKey: state.anthropicKey,
       companionEnabled: state.companionEnabled,
       allowNotifications: state.allowNotifications,
       quietMode: state.quietMode,
@@ -314,58 +263,6 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       await storage.setSettings({ aiPrivacyMode });
     } catch (err) {
       set({ error: err instanceof Error ? err.message : "Failed to save AI privacy mode" });
-    }
-  },
-
-  setAIProvider: async (aiProvider) => {
-    const current = get();
-    const defaults = DEFAULT_PROVIDER_CONFIGS[aiProvider];
-
-    // Preserve user configuration for custom provider; otherwise load defaults.
-    const nextModel =
-      aiProvider === "custom" ? current.aiModel : defaults.model;
-    const nextBaseUrl =
-      aiProvider === "custom" ? current.aiBaseUrl : defaults.baseUrl;
-
-    set({ aiProvider, aiModel: nextModel, aiBaseUrl: nextBaseUrl });
-    try {
-      await storage.setSettings({
-        aiProvider,
-        aiModel: nextModel,
-        aiBaseUrl: nextBaseUrl,
-      });
-    } catch (err) {
-      set({
-        error:
-          err instanceof Error ? err.message : "Failed to save AI provider",
-      });
-    }
-  },
-
-  setAIModel: async (aiModel) => {
-    set({ aiModel });
-    try {
-      await storage.setSettings({ aiModel });
-    } catch (err) {
-      set({ error: err instanceof Error ? err.message : "Failed to save AI model" });
-    }
-  },
-
-  setAIBaseUrl: async (aiBaseUrl) => {
-    set({ aiBaseUrl });
-    try {
-      await storage.setSettings({ aiBaseUrl });
-    } catch (err) {
-      set({ error: err instanceof Error ? err.message : "Failed to save AI base URL" });
-    }
-  },
-
-  setAIApiKey: async (aiApiKey) => {
-    set({ aiApiKey });
-    try {
-      await storage.setSettings({ aiApiKey });
-    } catch (err) {
-      set({ error: err instanceof Error ? err.message : "Failed to save AI API key" });
     }
   },
 

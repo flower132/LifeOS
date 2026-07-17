@@ -1,18 +1,17 @@
 import { LifeObjectType } from "@/lib/types";
 import {
+  AIImageInput,
   AIProvider,
-  AIProviderConfig,
   AIStructuredGenerationRequest,
-} from "../types";
+} from "./types";
 
 /**
- * Build a type-aware mock structured response.
+ * Client-side mock provider — runs fully offline with zero network calls.
  *
- * The mock provider must implement generateStructuredObject so the engine can
- * run offline/privacy-mode analysis end-to-end. The output shape follows the
- * unified Object Intelligence output schema, and the `profile.type` field always
- * matches the requested objectType so every registered profile mapper can parse
- * it successfully.
+ * Used when AI is disabled, privacy mode is on, or a caller explicitly
+ * requests a mock run. The output shape follows the unified Object
+ * Intelligence output schema, and the `profile.type` field always matches the
+ * requested objectType so every registered profile mapper can parse it.
  */
 function buildMockStructuredResponse(
   request: AIStructuredGenerationRequest
@@ -180,17 +179,14 @@ function buildMockStructuredResponse(
   }
 }
 
-export function createMockProvider(
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  _config: AIProviderConfig
-): AIProvider {
+export function createMockProvider(): AIProvider {
   return {
     async generate(prompt: string): Promise<string> {
       return buildMockStructuredResponse({ prompt, images: [] });
     },
     async generateWithImages(
       prompt: string,
-      images: import("../types").AIImageInput[]
+      images: AIImageInput[]
     ): Promise<string> {
       return buildMockStructuredResponse({ prompt, images });
     },

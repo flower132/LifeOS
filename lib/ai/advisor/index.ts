@@ -1,8 +1,7 @@
 import { Language } from "@/lib/i18n";
 import { useSettingsStore } from "@/stores/settingsStore";
-import { addAILog } from "@/lib/ai/logs";
-import { selectProviderForAnalysis } from "@/lib/ai/objectIntelligence/fallback";
-import { AIStructuredGenerationRequest } from "@/lib/ai/types";
+import { selectProviderForTask } from "@/lib/ai/objectIntelligence/fallback";
+import { AIStructuredGenerationRequest, AITask } from "@/lib/ai/types";
 import {
   AdvisorContext,
   AdvisorHomeInsightResult,
@@ -10,10 +9,8 @@ import {
   AdvisorAskOptions,
   AdvisorHomeInsightOptions,
 } from "./types";
-import {
-  buildAdvisorPrompt,
-  buildHomeInsightPrompt,
-} from "./promptBuilder";
+import { buildAdvisorPrompt } from "@/lib/ai/prompts/relationship";
+import { buildHomeInsightPrompt } from "@/lib/ai/prompts/workspace";
 import { resolveEvidence } from "./evidenceResolver";
 
 function getLanguage(): Language {
@@ -115,22 +112,13 @@ function buildMockHomeInsightResult(): AdvisorHomeInsightResult {
 }
 
 async function runAdvisorGeneration<T>(
+  task: AITask,
   context: AdvisorContext,
   buildPrompt: (language: Language) => string,
   normalize: (raw: unknown) => T,
   forceMock?: boolean
 ): Promise<T> {
-  const selected = forceMock
-    ? {
-        provider: selectProviderForAnalysis({
-          provider: "mock",
-          apiKey: "",
-          baseUrl: "",
-          model: "mock",
-        }),
-        isMock: true,
-      }
-    : { provider: selectProviderForAnalysis(), isMock: false };
+  const selected = selectProviderForTask(task, { forceMock });
 
   if (selected.isMock) {
     // Mock provider does not understand Advisor JSON shape, so we return a
@@ -148,31 +136,10 @@ async function runAdvisorGeneration<T>(
     objectType: context.object.type,
   };
 
-  const start = performance.now();
-  try {
-    const text = await selected.provider.provider.generateStructuredObject(request);
-    const durationMs = Math.round(performance.now() - start);
-    const parsed = parseJsonResponse(text);
-
-    addAILog({
-      provider: selected.provider.providerId,
-      model: selected.provider.model,
-      durationMs,
-      status: "success",
-    });
-
-    return normalize(parsed);
-  } catch (err) {
-    const durationMs = Math.round(performance.now() - start);
-    addAILog({
-      provider: selected.provider.providerId,
-      model: selected.provider.model,
-      durationMs,
-      status: "error",
-      error: err instanceof Error ? err.message : String(err),
-    });
-    throw err;
-  }
+  // Server calls are logged centrally by the /api/ai client proxy.
+  const text = await selected.provider.generateStructuredObject(request);
+  const parsed = parseJsonResponse(text);
+  return normalize(parsed);
 }
 
 class AdvisorService {
@@ -181,11 +148,12 @@ class AdvisorService {
     question: string,
     options: AdvisorAskOptions = {}
   ): Promise<AdvisorResult> {
-    if (options.forceMock || selectProviderForAnalysis().isMock) {
+    if (options.forceMock || selectProviderForTask("RELATIONSHIP").isMock) {
       return buildMockAdvisorResult();
     }
 
     const result = await runAdvisorGeneration(
+      "RELATIONSHIP",
       context,
       () => buildAdvisorPrompt(context, question, getLanguage()),
       normalizeAdvisorResult,
@@ -216,11 +184,12 @@ class AdvisorService {
     context: AdvisorContext,
     options: AdvisorHomeInsightOptions = {}
   ): Promise<AdvisorHomeInsightResult> {
-    if (options.forceMock || selectProviderForAnalysis().isMock) {
+    if (options.forceMock || selectProviderForTask("WORKSPACE").isMock) {
       return buildMockHomeInsightResult();
     }
 
     const result = await runAdvisorGeneration(
+      "WORKSPACE",
       context,
       () => buildHomeInsightPrompt(context, getLanguage()),
       normalizeHomeInsightResult,

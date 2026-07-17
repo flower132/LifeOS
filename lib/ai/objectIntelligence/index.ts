@@ -19,7 +19,7 @@ export {
   normalizeAIAnalysisHistoryEntry,
 } from "./normalize";
 
-export { buildObjectAnalysisPrompt } from "./promptBuilder";
+export { buildObjectAnalysisPrompt } from "@/lib/ai/prompts/objectAnalysis";
 
 export {
   mapObjectAnalysisResult,
@@ -34,7 +34,7 @@ export {
 } from "./engine";
 
 export {
-  selectProviderForAnalysis,
+  selectProviderForTask,
   shouldRunAnalysis,
   type SelectedProvider,
 } from "./fallback";

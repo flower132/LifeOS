@@ -1,4 +1,4 @@
-import { AIErrorCode, AIUsageLog } from "./types";
+import { AIErrorCode, AIUsageLog, hasAIErrorCode } from "./types";
 
 const AI_LOGS_KEY = "lifeos_ai_logs";
 const MAX_LOGS = 50;
@@ -70,15 +70,20 @@ export function classifyError(error: unknown): {
   message: string;
   code: AIErrorCode;
 } {
+  if (hasAIErrorCode(error)) {
+    return {
+      message: error instanceof Error ? error.message : "AI service error",
+      code: error.code,
+    };
+  }
+
   if (error instanceof TypeError) {
     const msg = error.message.toLowerCase();
-    if (msg.includes("fetch") || msg.includes("network")) {
-      return { message: "Network Error", code: "network" };
-    }
-    if (msg.includes("cors") || msg.includes("cross-origin")) {
-      return { message: "CORS Error", code: "cors" };
-    }
-    if (msg.includes("failed to fetch")) {
+    if (
+      msg.includes("fetch") ||
+      msg.includes("network") ||
+      msg.includes("failed to fetch")
+    ) {
       return { message: "Network Error", code: "network" };
     }
   }
@@ -100,14 +105,14 @@ export function classifyError(error: unknown): {
     if (msg.includes("429") || msg.includes("rate limit") || msg.includes("too many")) {
       return { message: "Rate Limit Exceeded (429)", code: "rate_limit" };
     }
+    if (msg.includes("quota")) {
+      return { message: "AI Quota Exceeded", code: "quota_exceeded" };
+    }
     if (msg.includes("json") || msg.includes("parse")) {
       return { message: `JSON Parse Error: ${error.message}`, code: "json_parse" };
     }
     if (msg.includes("timeout")) {
       return { message: "Request Timeout", code: "timeout" };
-    }
-    if (msg.includes("mixed content")) {
-      return { message: "Mixed Content Error (HTTPS page calling HTTP API)", code: "mixed_content" };
     }
   }
 
@@ -115,22 +120,4 @@ export function classifyError(error: unknown): {
     message: error instanceof Error ? error.message : "Unknown AI error",
     code: "unknown",
   };
-}
-
-export function detectMixedContent(baseUrl: string): boolean {
-  if (typeof window === "undefined") return false;
-  if (!baseUrl) return false;
-  return (
-    window.location.protocol === "https:" && baseUrl.startsWith("http://")
-  );
-}
-
-export function formatErrorForUser(error: unknown, baseUrl?: string): { message: string; code: AIErrorCode } {
-  if (baseUrl && detectMixedContent(baseUrl)) {
-    return {
-      message: "Mixed Content Error: this page is HTTPS but the AI API uses HTTP. Use an HTTPS API endpoint or run locally.",
-      code: "mixed_content",
-    };
-  }
-  return classifyError(error);
 }

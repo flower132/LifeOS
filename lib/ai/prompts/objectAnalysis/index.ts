@@ -1,7 +1,7 @@
 import { Language } from "@/lib/i18n";
 import { LifeObjectType } from "@/lib/types";
-import { AIAnalysisInput } from "./types";
-import { aiProfileRegistry } from "./profiles";
+import { AIAnalysisInput } from "@/lib/ai/objectIntelligence/types";
+import { aiProfileRegistry } from "@/lib/ai/objectIntelligence/profiles";
 
 export function buildObjectAnalysisPrompt(
   type: LifeObjectType,

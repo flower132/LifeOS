@@ -1,5 +1,5 @@
-import { CompanionContext } from "../types";
-import { ReminderOutput } from "../schemas";
+import { CompanionContext } from "@/lib/companion/types";
+import { ReminderOutput } from "@/lib/companion/schemas";
 import { Note } from "@/lib/types";
 
 export interface ReminderCandidate {

@@ -356,30 +356,27 @@ export class LocalStorageAdapter implements StorageAdapter {
       safeSetItem(KEYS.templates, initial);
     }
 
-    // Migrate old AI settings schema to new unified schema.
+    // Strip legacy BYOK AI settings (provider/apiKey/baseUrl/model): AI calls
+    // now go through the server-side /api/ai route with env-configured keys,
+    // so user keys must not remain in browser storage.
     const settings = await this.getSettings();
+    const legacy = settings as Record<string, unknown>;
     if (
-      settings.aiProvider === "openai" &&
-      !settings.aiApiKey &&
-      settings.openaiKey
+      "aiProvider" in legacy ||
+      "aiApiKey" in legacy ||
+      "aiModel" in legacy ||
+      "aiBaseUrl" in legacy ||
+      "openaiKey" in legacy ||
+      "anthropicKey" in legacy
     ) {
-      settings.aiApiKey = settings.openaiKey;
-      settings.aiBaseUrl = "https://api.openai.com/v1";
-      if (!settings.aiModel || settings.aiModel === "default") {
-        settings.aiModel = "gpt-4o-mini";
-      }
-    } else if (
-      settings.aiProvider === "anthropic" &&
-      !settings.aiApiKey &&
-      settings.anthropicKey
-    ) {
-      settings.aiApiKey = settings.anthropicKey;
-      settings.aiBaseUrl = "https://api.anthropic.com/v1";
-      if (!settings.aiModel || settings.aiModel === "default") {
-        settings.aiModel = "claude-3-5-sonnet-latest";
-      }
+      delete legacy.aiProvider;
+      delete legacy.aiApiKey;
+      delete legacy.aiModel;
+      delete legacy.aiBaseUrl;
+      delete legacy.openaiKey;
+      delete legacy.anthropicKey;
+      safeSetItem(KEYS.settings, legacy);
     }
-    await this.setSettings(settings);
   }
 
   private async migrateV2ToV3(): Promise<void> {

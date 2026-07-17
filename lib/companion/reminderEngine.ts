@@ -1,15 +1,14 @@
 import { v4 as uuidv4 } from "uuid";
 import { CompanionContext } from "./types";
 import { CompanionReminder, Note } from "@/lib/types";
-import { selectProviderForAnalysis } from "@/lib/ai/objectIntelligence/fallback";
+import { selectProviderForTask } from "@/lib/ai/objectIntelligence/fallback";
 import { AIStructuredGenerationRequest } from "@/lib/ai/types";
-import { addAILog } from "@/lib/ai/logs";
 import { reminderOutputSchema } from "./schemas";
 import {
   buildReminderPrompt,
   buildMockReminderOutput,
   ReminderCandidate,
-} from "./prompts/reminderPrompt";
+} from "@/lib/ai/prompts/reminder";
 import { applyPenalty } from "./learning";
 
 function now(): string {
@@ -222,7 +221,7 @@ export async function generateReminder(
 
   if (!top || scoreCandidate(top) < 20) return null;
 
-  const selected = selectProviderForAnalysis();
+  const selected = selectProviderForTask("REMINDER");
   let output: {
     title: string;
     whyNow: string;
@@ -234,7 +233,7 @@ export async function generateReminder(
     output = buildMockReminderOutput(top);
   } else {
     const prompt = buildReminderPrompt(context, top);
-    const start = performance.now();
+    // Server calls are logged centrally by the /api/ai client proxy.
     try {
       const raw = await callStructured(
         selected.provider,
@@ -248,22 +247,7 @@ export async function generateReminder(
       } else {
         output = parsed.data;
       }
-      const durationMs = Math.round(performance.now() - start);
-      addAILog({
-        provider: selected.providerId,
-        model: selected.model,
-        durationMs,
-        status: "success",
-      });
-    } catch (err) {
-      const durationMs = Math.round(performance.now() - start);
-      addAILog({
-        provider: selected.providerId,
-        model: selected.model,
-        durationMs,
-        status: "error",
-        error: err instanceof Error ? err.message : String(err),
-      });
+    } catch {
       output = buildMockReminderOutput(top);
     }
   }

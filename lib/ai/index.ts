@@ -1,19 +1,19 @@
 import {
+  AIGenerateOptions,
+  AIImageInput,
   AIAnalysisRunResult,
   AIErrorCode,
-  AIProviderConfig,
+  AIClientError,
+  AITask,
   AITestResult,
 } from "./types";
 import { useSettingsStore } from "@/stores/settingsStore";
-import { registry } from "./registry";
-import {
-  addAILog,
-  detectMixedContent,
-  formatErrorForUser,
-} from "./logs";
+import { addAILog, classifyError } from "./logs";
+import { postAI } from "./serverProxy";
+import type { ServerTaskProvider } from "./serverProxy";
 import {
   objectIntelligenceEngine,
-  selectProviderForAnalysis,
+  selectProviderForTask,
   shouldRunAnalysis,
 } from "./objectIntelligence";
 import {
@@ -28,35 +28,86 @@ import { LifeObjectType } from "@/lib/types";
 import { Language } from "@/lib/i18n";
 
 export { getAILogs, clearAILogs } from "./logs";
+export { postAI, createServerTaskProvider } from "./serverProxy";
+export type { AIResponseMeta, ServerTaskProvider } from "./serverProxy";
 export type {
   AIAnalysisRunResult,
   AITestResult,
   AIInsightResult,
 } from "./types";
+export type { AITask, AIServerResponse, AIServerRequest } from "./types";
+export { AIClientError, AITASKS, isAITask } from "./types";
 
 function getLanguage(): Language {
   if (typeof window === "undefined") return "en";
   return useSettingsStore.getState().language;
 }
 
-function getCurrentConfig(): AIProviderConfig {
-  if (typeof window === "undefined") {
-    return { provider: "mock", apiKey: "", baseUrl: "", model: "" };
-  }
-  const state = useSettingsStore.getState();
-  return {
-    provider: state.aiProvider,
-    apiKey: state.aiApiKey,
-    baseUrl: state.aiBaseUrl,
-    model: state.aiModel,
-  };
+// ---------------------------------------------------------------------------
+// ai — the unified client facade. The ONLY AI entry point for business code:
+//
+//   await ai.generate({ task: "TODAY_FOCUS", prompt, options })
+//
+// Business code never names a provider or model. Everything routes through
+// POST /api/ai → router → provider → model.
+// ---------------------------------------------------------------------------
+
+export interface AIGenerateRequest {
+  task: AITask;
+  prompt: string;
+  images?: AIImageInput[];
+  options?: AIGenerateOptions;
 }
+
+export interface AIChatRequest {
+  task: AITask;
+  messages: { role: "system" | "user" | "assistant"; content: string }[];
+  options?: AIGenerateOptions;
+}
+
+export const ai = {
+  /** Single-turn generation through the unified server route. */
+  async generate(request: AIGenerateRequest) {
+    return postAI({
+      task: request.task,
+      prompt: request.prompt,
+      images: request.images,
+      options: request.options,
+    });
+  },
+
+  /**
+   * Multi-turn chat. The current server route accepts a single prompt, so
+   * messages are flattened into one conversation transcript; native
+   * multi-turn arrives with the chat-capable providers.
+   */
+  async chat(request: AIChatRequest) {
+    const prompt = request.messages
+      .map((m) => {
+        if (m.role === "system") return `[System]\n${m.content}`;
+        if (m.role === "assistant") return `[Assistant]\n${m.content}`;
+        return `[User]\n${m.content}`;
+      })
+      .join("\n\n");
+    return postAI({ task: request.task, prompt, options: request.options });
+  },
+
+  /** Streaming — reserved. */
+  async stream(): Promise<never> {
+    throw new AIClientError("not_implemented", "Not Implemented");
+  },
+
+  /** Verify the server-side AI configuration end to end. */
+  testConnection(): Promise<AITestResult> {
+    return aiService.testConnection();
+  },
+};
 
 /**
  * High-level AI service facade.
  *
  * AIService is responsible for:
- *   - Provider selection and fallback handling.
+ *   - Delegating generation to the unified /api/ai route (or mock locally).
  *   - Invoking the type-agnostic ObjectIntelligenceEngine.
  *   - Logging successes and failures.
  *   - Persisting analysis history through the StorageAdapter.
@@ -71,15 +122,14 @@ class AIService {
         success: false,
         error: "Cannot test connection during server rendering",
         errorCode: "unknown",
-        provider: "mock",
+        provider: "server",
         model: "",
         durationMs: 0,
       };
     }
 
-    const config = getCurrentConfig();
-
-    if (config.provider === "mock") {
+    const state = useSettingsStore.getState();
+    if (!state.aiEnabled || state.aiPrivacyMode) {
       return {
         success: true,
         message: "Mock provider is active",
@@ -89,52 +139,20 @@ class AIService {
       };
     }
 
-    if (!config.apiKey) {
-      return {
-        success: false,
-        error: "API Key is not set",
-        errorCode: "invalid_key",
-        provider: config.provider,
-        model: config.model,
-        durationMs: 0,
-      };
-    }
-
-    if (detectMixedContent(config.baseUrl)) {
-      return {
-        success: false,
-        error:
-          "Mixed Content Error: this page is HTTPS but the AI API uses HTTP. Use an HTTPS API endpoint or run locally.",
-        errorCode: "mixed_content",
-        provider: config.provider,
-        model: config.model,
-        durationMs: 0,
-      };
-    }
-
     const start = performance.now();
     try {
-      const provider = registry.create(config.provider, config);
-      const text = await provider.generate("Reply OK");
+      const { content, meta } = await postAI({ task: "HEALTH_CHECK" });
       const durationMs = Math.round(performance.now() - start);
-      const normalized = text.trim().toLowerCase();
+      const normalized = content.trim().toLowerCase();
       const success = normalized.includes("ok");
-
-      addAILog({
-        provider: config.provider,
-        model: config.model,
-        durationMs,
-        status: success ? "success" : "error",
-        error: success ? undefined : "Unexpected response",
-      });
 
       if (!success) {
         return {
           success: false,
-          error: `Unexpected response: ${text.slice(0, 200)}`,
+          error: `Unexpected response: ${content.slice(0, 200)}`,
           errorCode: "unknown",
-          provider: config.provider,
-          model: config.model,
+          provider: meta.provider,
+          model: meta.model,
           durationMs,
         };
       }
@@ -142,27 +160,22 @@ class AIService {
       return {
         success: true,
         message: "Connection successful",
-        provider: config.provider,
-        model: config.model,
+        provider: meta.provider,
+        model: meta.model,
         durationMs,
       };
     } catch (err) {
       const durationMs = Math.round(performance.now() - start);
-      const { message, code } = formatErrorForUser(err, config.baseUrl);
-      addAILog({
-        provider: config.provider,
-        model: config.model,
-        durationMs,
-        status: "error",
-        error: message,
-        errorCode: code,
-      });
+      const { message, code } =
+        err instanceof AIClientError
+          ? { message: err.message, code: err.code }
+          : classifyError(err);
       return {
         success: false,
         error: message,
         errorCode: code,
-        provider: config.provider,
-        model: config.model,
+        provider: err instanceof AIClientError ? (err.provider ?? "server") : "server",
+        model: err instanceof AIClientError ? (err.model ?? "") : "",
         durationMs,
       };
     }
@@ -193,9 +206,9 @@ class AIService {
       };
     }
 
-    const selected = options.forceMock
-      ? this.createMockSelection()
-      : selectProviderForAnalysis();
+    const selected = selectProviderForTask("OBJECT_ANALYSIS", {
+      forceMock: options.forceMock,
+    });
 
     const result = await objectIntelligenceEngine.analyze(type, input, {
       provider: selected.provider,
@@ -204,47 +217,47 @@ class AIService {
       language: getLanguage(),
     });
 
-    if (result.success) {
-      addAILog({
-        provider: result.provider,
-        model: result.model,
-        durationMs: result.durationMs,
-        status: "success",
-      });
+    // Stamp real provider/model from the server response when available.
+    if (!selected.isMock) {
+      const meta = (selected.provider as ServerTaskProvider).lastMeta;
+      if (meta) {
+        result.provider = meta.provider as typeof result.provider;
+        result.model = meta.model;
+      }
+    }
 
+    // Server calls are already logged by the /api/ai client proxy; only mock
+    // runs (fully local, zero network) need a log entry here.
+    if (selected.isMock) {
+      if (result.success) {
+        addAILog({
+          provider: result.provider,
+          model: result.model,
+          durationMs: result.durationMs,
+          status: "success",
+        });
+      } else {
+        addAILog({
+          provider: result.provider,
+          model: result.model,
+          durationMs: result.durationMs,
+          status: "error",
+          error: result.error,
+          errorCode: result.errorCode,
+        });
+      }
+    }
+
+    if (result.success) {
       if (options.saveHistory !== false) {
         const historyEntryId = await this.saveHistoryEntry(type, input, result);
         if (historyEntryId) {
           (result as AIAnalysisRunResult<AIAnalysisResult>).historyEntryId = historyEntryId;
         }
       }
-    } else {
-      addAILog({
-        provider: result.provider,
-        model: result.model,
-        durationMs: result.durationMs,
-        status: "error",
-        error: result.error,
-        errorCode: result.errorCode,
-      });
     }
 
     return result;
-  }
-
-  private createMockSelection() {
-    const mockConfig: AIProviderConfig = {
-      provider: "mock",
-      apiKey: "",
-      baseUrl: "",
-      model: "mock",
-    };
-    return {
-      provider: registry.create("mock", mockConfig),
-      providerId: "mock" as const,
-      model: "mock",
-      isMock: true,
-    };
   }
 
   private async saveHistoryEntry(

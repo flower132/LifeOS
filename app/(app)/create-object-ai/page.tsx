@@ -20,7 +20,7 @@ import { useTranslation } from "@/lib/useTranslation";
 import { getObjectDisplayName } from "@/lib/ai/objectIntelligence/mapper";
 import { updateAIAnalysisHistoryObjectId } from "@/lib/ai/objectIntelligence/history";
 import { isAIProfileSupported } from "@/lib/ai/objectIntelligence/profiles";
-import { selectProviderForAnalysis } from "@/lib/ai/objectIntelligence/fallback";
+import { selectProviderForTask } from "@/lib/ai/objectIntelligence/fallback";
 import { LifeObjectType, LIFE_OBJECT_TYPES } from "@/lib/types";
 import { isNonEmptyString } from "@/lib/navigation/dirtyCheck";
 
@@ -97,7 +97,7 @@ export default function CreateObjectAIPage() {
       setLastInput({ textInput, images });
 
       try {
-        const selected = selectProviderForAnalysis();
+        const selected = selectProviderForTask("OBJECT_ANALYSIS");
         setAnalysisMeta({
           provider: selected.providerId,
           model: selected.model,

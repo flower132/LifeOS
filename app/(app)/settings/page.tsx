@@ -21,7 +21,6 @@ import {
 import { useSettingsStore } from "@/stores/settingsStore";
 import { hydrateStores } from "@/stores";
 import { useTranslation } from "@/lib/useTranslation";
-import { AIProviderId } from "@/lib/ai/types";
 import { aiService, AITestResult, getAILogs, clearAILogs } from "@/lib/ai";
 import { AIUsageLog } from "@/lib/ai/types";
 import {
@@ -57,10 +56,6 @@ export default function SettingsPage() {
     timeFormat,
     aiEnabled,
     aiPrivacyMode,
-    aiProvider,
-    aiModel,
-    aiBaseUrl,
-    aiApiKey,
     companionEnabled,
     allowNotifications,
     loaded,
@@ -72,10 +67,6 @@ export default function SettingsPage() {
     setTimeFormat,
     setAIEnabled,
     setAIPrivacyMode,
-    setAIProvider,
-    setAIModel,
-    setAIBaseUrl,
-    setAIApiKey,
     setCompanionEnabled,
     setAllowNotifications,
   } = useSettingsStore();
@@ -92,36 +83,11 @@ export default function SettingsPage() {
 
   const storageUsage = useMemo(() => calculateStorageUsage(), []);
 
-  const maskedApiKey = useMemo(() => {
-    if (!aiApiKey) return "";
-    if (aiApiKey.length <= 8) return "*".repeat(aiApiKey.length);
-    return `${aiApiKey.slice(0, 4)}${"*".repeat(aiApiKey.length - 8)}${aiApiKey.slice(-4)}`;
-  }, [aiApiKey]);
-
-  const activeProviderLabel = useMemo(() => {
-    switch (aiProvider) {
-      case "openai":
-        return t("providerOpenAI");
-      case "anthropic":
-        return t("providerAnthropic");
-      case "deepseek":
-        return t("providerDeepSeek");
-      case "kimi":
-        return t("providerKimi");
-      case "gemini":
-        return t("providerGemini");
-      case "openrouter":
-        return t("providerOpenRouter");
-      case "siliconflow":
-        return t("providerSiliconFlow");
-      case "ollama":
-        return t("providerOllama");
-      case "custom":
-        return t("providerCustom");
-      default:
-        return t("providerMock");
-    }
-  }, [aiProvider, t]);
+  // Server-side AI identity, learned from the last test/log entry.
+  const activeServerProvider =
+    testResult?.provider || logs[0]?.provider || "-";
+  const activeServerModel = testResult?.model || logs[0]?.model || "-";
+  const mockActive = !aiEnabled || aiPrivacyMode;
 
   const handleExportJson = async () => {
     setExportingJson(true);
@@ -449,79 +415,29 @@ export default function SettingsPage() {
               {t("aiPrivacyModeDescription")}
             </p>
 
-            <div className="space-y-1">
-              <span className="text-sm font-medium text-foreground">
-                {t("aiProvider")}
-              </span>
-              <select
-                value={aiProvider}
-                onChange={(e) =>
-                  void setAIProvider(e.target.value as AIProviderId)
-                }
-                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent"
-              >
-                <option value="mock">{t("providerMock")}</option>
-                <option value="openai">{t("providerOpenAI")}</option>
-                <option value="anthropic">{t("providerAnthropic")}</option>
-                <option value="deepseek">{t("providerDeepSeek")}</option>
-                <option value="kimi">{t("providerKimi")}</option>
-                <option value="gemini">{t("providerGemini")}</option>
-                <option value="openrouter">{t("providerOpenRouter")}</option>
-                <option value="siliconflow">{t("providerSiliconFlow")}</option>
-                <option value="ollama">{t("providerOllama")}</option>
-                <option value="custom">{t("providerCustom")}</option>
-              </select>
+            <div className="space-y-1 text-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">{t("aiProvider")}</span>
+                <span className="font-medium text-foreground">
+                  {mockActive ? t("providerMock") : activeServerProvider}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">{t("aiModel")}</span>
+                <span className="font-medium text-foreground">
+                  {mockActive ? t("providerMock") : activeServerModel}
+                </span>
+              </div>
               <p className="text-xs text-muted-foreground">
-                {t("currentProvider")}: {activeProviderLabel}
-              </p>
-            </div>
-
-            <div className="space-y-1">
-              <span className="text-sm font-medium text-foreground">
-                {t("aiModel")}
-              </span>
-              <input
-                type="text"
-                value={aiModel}
-                onChange={(e) => void setAIModel(e.target.value)}
-                placeholder={t("aiModelPlaceholder")}
-                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent"
-              />
-            </div>
-
-            <div className="space-y-1">
-              <span className="text-sm font-medium text-foreground">
-                {t("aiBaseUrl")}
-              </span>
-              <input
-                type="text"
-                value={aiBaseUrl}
-                onChange={(e) => void setAIBaseUrl(e.target.value)}
-                placeholder={t("aiBaseUrlPlaceholder")}
-                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent"
-              />
-            </div>
-
-            <div className="space-y-1">
-              <span className="text-sm font-medium text-foreground">
-                {t("aiApiKey")}
-              </span>
-              <input
-                type="password"
-                value={aiApiKey}
-                onChange={(e) => void setAIApiKey(e.target.value)}
-                placeholder={t("aiApiKeyPlaceholder")}
-                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent"
-              />
-              <p className="text-xs text-muted-foreground">
-                {t("keyStoredLocally")}
+                {t("aiServerManagedDescription") ??
+                  "AI 由服务端统一管理，密钥不会出现在浏览器中。"}
               </p>
             </div>
 
             <button
               type="button"
               onClick={() => void handleTestConnection()}
-              disabled={testingAI || aiProvider === "mock"}
+              disabled={testingAI || mockActive}
               className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-input bg-background px-4 py-2 text-sm font-medium text-foreground hover:bg-muted disabled:opacity-50"
             >
               {testingAI ? (
@@ -532,7 +448,7 @@ export default function SettingsPage() {
               {testingAI ? t("testing") : t("testConnection")}
             </button>
 
-            {aiProvider === "mock" && (
+            {mockActive && (
               <p className="text-xs text-muted-foreground">
                 {t("testConnectionMockNotAvailable")}
               </p>
@@ -558,7 +474,7 @@ export default function SettingsPage() {
                 </div>
                 <div className="mt-1 space-y-1 text-xs opacity-90">
                   <p>
-                    {t("aiProvider")}: {activeProviderLabel}
+                    {t("aiProvider")}: {testResult.provider || "-"}
                   </p>
                   <p>
                     {t("aiModel")}: {testResult.model || "-"}
@@ -617,23 +533,13 @@ export default function SettingsPage() {
             <div className="flex items-center justify-between">
               <span className="text-muted-foreground">{t("aiProvider")}</span>
               <span className="font-medium text-foreground">
-                {activeProviderLabel}
+                {mockActive ? t("providerMock") : activeServerProvider}
               </span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-muted-foreground">{t("aiModel")}</span>
-              <span className="font-medium text-foreground">{aiModel || "-"}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-muted-foreground">{t("aiBaseUrl")}</span>
-              <span className="max-w-[60%] truncate font-medium text-foreground">
-                {aiBaseUrl || "-"}
-              </span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-muted-foreground">{t("aiApiKey")}</span>
               <span className="font-medium text-foreground">
-                {maskedApiKey || t("apiKeyHidden")}
+                {mockActive ? t("providerMock") : activeServerModel}
               </span>
             </div>
             <div className="flex items-center justify-between">

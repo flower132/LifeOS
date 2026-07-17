@@ -20,10 +20,9 @@ import {
   buildMockDailyTimelineOutput,
   buildMockWeeklyReviewOutput,
   buildMockMonthlyStoryOutput,
-} from "./prompts/reviewPrompt";
-import { selectProviderForAnalysis } from "@/lib/ai/objectIntelligence/fallback";
+} from "@/lib/ai/prompts/review";
+import { selectProviderForTask } from "@/lib/ai/objectIntelligence/fallback";
 import { AIStructuredGenerationRequest } from "@/lib/ai/types";
-import { addAILog } from "@/lib/ai/logs";
 import { getISOWeekBounds, getMonthBounds } from "./utils/date";
 
 function now(): string {
@@ -133,14 +132,14 @@ export async function generateDailyTimeline(
   const notes = context.notes.filter((n) => n.created_at.startsWith(date));
   if (notes.length === 0) return null;
 
-  const selected = selectProviderForAnalysis();
+  const selected = selectProviderForTask("SUMMARY");
   let output: TimelineOutput;
 
   if (selected.isMock) {
     output = buildMockDailyTimelineOutput(notes);
   } else {
     const prompt = buildDailyTimelinePrompt(context, date);
-    const start = performance.now();
+    // Server calls are logged centrally by the /api/ai client proxy.
     try {
       const raw = await callStructured(
         selected.provider,
@@ -154,20 +153,7 @@ export async function generateDailyTimeline(
       } else {
         output = parsed.data;
       }
-      addAILog({
-        provider: selected.providerId,
-        model: selected.model,
-        durationMs: Math.round(performance.now() - start),
-        status: "success",
-      });
-    } catch (err) {
-      addAILog({
-        provider: selected.providerId,
-        model: selected.model,
-        durationMs: Math.round(performance.now() - start),
-        status: "error",
-        error: err instanceof Error ? err.message : String(err),
-      });
+    } catch {
       output = buildMockDailyTimelineOutput(notes);
     }
   }
@@ -187,14 +173,14 @@ export async function generateWeeklyReview(
   );
   if (notes.length < 3) return null;
 
-  const selected = selectProviderForAnalysis();
+  const selected = selectProviderForTask("WEEKLY_REVIEW");
   let output: WeeklyReviewOutput;
 
   if (selected.isMock) {
     output = buildMockWeeklyReviewOutput(notes);
   } else {
     const prompt = buildWeeklyReviewPrompt(context, weekKey);
-    const start = performance.now();
+    // Server calls are logged centrally by the /api/ai client proxy.
     try {
       const raw = await callStructured(
         selected.provider,
@@ -208,20 +194,7 @@ export async function generateWeeklyReview(
       } else {
         output = parsed.data;
       }
-      addAILog({
-        provider: selected.providerId,
-        model: selected.model,
-        durationMs: Math.round(performance.now() - start),
-        status: "success",
-      });
-    } catch (err) {
-      addAILog({
-        provider: selected.providerId,
-        model: selected.model,
-        durationMs: Math.round(performance.now() - start),
-        status: "error",
-        error: err instanceof Error ? err.message : String(err),
-      });
+    } catch {
       output = buildMockWeeklyReviewOutput(notes);
     }
   }
@@ -241,14 +214,14 @@ export async function generateMonthlyStory(
   );
   if (notes.length < 5) return null;
 
-  const selected = selectProviderForAnalysis();
+  const selected = selectProviderForTask("MONTHLY_STORY");
   let output: MonthlyStoryOutput;
 
   if (selected.isMock) {
     output = buildMockMonthlyStoryOutput(notes);
   } else {
     const prompt = buildMonthlyStoryPrompt(context, monthKey);
-    const start = performance.now();
+    // Server calls are logged centrally by the /api/ai client proxy.
     try {
       const raw = await callStructured(
         selected.provider,
@@ -262,20 +235,7 @@ export async function generateMonthlyStory(
       } else {
         output = parsed.data;
       }
-      addAILog({
-        provider: selected.providerId,
-        model: selected.model,
-        durationMs: Math.round(performance.now() - start),
-        status: "success",
-      });
-    } catch (err) {
-      addAILog({
-        provider: selected.providerId,
-        model: selected.model,
-        durationMs: Math.round(performance.now() - start),
-        status: "error",
-        error: err instanceof Error ? err.message : String(err),
-      });
+    } catch {
       output = buildMockMonthlyStoryOutput(notes);
     }
   }

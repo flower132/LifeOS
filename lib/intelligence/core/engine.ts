@@ -10,7 +10,7 @@ import { useObjectStore } from "@/stores/objectStore";
 import { useNoteStore } from "@/stores/noteStore";
 import { useRelationStore } from "@/stores/relationStore";
 import { useSettingsStore } from "@/stores/settingsStore";
-import { selectProviderForAnalysis } from "@/lib/ai/objectIntelligence/fallback";
+import { selectProviderForTask } from "@/lib/ai/objectIntelligence/fallback";
 import { AIProvider, AIStructuredGenerationRequest } from "@/lib/ai/types";
 
 import {
@@ -20,13 +20,15 @@ import {
   TodayStoryEngineInput,
   RelatedMemory,
 } from "./types";
-import { buildPatternPrompt, discoverPatterns } from "../engines/patternEngine";
+import { discoverPatterns } from "../engines/patternEngine";
+import { buildPatternPrompt } from "@/lib/ai/prompts/pattern";
+import { buildTodayStoryPrompt } from "@/lib/ai/prompts/todayStory";
+import { buildRelatedMemoriesPrompt } from "@/lib/ai/prompts/memoryUnderstanding";
 import {
-  buildTodayStoryPrompt,
   mapTodayStoryOutput,
   buildMockTodayStory,
 } from "../engines/todayStoryEngine";
-import { buildRelatedMemoriesPrompt, mapRelatedMemoriesOutput } from "../engines/relatedMemoriesEngine";
+import { mapRelatedMemoriesOutput } from "../engines/relatedMemoriesEngine";
 import { useIntelligenceStore } from "@/stores/intelligenceStore";
 
 const DEFAULT_ANALYSIS_WINDOW_DAYS = 180;
@@ -93,7 +95,7 @@ async function callStructured(
 
 export class IntelligenceService {
   async runIncremental(opts?: IntelligenceRunOptions): Promise<void> {
-    const { provider, isMock } = selectProviderForAnalysis();
+    const { provider, isMock } = selectProviderForTask("PATTERN");
     if (isMock && !opts?.force) {
       console.log("[Intelligence] Skipping incremental analysis: mock provider.");
       return;
@@ -124,7 +126,7 @@ export class IntelligenceService {
   }
 
   async runFull(opts?: IntelligenceRunOptions): Promise<void> {
-    const { provider, isMock } = selectProviderForAnalysis();
+    const { provider, isMock } = selectProviderForTask("PATTERN");
     if (isMock && !opts?.force) {
       console.log("[Intelligence] Skipping full analysis: mock provider.");
       return;
@@ -163,7 +165,7 @@ export class IntelligenceService {
       if (cached) return cached;
     }
 
-    const { provider, isMock } = selectProviderForAnalysis();
+    const { provider, isMock } = selectProviderForTask("TODAY_STORY");
 
     const context = await buildContext({ maxNotes: 100 });
     if (!context) return null;
@@ -193,7 +195,7 @@ export class IntelligenceService {
   }
 
   async findRelatedMemories(noteId: string): Promise<RelatedMemory[]> {
-    const { provider, isMock } = selectProviderForAnalysis();
+    const { provider, isMock } = selectProviderForTask("MEMORY_UNDERSTANDING");
     const notes = useNoteStore.getState().notes;
     const targetNote = notes.find((n) => n.id === noteId);
     if (!targetNote) return [];

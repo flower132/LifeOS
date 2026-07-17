@@ -3,10 +3,10 @@ import { LifeObject, Note } from "@/lib/types";
 import { AIAnalysisInput } from "@/lib/ai/objectIntelligence/types";
 import { mapObjectAnalysisResult } from "@/lib/ai/objectIntelligence/mapper";
 import {
-  selectProviderForAnalysis,
+  selectProviderForTask,
   shouldRunAnalysis,
 } from "@/lib/ai/objectIntelligence/fallback";
-import { buildPersonUpdatePrompt } from "./buildPersonUpdatePrompt";
+import { buildPersonUpdatePrompt } from "@/lib/ai/prompts/personUpdate";
 import { mergePersonAnalysis, MergePersonAnalysisResult } from "./mergePersonAnalysis";
 
 export interface AnalyzePersonUpdateOptions {
@@ -79,7 +79,9 @@ export async function analyzePersonUpdate(
   const start = performance.now();
 
   try {
-    const selected = selectProviderForAnalysis();
+    const selected = selectProviderForTask("PERSON_UPDATE", {
+      forceMock: options.forceMock,
+    });
 
     const prompt = buildPersonUpdatePrompt(
       object,

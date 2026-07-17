@@ -1,7 +1,7 @@
-import { CompanionContext } from "../types";
-import { ReflectionOutput } from "../schemas";
+import { CompanionContext } from "@/lib/companion/types";
+import { ReflectionOutput } from "@/lib/companion/schemas";
 import { Note } from "@/lib/types";
-import { applyPenalty } from "../learning";
+import { applyPenalty } from "@/lib/companion/learning";
 
 export interface ReflectionSeed {
   source: "memory" | "goal" | "project" | "relationship" | "self";
