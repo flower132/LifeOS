@@ -113,7 +113,18 @@ function mapRelation(r: DbRow): Relation {
     strength: typeof r.strength === "number" ? r.strength : undefined,
     note: getOptionalString(r, "note"),
     created_at: toISO(r.created_at),
+    label: getOptionalString(r, "label"),
+    confidence: typeof r.confidence === "number" ? r.confidence : undefined,
+    sourceMemoryId: getOptionalString(r, "source_memory_id"),
+    createdBy: (getOptionalString(r, "created_by") as Relation["createdBy"]) ?? "user",
+    updated_at: r.updated_at ? toISO(r.updated_at) : undefined,
   };
+}
+
+/** True when Supabase reports an unknown column (V2 columns not migrated yet). */
+function isMissingColumnError(error: unknown): boolean {
+  const message = String((error as { message?: unknown })?.message ?? error).toLowerCase();
+  return message.includes("column") && (message.includes("does not exist") || message.includes("could not find"));
 }
 
 function mapTag(r: DbRow): Tag {
@@ -854,14 +865,71 @@ export class SupabaseAdapter implements StorageAdapter {
       id: generateId(), user_id: uid,
       source_object_id: relation.source_object_id, target_object_id: relation.target_object_id,
       type: relation.type, strength: relation.strength ?? null, note: relation.note || null,
+      // V2 Knowledge Graph fields (require the ALTER TABLE below; absent
+      // columns degrade to a legacy insert automatically):
+      //   alter table relations add column if not exists label text;
+      //   alter table relations add column if not exists confidence double precision;
+      //   alter table relations add column if not exists source_memory_id uuid;
+      //   alter table relations add column if not exists created_by text default 'user';
+      //   alter table relations add column if not exists updated_at timestamptz;
+      label: relation.label ?? null,
+      confidence: relation.confidence ?? null,
+      source_memory_id: relation.sourceMemoryId ?? null,
+      created_by: relation.createdBy ?? "user",
+      updated_at: null,
       created_at: now,
     };
     const client = getSupabase();
-    const { data, error } = await client.from("relations").insert(row).select().single();
+    let { data, error } = await client.from("relations").insert(row).select().single();
+    if (error && isMissingColumnError(error)) {
+      // Legacy table without V2 columns — retry with the legacy row shape.
+      const legacyRow = {
+        id: row.id, user_id: uid,
+        source_object_id: row.source_object_id, target_object_id: row.target_object_id,
+        type: row.type, strength: row.strength, note: row.note,
+        created_at: row.created_at,
+      };
+      ({ data, error } = await client.from("relations").insert(legacyRow).select().single());
+    }
     if (error) throw error;
     const created = mapRelation(data);
     this.cache.relations = [created, ...this.cache.relations];
     return created;
+  }
+
+  async updateRelation(
+    id: string,
+    updates: Partial<Omit<Relation, "id" | "created_at">>
+  ): Promise<Relation> {
+    await this.init();
+    const uid = await getUid();
+    if (!uid) throw new Error("Not authenticated");
+    const existing = this.cache.relations.find((r) => r.id === id);
+    if (!existing) throw new Error("Relation not found");
+    const updated: Relation = { ...existing, ...updates, updated_at: new Date().toISOString() };
+    const client = getSupabase();
+    const row: DbRow = {
+      ...(updates.type !== undefined && { type: updates.type }),
+      ...(updates.strength !== undefined && { strength: updates.strength }),
+      ...(updates.note !== undefined && { note: updates.note }),
+      label: updated.label ?? null,
+      confidence: updated.confidence ?? null,
+      source_memory_id: updated.sourceMemoryId ?? null,
+      created_by: updated.createdBy ?? "user",
+      updated_at: updated.updated_at,
+    };
+    let { error } = await client.from("relations").update(row).eq("id", id).eq("user_id", uid);
+    if (error && isMissingColumnError(error)) {
+      const legacyRow: DbRow = {
+        ...(updates.type !== undefined && { type: updates.type }),
+        ...(updates.strength !== undefined && { strength: updates.strength }),
+        ...(updates.note !== undefined && { note: updates.note }),
+      };
+      ({ error } = await client.from("relations").update(legacyRow).eq("id", id).eq("user_id", uid));
+    }
+    if (error) throw error;
+    this.cache.relations = this.cache.relations.map((r) => (r.id === id ? updated : r));
+    return updated;
   }
   async deleteRelation(id: string): Promise<void> {
     await this.init();
@@ -881,6 +949,9 @@ export class SupabaseAdapter implements StorageAdapter {
       id: r.id, user_id: uid,
       source_object_id: r.source_object_id, target_object_id: r.target_object_id,
       type: r.type, strength: r.strength ?? null, note: r.note || null,
+      label: r.label ?? null, confidence: r.confidence ?? null,
+      source_memory_id: r.sourceMemoryId ?? null, created_by: r.createdBy ?? "user",
+      updated_at: r.updated_at ?? null,
       created_at: r.created_at,
     }));
     const currentIds = new Set(this.cache.relations.map((r) => r.id));

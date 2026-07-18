@@ -2,6 +2,7 @@ import { Language } from "@/lib/i18n";
 import { LifeObject, Note } from "@/lib/types";
 import { useObjectStore } from "@/stores/objectStore";
 import { useSettingsStore } from "@/stores/settingsStore";
+import { ExtractedRelation } from "@/lib/relations/types";
 import { extractMemoryKnowledge } from "./extractor";
 import { linkEntities } from "./linker";
 import { calculateImportance } from "./importance";
@@ -54,6 +55,8 @@ function knownEntityNames(objects: LifeObject[]) {
 export interface ProcessResult {
   memory: Omit<Memory, "id" | "createdAt" | "updatedAt">;
   usedAI: boolean;
+  /** AI-extracted relation candidates for the Knowledge Graph. */
+  extractedRelations: ExtractedRelation[];
 }
 
 /** Process a user note into a Memory record. */
@@ -94,6 +97,13 @@ export async function processNote(note: Note): Promise<ProcessResult | null> {
 
     return {
       usedAI: extraction.summary !== note.content.slice(0, 40),
+      extractedRelations: extraction.relations.map((r) => ({
+        fromName: r.from,
+        toName: r.to,
+        type: r.type,
+        label: r.label,
+        confidence: r.confidence,
+      })),
       memory: {
         type: extraction.type,
         content: note.content,
@@ -137,6 +147,13 @@ export async function processAIContent(params: {
 
     return {
       usedAI: true,
+      extractedRelations: extraction.relations.map((r) => ({
+        fromName: r.from,
+        toName: r.to,
+        type: r.type,
+        label: r.label,
+        confidence: r.confidence,
+      })),
       memory: {
         type: params.type ?? extraction.type,
         content: params.content,

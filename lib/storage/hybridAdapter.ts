@@ -132,6 +132,14 @@ export class HybridStorageAdapter implements StorageAdapter {
     this.requestSync("relations", created.id);
     return created;
   }
+  async updateRelation(
+    id: string,
+    updates: Partial<Omit<Relation, "id" | "created_at">>
+  ): Promise<Relation> {
+    const updated = await this.local.updateRelation(id, updates);
+    this.requestSync("relations", id);
+    return updated;
+  }
   async deleteRelation(id: string): Promise<void> {
     await this.local.deleteRelation(id);
     this.requestSync("relations", id);

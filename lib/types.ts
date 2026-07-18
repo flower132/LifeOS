@@ -569,6 +569,16 @@ export interface Relation {
   strength?: number;
   note?: string;
   created_at: string;
+  // ── V2 Knowledge Graph (Relation Engine) — all optional, legacy rows omit them ──
+  /** Free-form predicate label (e.g. "合作项目", "准备"), for AI-extracted semantics. */
+  label?: string;
+  /** 0..1 — extraction confidence / human-confirmed strength of this edge. */
+  confidence?: number;
+  /** Provenance: the memory this relation was extracted from. */
+  sourceMemoryId?: string;
+  /** "ai" (auto-extracted) or "user" (manually created). Legacy rows: "user". */
+  createdBy?: "ai" | "user";
+  updated_at?: string;
 }
 
 export interface Tag {

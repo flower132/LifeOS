@@ -136,6 +136,17 @@ export function isValidRelation(obj: unknown): obj is Relation {
   ) {
     return false;
   }
+  // V2 Knowledge Graph optional fields
+  if (r.label !== undefined && typeof r.label !== "string") return false;
+  if (
+    r.confidence !== undefined &&
+    (typeof r.confidence !== "number" || r.confidence < 0 || r.confidence > 1)
+  ) {
+    return false;
+  }
+  if (r.sourceMemoryId !== undefined && typeof r.sourceMemoryId !== "string") return false;
+  if (r.createdBy !== undefined && r.createdBy !== "ai" && r.createdBy !== "user") return false;
+  if (r.updated_at !== undefined && !isValidIsoDate(r.updated_at)) return false;
 
   return true;
 }

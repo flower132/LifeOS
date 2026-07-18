@@ -51,6 +51,7 @@ export function RelationForm({ sourceObjectId, onCreated }: RelationFormProps) {
         type,
         strength,
         note: note.trim() || undefined,
+        createdBy: "user",
       });
       setTargetObjectId("");
       setNote("");

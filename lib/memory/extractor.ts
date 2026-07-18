@@ -29,6 +29,19 @@ const extractionSchema = z.object({
   topics: z.array(z.string()).default([]),
   emotions: z.array(z.string()).default([]),
   insights: z.array(z.string()).default([]),
+  relations: z
+    .array(
+      z.object({
+        from: z.string(),
+        to: z.string(),
+        type: z
+          .enum(["family", "friend", "colleague", "mentor", "partner", "custom"])
+          .default("custom"),
+        label: z.string().optional(),
+        confidence: z.number().min(0).max(1).default(0.6),
+      })
+    )
+    .default([]),
   importance: z.number().min(0).max(1).default(0.3),
 });
 
@@ -44,6 +57,14 @@ export interface MemoryExtraction {
   topics: string[];
   emotions: string[];
   insights: string[];
+  /** AI-extracted relation candidates (Knowledge Graph edges). */
+  relations: {
+    from: string;
+    to: string;
+    type: "family" | "friend" | "colleague" | "mentor" | "partner" | "custom";
+    label?: string;
+    confidence: number;
+  }[];
   /** AI-estimated importance 0..1 (feeds importance.ts). */
   aiImportance: number;
 }
@@ -99,6 +120,13 @@ export async function extractMemoryKnowledge(
           topics: parsed.data.topics,
           emotions: parsed.data.emotions,
           insights: parsed.data.insights,
+          relations: parsed.data.relations.map((r) => ({
+            from: r.from,
+            to: r.to,
+            type: r.type,
+            label: r.label,
+            confidence: r.confidence,
+          })),
           aiImportance: parsed.data.importance,
         };
       }
@@ -133,6 +161,7 @@ function localExtraction(input: ExtractInput): MemoryExtraction {
     topics: [],
     emotions: [],
     insights: [],
+    relations: [],
     aiImportance: people.length + projects.length + goals.length > 0 ? 0.5 : 0.3,
   };
 }

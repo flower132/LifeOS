@@ -57,7 +57,7 @@ const STORAGE_METHODS: (keyof StorageAdapter)[] = [
   "getStorageVersion", "setStorageVersion", "migrateIfNeeded", "ensureDefaultTemplates",
   "getObjects", "getObjectById", "createObject", "updateObject", "deleteObject", "deleteObjects", "restoreObjects", "setObjects",
   "getNotes", "getNotesByObjectId", "createNote", "deleteNote", "setNotes",
-  "getRelations", "getRelationsByObjectId", "createRelation", "deleteRelation", "setRelations",
+  "getRelations", "getRelationsByObjectId", "createRelation", "updateRelation", "deleteRelation", "setRelations",
   "getTags", "createTag", "updateTag", "deleteTag", "setTags",
   "getTemplates", "createTemplate", "updateTemplate", "deleteTemplate", "setTemplates",
   "getSettings", "setSettings",

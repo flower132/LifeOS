@@ -14,6 +14,10 @@ interface RelationState {
   addRelation: (
     relation: Omit<Relation, "id" | "created_at">
   ) => Promise<Relation>;
+  updateRelation: (
+    id: string,
+    updates: Partial<Omit<Relation, "id" | "created_at">>
+  ) => Promise<Relation>;
   removeRelation: (id: string) => Promise<void>;
   getByObjectId: (objectId: string) => Relation[];
 }
@@ -56,6 +60,22 @@ export const useRelationStore = create<RelationState>((set, get) => {
       } catch (err) {
         const message =
           err instanceof Error ? err.message : "Failed to create relation";
+        set({ error: message });
+        throw err;
+      }
+    },
+
+    updateRelation: async (id, updates) => {
+      try {
+        const updated = await storage.updateRelation(id, updates);
+        set((state) => ({
+          relations: state.relations.map((r) => (r.id === id ? updated : r)),
+          error: null,
+        }));
+        return updated;
+      } catch (err) {
+        const message =
+          err instanceof Error ? err.message : "Failed to update relation";
         set({ error: message });
         throw err;
       }

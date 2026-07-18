@@ -81,6 +81,10 @@ export interface StorageAdapter {
   createRelation(
     relation: Omit<Relation, "id" | "created_at">
   ): Promise<Relation>;
+  updateRelation(
+    id: string,
+    updates: Partial<Omit<Relation, "id" | "created_at">>
+  ): Promise<Relation>;
   deleteRelation(id: string): Promise<void>;
   setRelations(relations: Relation[]): Promise<void>;
 

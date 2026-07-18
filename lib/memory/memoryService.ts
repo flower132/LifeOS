@@ -5,6 +5,7 @@ import { useMemoryStore } from "@/stores/memoryStore";
 import { useObjectStore } from "@/stores/objectStore";
 import { useSettingsStore } from "@/stores/settingsStore";
 import { rankMemories } from "@/lib/ai/context/relevance";
+import { applyExtractedRelations } from "@/lib/relations";
 import { processAIContent, processNote } from "./processor";
 import { periodKey, summarizePeriod, SummaryPeriod } from "./summarizer";
 import { buildTimeline, groupByMonth, TimelineEntry } from "./timeline";
@@ -72,6 +73,7 @@ function asScoreableNote(memory: Memory): Note {
 class MemoryService {
   /**
    * Process a newly saved note through the pipeline and persist the Memory.
+   * Also applies AI-extracted relations to the Knowledge Graph.
    * Fire-and-forget from the note store — never throws.
    */
   async ingestNote(note: Note): Promise<Memory | null> {
@@ -79,6 +81,20 @@ class MemoryService {
     if (!result) return null;
     const created = await storage.createMemory(result.memory);
     useMemoryStore.getState().upsertLocal(created);
+
+    // Knowledge Graph: relation extraction is a best-effort side effect.
+    if (result.extractedRelations.length > 0) {
+      try {
+        await applyExtractedRelations({
+          relations: result.extractedRelations,
+          objects: useObjectStore.getState().objects,
+          sourceMemoryId: created.id,
+        });
+      } catch (err) {
+        console.warn("[memory] Relation extraction failed:", err);
+      }
+    }
+
     return created;
   }
 
@@ -88,6 +104,19 @@ class MemoryService {
     if (!result) return null;
     const created = await storage.createMemory(result.memory);
     useMemoryStore.getState().upsertLocal(created);
+
+    if (result.extractedRelations.length > 0) {
+      try {
+        await applyExtractedRelations({
+          relations: result.extractedRelations,
+          objects: useObjectStore.getState().objects,
+          sourceMemoryId: created.id,
+        });
+      } catch (err) {
+        console.warn("[memory] Relation extraction failed:", err);
+      }
+    }
+
     return created;
   }
 

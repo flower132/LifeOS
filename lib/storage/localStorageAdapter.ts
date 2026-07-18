@@ -921,6 +921,20 @@ export class LocalStorageAdapter implements StorageAdapter {
     return created;
   }
 
+  async updateRelation(
+    id: string,
+    updates: Partial<Omit<Relation, "id" | "created_at">>
+  ): Promise<Relation> {
+    const relations = await this.getRelations();
+    const index = relations.findIndex((r) => r.id === id);
+    if (index === -1) throw new StorageError("Relation not found", "validation");
+    const updated: Relation = { ...relations[index], ...updates, updated_at: now() };
+    relations[index] = updated;
+    maybeBackup(KEYS.relations);
+    safeSetItem(KEYS.relations, relations);
+    return updated;
+  }
+
   async deleteRelation(id: string): Promise<void> {
     const relations = (await this.getRelations()).filter((r) => r.id !== id);
     maybeBackup(KEYS.relations);
