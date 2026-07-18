@@ -232,6 +232,7 @@ class SyncServiceImpl implements SyncService {
       decisions,
       memories,
       objectProfiles,
+      relationSuggestions,
     ] = await Promise.all([
       adapter.getObjects(),
       adapter.getNotes(),
@@ -248,6 +249,7 @@ class SyncServiceImpl implements SyncService {
       adapter.getDecisions(),
       adapter.getMemories(),
       adapter.getObjectProfiles(),
+      adapter.getRelationSuggestions(),
     ]);
     return {
       objects,
@@ -265,6 +267,7 @@ class SyncServiceImpl implements SyncService {
       decisions,
       memories,
       objectProfiles,
+      relationSuggestions,
     };
   }
 
@@ -287,6 +290,7 @@ class SyncServiceImpl implements SyncService {
       decisions,
       memories,
       objectProfiles,
+      relationSuggestions,
     ] = await Promise.all([
       adapter.getObjects(),
       adapter.getNotes(),
@@ -303,6 +307,7 @@ class SyncServiceImpl implements SyncService {
       adapter.getDecisions(),
       adapter.getMemories(),
       adapter.getObjectProfiles(),
+      adapter.getRelationSuggestions(),
     ]);
     return {
       objects,
@@ -320,6 +325,7 @@ class SyncServiceImpl implements SyncService {
       decisions,
       memories,
       objectProfiles,
+      relationSuggestions,
     };
   }
 
@@ -342,6 +348,7 @@ class SyncServiceImpl implements SyncService {
       adapter.setDecisions(snapshot.decisions),
       adapter.setMemories(snapshot.memories),
       adapter.setObjectProfiles(snapshot.objectProfiles),
+      adapter.setRelationSuggestions(snapshot.relationSuggestions),
     ]);
   }
 
@@ -363,6 +370,7 @@ class SyncServiceImpl implements SyncService {
       adapter.setDecisions(snapshot.decisions),
       adapter.setMemories(snapshot.memories),
       adapter.setObjectProfiles(snapshot.objectProfiles),
+      adapter.setRelationSuggestions(snapshot.relationSuggestions),
     ]);
   }
 }

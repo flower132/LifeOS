@@ -70,6 +70,19 @@ export interface AIContext {
     lines: string[];
     longTermMemories: { id: string; date: string; text: string }[];
   };
+  /** Knowledge Graph: ranked multi-hop neighbors of the focus object. */
+  graph: {
+    neighbors: {
+      id: string;
+      name: string;
+      type: string;
+      relationLabel?: string;
+      /** 0..100 AI-computed edge strength. */
+      strength: number;
+      /** Hops from the focus object. */
+      depth: number;
+    }[];
+  };
   metadata: {
     generatedAt: number;
     /** 0..1 — how much real data backed this context. */

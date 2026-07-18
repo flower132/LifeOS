@@ -1,5 +1,6 @@
 import { AITask } from "@/lib/ai/types";
 import { memoryService } from "@/lib/memory/memoryService";
+import { buildGraphContext } from "@/lib/graph/contextBuilder";
 import { getWorld } from "./retriever";
 import { serializeContext } from "./contextBuilder";
 import { dedupeSources } from "./sources";
@@ -72,6 +73,7 @@ const EMPTY_CONTEXT = (signals: ContextSignals, strategy: string): AIContext => 
   timeline: { recentEvents: [] },
   insights: { previousInsights: [] },
   knowledge: { lines: [], longTermMemories: [] },
+  graph: { neighbors: [] },
   metadata: {
     generatedAt: Date.now(),
     confidence: 0,
@@ -139,6 +141,31 @@ export function buildAIContext(signals: ContextSignals): AIContext | null {
     console.warn("[context] Memory knowledge unavailable:", err);
   }
 
+  // Knowledge Graph: ranked multi-hop neighbors become part of every AI
+  // call's context — the graph is the single context source for all AI.
+  try {
+    const graphFocusId = signals.objectId ?? world.self?.id;
+    if (graphFocusId) {
+      const graphContext = buildGraphContext(graphFocusId, {
+        hops: 2,
+        query: signals.query,
+        topK: 10,
+      });
+      if (graphContext) {
+        ctx.graph.neighbors = graphContext.neighbors.map((n) => ({
+          id: n.object.id,
+          name: n.object.name,
+          type: n.object.type,
+          relationLabel: n.relation.label ?? n.relation.type,
+          strength: n.strength,
+          depth: n.depth,
+        }));
+      }
+    }
+  } catch (err) {
+    console.warn("[context] Graph context unavailable:", err);
+  }
+
   return ctx;
 }
 
@@ -179,7 +206,8 @@ export function getSerializedContext(
     ctx.goals.activeGoals.length > 0 ||
     ctx.insights.previousInsights.length > 0 ||
     ctx.knowledge.lines.length > 0 ||
-    ctx.knowledge.longTermMemories.length > 0;
+    ctx.knowledge.longTermMemories.length > 0 ||
+    ctx.graph.neighbors.length > 0;
   if (!hasData) return null;
 
   const budget = DEEP_TASKS.has(signals.task)

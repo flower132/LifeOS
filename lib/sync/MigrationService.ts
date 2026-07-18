@@ -55,6 +55,7 @@ export async function buildLocalSnapshot(): Promise<SyncSnapshot> {
     decisions,
     memories,
     objectProfiles,
+    relationSuggestions,
   ] = await Promise.all([
     adapter.getObjects(),
     adapter.getNotes(),
@@ -71,6 +72,7 @@ export async function buildLocalSnapshot(): Promise<SyncSnapshot> {
     adapter.getDecisions(),
     adapter.getMemories(),
     adapter.getObjectProfiles(),
+    adapter.getRelationSuggestions(),
   ]);
   return {
     objects,
@@ -88,6 +90,7 @@ export async function buildLocalSnapshot(): Promise<SyncSnapshot> {
     decisions,
     memories,
     objectProfiles,
+    relationSuggestions,
   };
 }
 
@@ -110,6 +113,7 @@ export async function buildRemoteSnapshot(): Promise<SyncSnapshot> {
     decisions,
     memories,
     objectProfiles,
+    relationSuggestions,
   ] = await Promise.all([
     adapter.getObjects(),
     adapter.getNotes(),
@@ -126,6 +130,7 @@ export async function buildRemoteSnapshot(): Promise<SyncSnapshot> {
     adapter.getDecisions(),
     adapter.getMemories(),
     adapter.getObjectProfiles(),
+    adapter.getRelationSuggestions(),
   ]);
   return {
     objects,
@@ -143,6 +148,7 @@ export async function buildRemoteSnapshot(): Promise<SyncSnapshot> {
     decisions,
     memories,
     objectProfiles,
+    relationSuggestions,
   };
 }
 
@@ -263,6 +269,7 @@ export async function resolveConflict(strategy: ConflictStrategy): Promise<void>
       adapter.setDecisions(merged.decisions),
       adapter.setMemories(merged.memories),
       adapter.setObjectProfiles(merged.objectProfiles),
+      adapter.setRelationSuggestions(merged.relationSuggestions),
     ]);
 
     await localStorageAdapter.setObjects(merged.objects);
@@ -280,6 +287,7 @@ export async function resolveConflict(strategy: ConflictStrategy): Promise<void>
     await localStorageAdapter.setDecisions(merged.decisions);
     await localStorageAdapter.setMemories(merged.memories);
     await localStorageAdapter.setObjectProfiles(merged.objectProfiles);
+    await localStorageAdapter.setRelationSuggestions(merged.relationSuggestions);
 
     syncService.setConflictStrategy("merge");
   }

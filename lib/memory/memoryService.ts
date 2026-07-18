@@ -5,7 +5,7 @@ import { useMemoryStore } from "@/stores/memoryStore";
 import { useObjectStore } from "@/stores/objectStore";
 import { useSettingsStore } from "@/stores/settingsStore";
 import { rankMemories } from "@/lib/ai/context/relevance";
-import { applyExtractedRelations } from "@/lib/relations";
+import { discoverRelations } from "@/lib/graph/discovery";
 import { processAIContent, processNote } from "./processor";
 import { periodKey, summarizePeriod, SummaryPeriod } from "./summarizer";
 import { buildTimeline, groupByMonth, TimelineEntry } from "./timeline";
@@ -82,16 +82,17 @@ class MemoryService {
     const created = await storage.createMemory(result.memory);
     useMemoryStore.getState().upsertLocal(created);
 
-    // Knowledge Graph: relation extraction is a best-effort side effect.
+    // Knowledge Graph: extracted relations become PENDING suggestions —
+    // nothing enters the graph without explicit user acceptance.
     if (result.extractedRelations.length > 0) {
       try {
-        await applyExtractedRelations({
+        await discoverRelations({
           relations: result.extractedRelations,
           objects: useObjectStore.getState().objects,
           sourceMemoryId: created.id,
         });
       } catch (err) {
-        console.warn("[memory] Relation extraction failed:", err);
+        console.warn("[memory] Relation discovery failed:", err);
       }
     }
 
@@ -107,13 +108,13 @@ class MemoryService {
 
     if (result.extractedRelations.length > 0) {
       try {
-        await applyExtractedRelations({
+        await discoverRelations({
           relations: result.extractedRelations,
           objects: useObjectStore.getState().objects,
           sourceMemoryId: created.id,
         });
       } catch (err) {
-        console.warn("[memory] Relation extraction failed:", err);
+        console.warn("[memory] Relation discovery failed:", err);
       }
     }
 

@@ -77,6 +77,18 @@ function buildSections(ctx: AIContext): { title: string; body: string }[] {
     sections.push({ title: "长期记忆与知识", body: parts.join("\n") });
   }
 
+  if (ctx.graph.neighbors.length > 0) {
+    sections.push({
+      title: "关系图谱（按相关度排序）",
+      body: ctx.graph.neighbors
+        .map(
+          (n) =>
+            `${n.name}（${n.type}，关系：${n.relationLabel ?? "关联"}，强度 ${n.strength}，${n.depth} 跳）`
+        )
+        .join("\n"),
+    });
+  }
+
   if (ctx.relationships.history.length > 0 && ctx.objects.focus) {
     sections.push({
       title: "历史互动",

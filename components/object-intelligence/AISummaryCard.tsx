@@ -3,12 +3,14 @@
 import { useEffect, useMemo, useState } from "react";
 import { LifeObject } from "@/lib/types";
 import { useObjectIntelligenceStore } from "@/stores/objectIntelligenceStore";
+import { useMemoryStore } from "@/stores/memoryStore";
 import {
   objectIntelligenceEngine,
   objectIntelligenceUpdater,
 } from "@/lib/object-intelligence";
+import { ensureGraphSummary, getGraphSummary } from "@/lib/graph";
 import { Card } from "@/components/ui/Card";
-import { MessageCircleHeart, RefreshCw, Sparkles, TrendingUp, AlertTriangle } from "lucide-react";
+import { MessageCircleHeart, RefreshCw, Sparkles, TrendingUp, AlertTriangle, Network } from "lucide-react";
 import { CommunicationDialog } from "./CommunicationDialog";
 import { useTranslation } from "@/lib/useTranslation";
 
@@ -28,6 +30,7 @@ export function AISummaryCard({ object }: AISummaryCardProps) {
   const { t } = useTranslation();
   const stored = useObjectIntelligenceStore((s) => s.profiles[object.id]);
   const profile = stored?.profile;
+  const memories = useMemoryStore((s) => s.memories);
   const [adviceOpen, setAdviceOpen] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -35,6 +38,16 @@ export function AISummaryCard({ object }: AISummaryCardProps) {
   useEffect(() => {
     if (!profile) objectIntelligenceUpdater.ensureProfile(object.id);
   }, [object.id, profile]);
+
+  // Graph summary: cached, refreshed in the background when stale.
+  useEffect(() => {
+    ensureGraphSummary(object.id);
+  }, [object.id]);
+  const graphSummary = useMemo(
+    () => getGraphSummary(object.id),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [object.id, memories]
+  );
 
   const goalInsight = useMemo(
     () => (object.type === "goal" ? objectIntelligenceEngine.getGoalInsight(object) : null),
@@ -104,6 +117,16 @@ export function AISummaryCard({ object }: AISummaryCardProps) {
 
         {profile.summary && (
           <p className="text-sm leading-relaxed text-foreground">{profile.summary}</p>
+        )}
+
+        {graphSummary && (
+          <div className="rounded-lg bg-muted/50 p-3 text-sm">
+            <p className="mb-1 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+              <Network className="h-3.5 w-3.5" />
+              {t("graphSummary") ?? "图谱摘要"}
+            </p>
+            <p className="leading-relaxed text-foreground">{graphSummary}</p>
+          </div>
         )}
 
         {profile.traits.length > 0 && (

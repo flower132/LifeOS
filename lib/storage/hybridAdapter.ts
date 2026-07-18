@@ -22,6 +22,7 @@ import {
 import { AppSettings, StorageAdapter } from "@/lib/storage/types";
 import { Memory as UnifiedMemory } from "@/lib/memory/types";
 import { StoredObjectProfile } from "@/lib/object-intelligence/types";
+import { RelationSuggestion } from "@/lib/graph/types";
 import { localStorageAdapter } from "@/lib/storage/localStorageAdapter";
 import { syncService } from "@/lib/sync/SyncService";
 import { SyncEntity } from "@/lib/sync/types";
@@ -477,6 +478,34 @@ export class HybridStorageAdapter implements StorageAdapter {
   async setObjectProfiles(profiles: StoredObjectProfile[]): Promise<void> {
     await this.local.setObjectProfiles(profiles);
     this.requestSync("objectProfiles");
+  }
+
+  // ---- relation suggestions ------------------------------------------------
+  async getRelationSuggestions(): Promise<RelationSuggestion[]> {
+    return this.local.getRelationSuggestions();
+  }
+  async createRelationSuggestion(
+    suggestion: Omit<RelationSuggestion, "id" | "createdAt" | "updatedAt">
+  ): Promise<RelationSuggestion> {
+    const created = await this.local.createRelationSuggestion(suggestion);
+    this.requestSync("relationSuggestions", created.id);
+    return created;
+  }
+  async updateRelationSuggestion(
+    id: string,
+    updates: Partial<Omit<RelationSuggestion, "id" | "createdAt">>
+  ): Promise<RelationSuggestion> {
+    const updated = await this.local.updateRelationSuggestion(id, updates);
+    this.requestSync("relationSuggestions", id);
+    return updated;
+  }
+  async deleteRelationSuggestion(id: string): Promise<void> {
+    await this.local.deleteRelationSuggestion(id);
+    this.requestSync("relationSuggestions", id);
+  }
+  async setRelationSuggestions(suggestions: RelationSuggestion[]): Promise<void> {
+    await this.local.setRelationSuggestions(suggestions);
+    this.requestSync("relationSuggestions");
   }
 }
 

@@ -52,6 +52,7 @@ import {
   StoredObjectProfile,
   isValidStoredObjectProfile,
 } from "@/lib/object-intelligence/types";
+import { RelationSuggestion, isValidRelationSuggestion } from "@/lib/graph/types";
 import { AppSettings, StorageAdapter } from "./types";
 import {
   getDefaultProperties,
@@ -91,6 +92,8 @@ const KEYS = {
   memories: "lifeos_unified_memories",
   // Object Intelligence（对象智能画像）
   objectProfiles: "lifeos_object_profiles",
+  // Knowledge Graph: Relation Discovery 建议队列
+  relationSuggestions: "lifeos_relation_suggestions",
 };
 
 const DEFAULT_INTELLIGENCE_CACHE: IntelligenceCache = {
@@ -1578,6 +1581,53 @@ export class LocalStorageAdapter implements StorageAdapter {
     const valid = filterValid(profiles, isValidStoredObjectProfile, "objectProfile");
     maybeBackup(KEYS.objectProfiles);
     safeSetItem(KEYS.objectProfiles, valid);
+  }
+
+  // ── Relation Discovery 建议队列 ────────────────────────────────────────────
+  async getRelationSuggestions(): Promise<RelationSuggestion[]> {
+    const items = safeGetItem<unknown[]>(KEYS.relationSuggestions, []);
+    return filterValid(items, isValidRelationSuggestion, "relationSuggestion");
+  }
+
+  async createRelationSuggestion(
+    suggestion: Omit<RelationSuggestion, "id" | "createdAt" | "updatedAt">
+  ): Promise<RelationSuggestion> {
+    const suggestions = await this.getRelationSuggestions();
+    const created: RelationSuggestion = {
+      ...suggestion,
+      id: uuidv4(),
+      createdAt: now(),
+      updatedAt: now(),
+    };
+    maybeBackup(KEYS.relationSuggestions);
+    safeSetItem(KEYS.relationSuggestions, [...suggestions, created]);
+    return created;
+  }
+
+  async updateRelationSuggestion(
+    id: string,
+    updates: Partial<Omit<RelationSuggestion, "id" | "createdAt">>
+  ): Promise<RelationSuggestion> {
+    const suggestions = await this.getRelationSuggestions();
+    const index = suggestions.findIndex((s) => s.id === id);
+    if (index === -1) throw new StorageError("Relation suggestion not found", "validation");
+    const updated: RelationSuggestion = { ...suggestions[index], ...updates, updatedAt: now() };
+    suggestions[index] = updated;
+    maybeBackup(KEYS.relationSuggestions);
+    safeSetItem(KEYS.relationSuggestions, suggestions);
+    return updated;
+  }
+
+  async deleteRelationSuggestion(id: string): Promise<void> {
+    const suggestions = (await this.getRelationSuggestions()).filter((s) => s.id !== id);
+    maybeBackup(KEYS.relationSuggestions);
+    safeSetItem(KEYS.relationSuggestions, suggestions);
+  }
+
+  async setRelationSuggestions(suggestions: RelationSuggestion[]): Promise<void> {
+    const valid = filterValid(suggestions, isValidRelationSuggestion, "relationSuggestion");
+    maybeBackup(KEYS.relationSuggestions);
+    safeSetItem(KEYS.relationSuggestions, valid);
   }
 }
 

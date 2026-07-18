@@ -24,6 +24,7 @@ import {
 import { AccentColorId } from "@/lib/theme/accentColors";
 import { Memory as UnifiedMemory } from "@/lib/memory/types";
 import { StoredObjectProfile } from "@/lib/object-intelligence/types";
+import { RelationSuggestion } from "@/lib/graph/types";
 
 export type DateFormat = "YYYY-MM-DD" | "MM/DD/YYYY" | "DD/MM/YYYY";
 export type TimeFormat = "24h" | "12h";
@@ -181,6 +182,13 @@ export interface StorageAdapter {
   updateObjectProfile(id: string, updates: Partial<Omit<StoredObjectProfile, "id" | "createdAt">>): Promise<StoredObjectProfile>;
   deleteObjectProfile(id: string): Promise<void>;
   setObjectProfiles(profiles: StoredObjectProfile[]): Promise<void>;
+
+  // Knowledge Graph: Relation Discovery 建议队列（用户确认后才写 relations）
+  getRelationSuggestions(): Promise<RelationSuggestion[]>;
+  createRelationSuggestion(s: Omit<RelationSuggestion, "id" | "createdAt" | "updatedAt">): Promise<RelationSuggestion>;
+  updateRelationSuggestion(id: string, updates: Partial<Omit<RelationSuggestion, "id" | "createdAt">>): Promise<RelationSuggestion>;
+  deleteRelationSuggestion(id: string): Promise<void>;
+  setRelationSuggestions(suggestions: RelationSuggestion[]): Promise<void>;
 }
 
 export interface StorageConfig {

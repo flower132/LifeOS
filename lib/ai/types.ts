@@ -66,6 +66,8 @@ export const AITASKS = [
   // Object Intelligence
   "OBJECT_PROFILE",
   "PERSON_ADVICE",
+  // Knowledge Graph Intelligence
+  "GRAPH_SUMMARY",
   // Advisor
   "RELATIONSHIP",
   "WORKSPACE",

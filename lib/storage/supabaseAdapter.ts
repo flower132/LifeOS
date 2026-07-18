@@ -30,6 +30,10 @@ import {
   StoredObjectProfile,
   isValidStoredObjectProfile,
 } from "@/lib/object-intelligence/types";
+import {
+  RelationSuggestion,
+  isValidRelationSuggestion,
+} from "@/lib/graph/types";
 
 const toISO = (d: unknown) =>
   d ? new Date(d as string | number).toISOString() : new Date().toISOString();
@@ -249,6 +253,21 @@ function mapTodayStory(r: DbRow): IntelligenceTodayStory {
 }
 
 // ---------- Long-term Memory mappers ----------
+function mapRelationSuggestion(r: DbRow): RelationSuggestion {
+  return {
+    id: getString(r, "id"),
+    fromObjectId: getString(r, "from_object_id"),
+    toObjectId: getString(r, "to_object_id"),
+    type: getString(r, "type") as RelationSuggestion["type"],
+    label: getOptionalString(r, "label"),
+    confidence: typeof r.confidence === "number" ? r.confidence : 0,
+    sourceMemoryId: getOptionalString(r, "source_memory_id"),
+    status: (getString(r, "status") as RelationSuggestion["status"]) || "pending",
+    createdAt: toISO(r.created_at),
+    updatedAt: toISO(r.updated_at),
+  };
+}
+
 function mapObjectProfile(r: DbRow): StoredObjectProfile {
   return {
     id: getString(r, "id"),
@@ -408,12 +427,13 @@ export class SupabaseAdapter implements StorageAdapter {
     decisions: DecisionMemory[];
     memories: UnifiedMemory[];
     objectProfiles: StoredObjectProfile[];
+    relationSuggestions: RelationSuggestion[];
     _loaded: boolean;
   } = { objects: [], notes: [], relations: [], tags: [], templates: [], settings: {}, aiAnalysisHistory: [], intelligenceCache: emptyIntelligenceCache(), intelligenceMeta: {
     lastFullAnalysisAt: null, lastIncrementalAnalysisAt: null, analysisVersion: "1.0.0", pendingUpdate: false,
   }, todayStories: [], companionMeta: {
     lastFocusDate: null, lastReminderDate: null, lastReflectionDate: null, lastWeeklyWeekKey: null, lastMonthlyMonthKey: null, consecutiveRejections: 0, lastAppearanceAt: null, appearanceCountToday: 0,
-  }, moments: [], chapters: [], memoryRelations: [], anniversaries: [], highlights: [], decisions: [], memories: [], objectProfiles: [], _loaded: false };
+  }, moments: [], chapters: [], memoryRelations: [], anniversaries: [], highlights: [], decisions: [], memories: [], objectProfiles: [], relationSuggestions: [], _loaded: false };
 
   private _initPromise: Promise<void> | null = null;
 
@@ -431,7 +451,7 @@ export class SupabaseAdapter implements StorageAdapter {
               lastFullAnalysisAt: null, lastIncrementalAnalysisAt: null, analysisVersion: "1.0.0", pendingUpdate: false,
             }, todayStories: [], companionMeta: {
               lastFocusDate: null, lastReminderDate: null, lastReflectionDate: null, lastWeeklyWeekKey: null, lastMonthlyMonthKey: null, consecutiveRejections: 0, lastAppearanceAt: null, appearanceCountToday: 0,
-            }, moments: [], chapters: [], memoryRelations: [], anniversaries: [], highlights: [], decisions: [], memories: [], objectProfiles: [], _loaded: false };
+            }, moments: [], chapters: [], memoryRelations: [], anniversaries: [], highlights: [], decisions: [], memories: [], objectProfiles: [], relationSuggestions: [], _loaded: false };
             resetSupabase();
           }
         });
@@ -464,7 +484,7 @@ export class SupabaseAdapter implements StorageAdapter {
     if (!uid) return;
 
     const client = getSupabase();
-    const [objs, notes, rels, tags, tpls, sets, history, intelCache, intelMeta, stories, companionMeta, moments, chapters, memoryRelations, anniversaries, highlights, decisions, memories, objectProfiles] = await Promise.all([
+    const [objs, notes, rels, tags, tpls, sets, history, intelCache, intelMeta, stories, companionMeta, moments, chapters, memoryRelations, anniversaries, highlights, decisions, memories, objectProfiles, relationSuggestions] = await Promise.all([
       client.from("objects").select("*").eq("user_id", uid),
       client.from("notes").select("*").eq("user_id", uid),
       client.from("relations").select("*").eq("user_id", uid),
@@ -489,6 +509,9 @@ export class SupabaseAdapter implements StorageAdapter {
       // Tolerant: object_profiles table may not exist yet either.
       client.from("object_profiles").select("*").eq("user_id", uid)
         .then((r) => r, () => ({ data: [] as never[] })),
+      // Tolerant: relation_suggestions table may not exist yet either.
+      client.from("relation_suggestions").select("*").eq("user_id", uid)
+        .then((r) => r, () => ({ data: [] as never[] })),
     ]);
 
     this.cache.objects    = (objs.data  || []).map(mapObject);
@@ -510,6 +533,7 @@ export class SupabaseAdapter implements StorageAdapter {
     this.cache.decisions = ((decisions.data || []) as DbRow[]).map(mapDecision).filter(isValidDecisionMemory);
     this.cache.memories = ((memories.data || []) as DbRow[]).map(mapMemory).filter(isValidMemory);
     this.cache.objectProfiles = ((objectProfiles.data || []) as DbRow[]).map(mapObjectProfile).filter(isValidStoredObjectProfile);
+    this.cache.relationSuggestions = ((relationSuggestions.data || []) as DbRow[]).map(mapRelationSuggestion).filter(isValidRelationSuggestion);
   }
 
   // ---------- version ----------
@@ -2131,6 +2155,117 @@ export class SupabaseAdapter implements StorageAdapter {
     }, undefined);
     this.cache.objectProfiles = profiles;
   }
+
+  // ---------- Knowledge Graph: Relation Discovery 建议队列 ----------
+  //
+  // Requires this table in Supabase (Local Mode works without it):
+  //
+  //   create table relation_suggestions (
+  //     id uuid primary key,
+  //     user_id uuid not null,
+  //     from_object_id uuid not null,
+  //     to_object_id uuid not null,
+  //     type text not null,
+  //     label text,
+  //     confidence double precision not null default 0,
+  //     source_memory_id uuid,
+  //     status text not null default 'pending',
+  //     created_at timestamptz not null default now(),
+  //     updated_at timestamptz not null default now()
+  //   );
+  //   alter table relation_suggestions enable row level security;
+  //   create policy "relation_suggestions_owner" on relation_suggestions for all
+  //     using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+  async getRelationSuggestions(): Promise<RelationSuggestion[]> {
+    await this.init();
+    return [...this.cache.relationSuggestions];
+  }
+
+  async createRelationSuggestion(
+    suggestion: Omit<RelationSuggestion, "id" | "createdAt" | "updatedAt">
+  ): Promise<RelationSuggestion> {
+    await this.init();
+    const uid = await getUid();
+    if (!uid) throw new Error("Not authenticated");
+    const now = new Date().toISOString();
+    const created: RelationSuggestion = { ...suggestion, id: generateId(), createdAt: now, updatedAt: now };
+    await this.memoriesCall(async (client) => {
+      const { error } = await client.from("relation_suggestions").insert(suggestionToRow(created, uid));
+      if (error) throw error;
+    }, undefined);
+    this.cache.relationSuggestions = [...this.cache.relationSuggestions, created];
+    return created;
+  }
+
+  async updateRelationSuggestion(
+    id: string,
+    updates: Partial<Omit<RelationSuggestion, "id" | "createdAt">>
+  ): Promise<RelationSuggestion> {
+    await this.init();
+    const uid = await getUid();
+    if (!uid) throw new Error("Not authenticated");
+    const existing = this.cache.relationSuggestions.find((s) => s.id === id);
+    if (!existing) throw new Error("Relation suggestion not found");
+    const updated: RelationSuggestion = { ...existing, ...updates, updatedAt: new Date().toISOString() };
+    await this.memoriesCall(async (client) => {
+      const { error } = await client
+        .from("relation_suggestions")
+        .update(suggestionToRow(updated, uid))
+        .eq("id", id)
+        .eq("user_id", uid);
+      if (error) throw error;
+    }, undefined);
+    this.cache.relationSuggestions = this.cache.relationSuggestions.map((s) => (s.id === id ? updated : s));
+    return updated;
+  }
+
+  async deleteRelationSuggestion(id: string): Promise<void> {
+    await this.init();
+    const uid = await getUid();
+    if (uid) {
+      await this.memoriesCall(async (client) => {
+        await client.from("relation_suggestions").delete().eq("id", id).eq("user_id", uid);
+      }, undefined);
+    }
+    this.cache.relationSuggestions = this.cache.relationSuggestions.filter((s) => s.id !== id);
+  }
+
+  async setRelationSuggestions(suggestions: RelationSuggestion[]): Promise<void> {
+    await this.init();
+    const uid = await getUid();
+    if (!uid) throw new Error("Not authenticated");
+    await this.memoriesCall(async (client) => {
+      const currentIds = new Set(this.cache.relationSuggestions.map((s) => s.id));
+      const nextIds = new Set(suggestions.map((s) => s.id));
+      const idsToDelete = Array.from(currentIds).filter((id) => !nextIds.has(id));
+      if (idsToDelete.length > 0) {
+        await client.from("relation_suggestions").delete().in("id", idsToDelete).eq("user_id", uid);
+      }
+      const rows = suggestions.map((s) => suggestionToRow(s, uid));
+      if (rows.length > 0) {
+        const { error } = await client.from("relation_suggestions").upsert(rows, { onConflict: "id" });
+        if (error) throw error;
+      }
+    }, undefined);
+    this.cache.relationSuggestions = suggestions;
+  }
+}
+
+function suggestionToRow(suggestion: RelationSuggestion, uid: string): DbRow {
+  return {
+    id: suggestion.id,
+    user_id: uid,
+    from_object_id: suggestion.fromObjectId,
+    to_object_id: suggestion.toObjectId,
+    type: suggestion.type,
+    label: suggestion.label ?? null,
+    confidence: suggestion.confidence,
+    source_memory_id: suggestion.sourceMemoryId ?? null,
+    status: suggestion.status,
+    created_at: suggestion.createdAt,
+    updated_at: suggestion.updatedAt,
+  };
 }
 
 function memoryToRow(memory: UnifiedMemory, uid: string): DbRow {

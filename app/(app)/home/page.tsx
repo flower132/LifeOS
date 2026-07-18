@@ -16,6 +16,7 @@ import { TodayFocusCard } from "./TodayFocusCard";
 import { ReflectionCard } from "./ReflectionCard";
 import { ReminderCard } from "./ReminderCard";
 import { SelfSummaryCard } from "./SelfSummaryCard";
+import { GraphInsightCard } from "./GraphInsightCard";
 import { useTranslation } from "@/lib/useTranslation";
 import { UserAvatar } from "@/components/user/UserAvatar";
 import { WorkspaceLayout } from "@/components/layout/WorkspaceLayout";
@@ -70,6 +71,8 @@ export default function HomePage() {
         <ReflectionCard />
 
         <ReminderCard />
+
+        <GraphInsightCard />
 
         <SelfSummaryCard />
 

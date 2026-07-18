@@ -15,6 +15,7 @@ import {
 import { AppSettings } from "@/lib/storage/types";
 import { Memory as UnifiedMemory } from "@/lib/memory/types";
 import { StoredObjectProfile } from "@/lib/object-intelligence/types";
+import { RelationSuggestion } from "@/lib/graph/types";
 
 export type SyncEntity =
   | "objects"
@@ -31,7 +32,8 @@ export type SyncEntity =
   | "highlights"
   | "decisions"
   | "memories"
-  | "objectProfiles";
+  | "objectProfiles"
+  | "relationSuggestions";
 
 export type SyncStatus = "idle" | "syncing" | "synced" | "pending" | "error";
 
@@ -53,6 +55,7 @@ export interface SyncSnapshot {
   decisions: DecisionMemory[];
   memories: UnifiedMemory[];
   objectProfiles: StoredObjectProfile[];
+  relationSuggestions: RelationSuggestion[];
 }
 
 export interface QueueItem {
