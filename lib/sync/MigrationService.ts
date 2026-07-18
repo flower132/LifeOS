@@ -54,6 +54,7 @@ export async function buildLocalSnapshot(): Promise<SyncSnapshot> {
     highlights,
     decisions,
     memories,
+    objectProfiles,
   ] = await Promise.all([
     adapter.getObjects(),
     adapter.getNotes(),
@@ -69,6 +70,7 @@ export async function buildLocalSnapshot(): Promise<SyncSnapshot> {
     adapter.getHighlights(),
     adapter.getDecisions(),
     adapter.getMemories(),
+    adapter.getObjectProfiles(),
   ]);
   return {
     objects,
@@ -85,6 +87,7 @@ export async function buildLocalSnapshot(): Promise<SyncSnapshot> {
     highlights,
     decisions,
     memories,
+    objectProfiles,
   };
 }
 
@@ -106,6 +109,7 @@ export async function buildRemoteSnapshot(): Promise<SyncSnapshot> {
     highlights,
     decisions,
     memories,
+    objectProfiles,
   ] = await Promise.all([
     adapter.getObjects(),
     adapter.getNotes(),
@@ -121,6 +125,7 @@ export async function buildRemoteSnapshot(): Promise<SyncSnapshot> {
     adapter.getHighlights(),
     adapter.getDecisions(),
     adapter.getMemories(),
+    adapter.getObjectProfiles(),
   ]);
   return {
     objects,
@@ -137,6 +142,7 @@ export async function buildRemoteSnapshot(): Promise<SyncSnapshot> {
     highlights,
     decisions,
     memories,
+    objectProfiles,
   };
 }
 
@@ -256,6 +262,7 @@ export async function resolveConflict(strategy: ConflictStrategy): Promise<void>
       adapter.setHighlights(merged.highlights),
       adapter.setDecisions(merged.decisions),
       adapter.setMemories(merged.memories),
+      adapter.setObjectProfiles(merged.objectProfiles),
     ]);
 
     await localStorageAdapter.setObjects(merged.objects);
@@ -272,6 +279,7 @@ export async function resolveConflict(strategy: ConflictStrategy): Promise<void>
     await localStorageAdapter.setHighlights(merged.highlights);
     await localStorageAdapter.setDecisions(merged.decisions);
     await localStorageAdapter.setMemories(merged.memories);
+    await localStorageAdapter.setObjectProfiles(merged.objectProfiles);
 
     syncService.setConflictStrategy("merge");
   }

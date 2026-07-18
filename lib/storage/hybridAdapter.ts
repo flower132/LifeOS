@@ -21,6 +21,7 @@ import {
 } from "@/lib/types";
 import { AppSettings, StorageAdapter } from "@/lib/storage/types";
 import { Memory as UnifiedMemory } from "@/lib/memory/types";
+import { StoredObjectProfile } from "@/lib/object-intelligence/types";
 import { localStorageAdapter } from "@/lib/storage/localStorageAdapter";
 import { syncService } from "@/lib/sync/SyncService";
 import { SyncEntity } from "@/lib/sync/types";
@@ -440,6 +441,34 @@ export class HybridStorageAdapter implements StorageAdapter {
   async setMemories(memories: UnifiedMemory[]): Promise<void> {
     await this.local.setMemories(memories);
     this.requestSync("memories");
+  }
+
+  // ---- object profiles -----------------------------------------------------
+  async getObjectProfiles(): Promise<StoredObjectProfile[]> {
+    return this.local.getObjectProfiles();
+  }
+  async createObjectProfile(
+    profile: Omit<StoredObjectProfile, "id" | "createdAt" | "updatedAt">
+  ): Promise<StoredObjectProfile> {
+    const created = await this.local.createObjectProfile(profile);
+    this.requestSync("objectProfiles", created.id);
+    return created;
+  }
+  async updateObjectProfile(
+    id: string,
+    updates: Partial<Omit<StoredObjectProfile, "id" | "createdAt">>
+  ): Promise<StoredObjectProfile> {
+    const updated = await this.local.updateObjectProfile(id, updates);
+    this.requestSync("objectProfiles", id);
+    return updated;
+  }
+  async deleteObjectProfile(id: string): Promise<void> {
+    await this.local.deleteObjectProfile(id);
+    this.requestSync("objectProfiles", id);
+  }
+  async setObjectProfiles(profiles: StoredObjectProfile[]): Promise<void> {
+    await this.local.setObjectProfiles(profiles);
+    this.requestSync("objectProfiles");
   }
 }
 

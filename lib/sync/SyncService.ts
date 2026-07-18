@@ -231,6 +231,7 @@ class SyncServiceImpl implements SyncService {
       highlights,
       decisions,
       memories,
+      objectProfiles,
     ] = await Promise.all([
       adapter.getObjects(),
       adapter.getNotes(),
@@ -246,6 +247,7 @@ class SyncServiceImpl implements SyncService {
       adapter.getHighlights(),
       adapter.getDecisions(),
       adapter.getMemories(),
+      adapter.getObjectProfiles(),
     ]);
     return {
       objects,
@@ -262,6 +264,7 @@ class SyncServiceImpl implements SyncService {
       highlights,
       decisions,
       memories,
+      objectProfiles,
     };
   }
 
@@ -283,6 +286,7 @@ class SyncServiceImpl implements SyncService {
       highlights,
       decisions,
       memories,
+      objectProfiles,
     ] = await Promise.all([
       adapter.getObjects(),
       adapter.getNotes(),
@@ -298,6 +302,7 @@ class SyncServiceImpl implements SyncService {
       adapter.getHighlights(),
       adapter.getDecisions(),
       adapter.getMemories(),
+      adapter.getObjectProfiles(),
     ]);
     return {
       objects,
@@ -314,6 +319,7 @@ class SyncServiceImpl implements SyncService {
       highlights,
       decisions,
       memories,
+      objectProfiles,
     };
   }
 
@@ -335,6 +341,7 @@ class SyncServiceImpl implements SyncService {
       adapter.setHighlights(snapshot.highlights),
       adapter.setDecisions(snapshot.decisions),
       adapter.setMemories(snapshot.memories),
+      adapter.setObjectProfiles(snapshot.objectProfiles),
     ]);
   }
 
@@ -355,6 +362,7 @@ class SyncServiceImpl implements SyncService {
       adapter.setHighlights(snapshot.highlights),
       adapter.setDecisions(snapshot.decisions),
       adapter.setMemories(snapshot.memories),
+      adapter.setObjectProfiles(snapshot.objectProfiles),
     ]);
   }
 }

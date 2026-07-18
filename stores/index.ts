@@ -7,6 +7,7 @@ import { useSettingsStore } from "./settingsStore";
 import { useIntelligenceStore } from "./intelligenceStore";
 import { useLongTermMemoryStore } from "./longTermMemoryStore";
 import { useMemoryStore } from "./memoryStore";
+import { useObjectIntelligenceStore } from "./objectIntelligenceStore";
 
 /**
  * Rehydrate all stores from persistent storage.
@@ -23,6 +24,7 @@ export async function hydrateStores(): Promise<void> {
     useIntelligenceStore.getState().hydrate(),
     useLongTermMemoryStore.getState().hydrate(),
     useMemoryStore.getState().hydrate(),
+    useObjectIntelligenceStore.getState().hydrate(),
   ]);
 }
 

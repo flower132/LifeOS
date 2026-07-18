@@ -26,6 +26,10 @@ import {
   Memory as UnifiedMemory,
   isValidMemory,
 } from "@/lib/memory/types";
+import {
+  StoredObjectProfile,
+  isValidStoredObjectProfile,
+} from "@/lib/object-intelligence/types";
 
 const toISO = (d: unknown) =>
   d ? new Date(d as string | number).toISOString() : new Date().toISOString();
@@ -234,6 +238,16 @@ function mapTodayStory(r: DbRow): IntelligenceTodayStory {
 }
 
 // ---------- Long-term Memory mappers ----------
+function mapObjectProfile(r: DbRow): StoredObjectProfile {
+  return {
+    id: getString(r, "id"),
+    objectId: getString(r, "object_id"),
+    profile: (r.profile ?? {}) as StoredObjectProfile["profile"],
+    createdAt: toISO(r.created_at),
+    updatedAt: toISO(r.updated_at),
+  };
+}
+
 function mapMemory(r: DbRow): UnifiedMemory {
   return {
     id: getString(r, "id"),
@@ -382,12 +396,13 @@ export class SupabaseAdapter implements StorageAdapter {
     highlights: Highlight[];
     decisions: DecisionMemory[];
     memories: UnifiedMemory[];
+    objectProfiles: StoredObjectProfile[];
     _loaded: boolean;
   } = { objects: [], notes: [], relations: [], tags: [], templates: [], settings: {}, aiAnalysisHistory: [], intelligenceCache: emptyIntelligenceCache(), intelligenceMeta: {
     lastFullAnalysisAt: null, lastIncrementalAnalysisAt: null, analysisVersion: "1.0.0", pendingUpdate: false,
   }, todayStories: [], companionMeta: {
     lastFocusDate: null, lastReminderDate: null, lastReflectionDate: null, lastWeeklyWeekKey: null, lastMonthlyMonthKey: null, consecutiveRejections: 0, lastAppearanceAt: null, appearanceCountToday: 0,
-  }, moments: [], chapters: [], memoryRelations: [], anniversaries: [], highlights: [], decisions: [], memories: [], _loaded: false };
+  }, moments: [], chapters: [], memoryRelations: [], anniversaries: [], highlights: [], decisions: [], memories: [], objectProfiles: [], _loaded: false };
 
   private _initPromise: Promise<void> | null = null;
 
@@ -405,7 +420,7 @@ export class SupabaseAdapter implements StorageAdapter {
               lastFullAnalysisAt: null, lastIncrementalAnalysisAt: null, analysisVersion: "1.0.0", pendingUpdate: false,
             }, todayStories: [], companionMeta: {
               lastFocusDate: null, lastReminderDate: null, lastReflectionDate: null, lastWeeklyWeekKey: null, lastMonthlyMonthKey: null, consecutiveRejections: 0, lastAppearanceAt: null, appearanceCountToday: 0,
-            }, moments: [], chapters: [], memoryRelations: [], anniversaries: [], highlights: [], decisions: [], memories: [], _loaded: false };
+            }, moments: [], chapters: [], memoryRelations: [], anniversaries: [], highlights: [], decisions: [], memories: [], objectProfiles: [], _loaded: false };
             resetSupabase();
           }
         });
@@ -438,7 +453,7 @@ export class SupabaseAdapter implements StorageAdapter {
     if (!uid) return;
 
     const client = getSupabase();
-    const [objs, notes, rels, tags, tpls, sets, history, intelCache, intelMeta, stories, companionMeta, moments, chapters, memoryRelations, anniversaries, highlights, decisions, memories] = await Promise.all([
+    const [objs, notes, rels, tags, tpls, sets, history, intelCache, intelMeta, stories, companionMeta, moments, chapters, memoryRelations, anniversaries, highlights, decisions, memories, objectProfiles] = await Promise.all([
       client.from("objects").select("*").eq("user_id", uid),
       client.from("notes").select("*").eq("user_id", uid),
       client.from("relations").select("*").eq("user_id", uid),
@@ -460,6 +475,9 @@ export class SupabaseAdapter implements StorageAdapter {
       // note above the memories section) — degrade to empty, never break init.
       client.from("memories").select("*").eq("user_id", uid)
         .then((r) => r, () => ({ data: [] as never[] })),
+      // Tolerant: object_profiles table may not exist yet either.
+      client.from("object_profiles").select("*").eq("user_id", uid)
+        .then((r) => r, () => ({ data: [] as never[] })),
     ]);
 
     this.cache.objects    = (objs.data  || []).map(mapObject);
@@ -480,6 +498,7 @@ export class SupabaseAdapter implements StorageAdapter {
     this.cache.highlights = ((highlights.data || []) as DbRow[]).map(mapHighlight).filter(isValidHighlight);
     this.cache.decisions = ((decisions.data || []) as DbRow[]).map(mapDecision).filter(isValidDecisionMemory);
     this.cache.memories = ((memories.data || []) as DbRow[]).map(mapMemory).filter(isValidMemory);
+    this.cache.objectProfiles = ((objectProfiles.data || []) as DbRow[]).map(mapObjectProfile).filter(isValidStoredObjectProfile);
   }
 
   // ---------- version ----------
@@ -1942,6 +1961,104 @@ export class SupabaseAdapter implements StorageAdapter {
       }
     }, undefined);
     this.cache.memories = memories;
+  }
+
+  // ---------- Object Intelligence（对象智能画像） ----------
+  //
+  // Requires this table in Supabase (Local Mode works without it; the
+  // adapter degrades gracefully when it is missing):
+  //
+  //   create table object_profiles (
+  //     id uuid primary key,
+  //     user_id uuid not null,
+  //     object_id uuid not null,
+  //     profile jsonb not null,
+  //     created_at timestamptz not null default now(),
+  //     updated_at timestamptz not null default now(),
+  //     unique (user_id, object_id)
+  //   );
+  //   alter table object_profiles enable row level security;
+  //   create policy "object_profiles_owner" on object_profiles for all
+  //     using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+  async getObjectProfiles(): Promise<StoredObjectProfile[]> {
+    await this.init();
+    return [...this.cache.objectProfiles];
+  }
+
+  async createObjectProfile(
+    profile: Omit<StoredObjectProfile, "id" | "createdAt" | "updatedAt">
+  ): Promise<StoredObjectProfile> {
+    await this.init();
+    const uid = await getUid();
+    if (!uid) throw new Error("Not authenticated");
+    const now = new Date().toISOString();
+    const created: StoredObjectProfile = { ...profile, id: generateId(), createdAt: now, updatedAt: now };
+    await this.memoriesCall(async (client) => {
+      const { error } = await client.from("object_profiles").insert({
+        id: created.id, user_id: uid, object_id: created.objectId,
+        profile: created.profile, created_at: created.createdAt, updated_at: created.updatedAt,
+      });
+      if (error) throw error;
+    }, undefined);
+    this.cache.objectProfiles = [...this.cache.objectProfiles, created];
+    return created;
+  }
+
+  async updateObjectProfile(
+    id: string,
+    updates: Partial<Omit<StoredObjectProfile, "id" | "createdAt">>
+  ): Promise<StoredObjectProfile> {
+    await this.init();
+    const uid = await getUid();
+    if (!uid) throw new Error("Not authenticated");
+    const existing = this.cache.objectProfiles.find((p) => p.id === id);
+    if (!existing) throw new Error("Object profile not found");
+    const updated: StoredObjectProfile = { ...existing, ...updates, updatedAt: new Date().toISOString() };
+    await this.memoriesCall(async (client) => {
+      const { error } = await client
+        .from("object_profiles")
+        .update({ object_id: updated.objectId, profile: updated.profile, updated_at: updated.updatedAt })
+        .eq("id", id)
+        .eq("user_id", uid);
+      if (error) throw error;
+    }, undefined);
+    this.cache.objectProfiles = this.cache.objectProfiles.map((p) => (p.id === id ? updated : p));
+    return updated;
+  }
+
+  async deleteObjectProfile(id: string): Promise<void> {
+    await this.init();
+    const uid = await getUid();
+    if (uid) {
+      await this.memoriesCall(async (client) => {
+        await client.from("object_profiles").delete().eq("id", id).eq("user_id", uid);
+      }, undefined);
+    }
+    this.cache.objectProfiles = this.cache.objectProfiles.filter((p) => p.id !== id);
+  }
+
+  async setObjectProfiles(profiles: StoredObjectProfile[]): Promise<void> {
+    await this.init();
+    const uid = await getUid();
+    if (!uid) throw new Error("Not authenticated");
+    await this.memoriesCall(async (client) => {
+      const currentIds = new Set(this.cache.objectProfiles.map((p) => p.id));
+      const nextIds = new Set(profiles.map((p) => p.id));
+      const idsToDelete = Array.from(currentIds).filter((id) => !nextIds.has(id));
+      if (idsToDelete.length > 0) {
+        await client.from("object_profiles").delete().in("id", idsToDelete).eq("user_id", uid);
+      }
+      const rows = profiles.map((p) => ({
+        id: p.id, user_id: uid, object_id: p.objectId,
+        profile: p.profile, created_at: p.createdAt, updated_at: p.updatedAt,
+      }));
+      if (rows.length > 0) {
+        const { error } = await client.from("object_profiles").upsert(rows, { onConflict: "id" });
+        if (error) throw error;
+      }
+    }, undefined);
+    this.cache.objectProfiles = profiles;
   }
 }
 

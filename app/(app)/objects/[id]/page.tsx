@@ -21,6 +21,7 @@ import { MemoriesTab } from "./tabs/MemoriesTab";
 import { HistoryTab } from "./tabs/HistoryTab";
 import { GrowthTab } from "./tabs/GrowthTab";
 import { isAIProfileSupported } from "@/lib/ai/objectIntelligence/profiles";
+import { AISummaryCard } from "@/components/object-intelligence/AISummaryCard";
 import { SkeletonBlock, SkeletonText } from "@/components/ui/Skeleton";
 
 type DetailTab = "overview" | "aiProfile" | "aiInsights" | "aiSuggestions" | "memories" | "history" | "growth";
@@ -155,6 +156,8 @@ export default function ObjectDetailPage() {
       maxWidth="4xl"
       contentClassName="px-6 py-6"
     >
+      <AISummaryCard object={object} />
+
       <nav className="mb-8 border-b border-border">
         <ul className="flex gap-1 overflow-x-auto">
           {tabs.map((tab) => {

@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { Note } from "@/lib/types";
 import { storage } from "@/lib/storage";
 import { memoryService } from "@/lib/memory";
+import { objectIntelligenceUpdater } from "@/lib/object-intelligence";
 import { subscribe } from "./storeEvents";
 
 interface NoteState {
@@ -51,7 +52,10 @@ export const useNoteStore = create<NoteState>((set, get) => {
         set((state) => ({ notes: [created, ...state.notes], error: null }));
         // Memory & Knowledge Layer: fire-and-forget pipeline (extract → link
         // → importance → persist). Never blocks or breaks note saving.
-        void memoryService.ingestNote(created);
+        void memoryService.ingestNote(created).then((memory) => {
+          // Object Intelligence: mark linked objects for background update.
+          if (memory) objectIntelligenceUpdater.notifyMemory(memory);
+        });
         return created;
       } catch (err) {
         const message =

@@ -63,6 +63,9 @@ export const AITASKS = [
   "MEMORY_UNDERSTANDING",
   // Memory & Knowledge Layer
   "MEMORY_EXTRACT",
+  // Object Intelligence
+  "OBJECT_PROFILE",
+  "PERSON_ADVICE",
   // Advisor
   "RELATIONSHIP",
   "WORKSPACE",

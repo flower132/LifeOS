@@ -74,6 +74,7 @@ const STORAGE_METHODS: (keyof StorageAdapter)[] = [
   "getHighlights", "createHighlight", "deleteHighlight", "setHighlights",
   "getDecisions", "createDecision", "updateDecision", "deleteDecision", "setDecisions",
   "getMemories", "createMemory", "updateMemory", "deleteMemory", "setMemories",
+  "getObjectProfiles", "createObjectProfile", "updateObjectProfile", "deleteObjectProfile", "setObjectProfiles",
 ];
 
 const storageProxy = {} as StorageAdapter;

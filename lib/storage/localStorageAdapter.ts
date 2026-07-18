@@ -48,6 +48,10 @@ import {
   Memory as UnifiedMemory,
   isValidMemory,
 } from "@/lib/memory/types";
+import {
+  StoredObjectProfile,
+  isValidStoredObjectProfile,
+} from "@/lib/object-intelligence/types";
 import { AppSettings, StorageAdapter } from "./types";
 import {
   getDefaultProperties,
@@ -85,6 +89,8 @@ const KEYS = {
   decisions: "lifeos_decisions",
   // Unified Memory（记忆与知识层）
   memories: "lifeos_unified_memories",
+  // Object Intelligence（对象智能画像）
+  objectProfiles: "lifeos_object_profiles",
 };
 
 const DEFAULT_INTELLIGENCE_CACHE: IntelligenceCache = {
@@ -1511,6 +1517,53 @@ export class LocalStorageAdapter implements StorageAdapter {
     const valid = filterValid(memories, isValidMemory, "memory");
     maybeBackup(KEYS.memories);
     safeSetItem(KEYS.memories, valid);
+  }
+
+  // ── Object Intelligence（对象智能画像）────────────────────────────────────
+  async getObjectProfiles(): Promise<StoredObjectProfile[]> {
+    const items = safeGetItem<unknown[]>(KEYS.objectProfiles, []);
+    return filterValid(items, isValidStoredObjectProfile, "objectProfile");
+  }
+
+  async createObjectProfile(
+    profile: Omit<StoredObjectProfile, "id" | "createdAt" | "updatedAt">
+  ): Promise<StoredObjectProfile> {
+    const profiles = await this.getObjectProfiles();
+    const created: StoredObjectProfile = {
+      ...profile,
+      id: uuidv4(),
+      createdAt: now(),
+      updatedAt: now(),
+    };
+    maybeBackup(KEYS.objectProfiles);
+    safeSetItem(KEYS.objectProfiles, [...profiles, created]);
+    return created;
+  }
+
+  async updateObjectProfile(
+    id: string,
+    updates: Partial<Omit<StoredObjectProfile, "id" | "createdAt">>
+  ): Promise<StoredObjectProfile> {
+    const profiles = await this.getObjectProfiles();
+    const index = profiles.findIndex((p) => p.id === id);
+    if (index === -1) throw new StorageError("Object profile not found", "validation");
+    const updated: StoredObjectProfile = { ...profiles[index], ...updates, updatedAt: now() };
+    profiles[index] = updated;
+    maybeBackup(KEYS.objectProfiles);
+    safeSetItem(KEYS.objectProfiles, profiles);
+    return updated;
+  }
+
+  async deleteObjectProfile(id: string): Promise<void> {
+    const profiles = (await this.getObjectProfiles()).filter((p) => p.id !== id);
+    maybeBackup(KEYS.objectProfiles);
+    safeSetItem(KEYS.objectProfiles, profiles);
+  }
+
+  async setObjectProfiles(profiles: StoredObjectProfile[]): Promise<void> {
+    const valid = filterValid(profiles, isValidStoredObjectProfile, "objectProfile");
+    maybeBackup(KEYS.objectProfiles);
+    safeSetItem(KEYS.objectProfiles, valid);
   }
 }
 

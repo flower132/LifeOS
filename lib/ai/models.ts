@@ -174,6 +174,8 @@ export const TASK_ROUTING: Record<AITask, RouteRule> = {
   TODAY_STORY: { model: "deepseek-chat", temperature: 0.5, maxTokens: 2048 },
   MEMORY_UNDERSTANDING: { model: "deepseek-chat", temperature: 0.2, maxTokens: 2048 },
   MEMORY_EXTRACT: { model: "deepseek-chat", temperature: 0.1, maxTokens: 2048 },
+  OBJECT_PROFILE: { model: "deepseek-chat", temperature: 0.3, maxTokens: 4096 },
+  PERSON_ADVICE: { model: "deepseek-chat", temperature: 0.4, maxTokens: 4096 },
   RELATIONSHIP: { model: "deepseek-chat", temperature: 0.4, maxTokens: 4096 },
   WORKSPACE: { model: "deepseek-chat", temperature: 0.4, maxTokens: 2048 },
   // Reserved tasks — routed, but no call sites yet.
@@ -206,6 +208,8 @@ export const TASK_METHOD: Record<
   TODAY_STORY: "chat",
   MEMORY_UNDERSTANDING: "analyze",
   MEMORY_EXTRACT: "extract",
+  OBJECT_PROFILE: "analyze",
+  PERSON_ADVICE: "analyze",
   RELATIONSHIP: "analyze",
   WORKSPACE: "analyze",
   CHAT: "chat",

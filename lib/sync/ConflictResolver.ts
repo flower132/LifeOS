@@ -14,6 +14,7 @@ import {
 } from "@/lib/types";
 import { AppSettings } from "@/lib/storage/types";
 import { Memory as UnifiedMemory } from "@/lib/memory/types";
+import { StoredObjectProfile } from "@/lib/object-intelligence/types";
 import {
   ConflictStrategy,
   MergeResult,
@@ -155,6 +156,7 @@ export function mergeSnapshots(
   const highlightsMerge = mergeList<Highlight>("highlights", local.highlights, remote.highlights);
   const decisionsMerge = mergeList<DecisionMemory>("decisions", local.decisions, remote.decisions);
   const memoriesMerge = mergeList<UnifiedMemory>("memories", local.memories, remote.memories);
+  const objectProfilesMerge = mergeList<StoredObjectProfile>("objectProfiles", local.objectProfiles, remote.objectProfiles);
 
   const snapshot: SyncSnapshot = {
     objects: objectsMerge.merged,
@@ -171,6 +173,7 @@ export function mergeSnapshots(
     highlights: highlightsMerge.merged,
     decisions: decisionsMerge.merged,
     memories: memoriesMerge.merged,
+    objectProfiles: objectProfilesMerge.merged,
   };
 
   const keptLocalCount =

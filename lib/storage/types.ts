@@ -23,6 +23,7 @@ import {
 
 import { AccentColorId } from "@/lib/theme/accentColors";
 import { Memory as UnifiedMemory } from "@/lib/memory/types";
+import { StoredObjectProfile } from "@/lib/object-intelligence/types";
 
 export type DateFormat = "YYYY-MM-DD" | "MM/DD/YYYY" | "DD/MM/YYYY";
 export type TimeFormat = "24h" | "12h";
@@ -169,6 +170,13 @@ export interface StorageAdapter {
   updateMemory(id: string, updates: Partial<Omit<UnifiedMemory, "id" | "createdAt">>): Promise<UnifiedMemory>;
   deleteMemory(id: string): Promise<void>;
   setMemories(memories: UnifiedMemory[]): Promise<void>;
+
+  // Object Intelligence（对象智能画像，每对象一条，objectId 唯一）
+  getObjectProfiles(): Promise<StoredObjectProfile[]>;
+  createObjectProfile(profile: Omit<StoredObjectProfile, "id" | "createdAt" | "updatedAt">): Promise<StoredObjectProfile>;
+  updateObjectProfile(id: string, updates: Partial<Omit<StoredObjectProfile, "id" | "createdAt">>): Promise<StoredObjectProfile>;
+  deleteObjectProfile(id: string): Promise<void>;
+  setObjectProfiles(profiles: StoredObjectProfile[]): Promise<void>;
 }
 
 export interface StorageConfig {
