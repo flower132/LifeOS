@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { LifeObject, LIFE_OBJECT_TYPES, ObjectDeletionSnapshot } from "@/lib/types";
 import { storage } from "@/lib/storage";
+import { memoryService } from "@/lib/memory";
 import { emit, subscribe } from "./storeEvents";
 
 interface ObjectState {
@@ -93,6 +94,8 @@ export const useObjectStore = create<ObjectState>((set, get) => {
           objects: state.objects.filter((o) => o.id !== id),
           error: null,
         }));
+        // Memory policy: unlink, never delete history.
+        void memoryService.unlinkObjects([id]);
         emit("objectsChanged");
         emit("tagsChanged");
         emit("notesChanged");
@@ -113,6 +116,8 @@ export const useObjectStore = create<ObjectState>((set, get) => {
           objects: state.objects.filter((o) => !idSet.has(o.id)),
           error: null,
         }));
+        // Memory policy: unlink, never delete history.
+        void memoryService.unlinkObjects(ids);
         emit("objectsChanged");
         emit("tagsChanged");
         emit("notesChanged");

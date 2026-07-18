@@ -20,6 +20,7 @@ import {
   DecisionMemory,
 } from "@/lib/types";
 import { AppSettings, StorageAdapter } from "@/lib/storage/types";
+import { Memory as UnifiedMemory } from "@/lib/memory/types";
 import { localStorageAdapter } from "@/lib/storage/localStorageAdapter";
 import { syncService } from "@/lib/sync/SyncService";
 import { SyncEntity } from "@/lib/sync/types";
@@ -411,6 +412,34 @@ export class HybridStorageAdapter implements StorageAdapter {
   async setDecisions(decisions: DecisionMemory[]): Promise<void> {
     await this.local.setDecisions(decisions);
     this.requestSync("decisions");
+  }
+
+  // ---- unified memories --------------------------------------------------
+  async getMemories(): Promise<UnifiedMemory[]> {
+    return this.local.getMemories();
+  }
+  async createMemory(
+    memory: Omit<UnifiedMemory, "id" | "createdAt" | "updatedAt">
+  ): Promise<UnifiedMemory> {
+    const created = await this.local.createMemory(memory);
+    this.requestSync("memories", created.id);
+    return created;
+  }
+  async updateMemory(
+    id: string,
+    updates: Partial<Omit<UnifiedMemory, "id" | "createdAt">>
+  ): Promise<UnifiedMemory> {
+    const updated = await this.local.updateMemory(id, updates);
+    this.requestSync("memories", id);
+    return updated;
+  }
+  async deleteMemory(id: string): Promise<void> {
+    await this.local.deleteMemory(id);
+    this.requestSync("memories", id);
+  }
+  async setMemories(memories: UnifiedMemory[]): Promise<void> {
+    await this.local.setMemories(memories);
+    this.requestSync("memories");
   }
 }
 

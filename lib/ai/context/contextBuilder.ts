@@ -62,6 +62,21 @@ function buildSections(ctx: AIContext): { title: string; body: string }[] {
     });
   }
 
+  if (ctx.knowledge.lines.length > 0 || ctx.knowledge.longTermMemories.length > 0) {
+    const parts: string[] = [];
+    if (ctx.knowledge.lines.length > 0) {
+      parts.push(`知识：\n${ctx.knowledge.lines.join("\n")}`);
+    }
+    if (ctx.knowledge.longTermMemories.length > 0) {
+      parts.push(
+        `长期记忆：\n${ctx.knowledge.longTermMemories
+          .map((m) => `[memory:${m.id}] ${m.date} ${m.text}`)
+          .join("\n")}`
+      );
+    }
+    sections.push({ title: "长期记忆与知识", body: parts.join("\n") });
+  }
+
   if (ctx.relationships.history.length > 0 && ctx.objects.focus) {
     sections.push({
       title: "历史互动",
@@ -156,6 +171,12 @@ export function serializeContext(
     ...(ctx.objects.focus ? [objectSource(ctx.objects.focus)] : []),
     ...ctx.memories.relevant.map((m) => noteSource(m.note)),
     ...ctx.memories.recent.map(noteSource),
+    ...ctx.knowledge.longTermMemories.map((m) => ({
+      kind: "memory" as const,
+      id: m.id,
+      label: m.text.slice(0, 60),
+      date: m.date,
+    })),
     ...ctx.goals.activeGoals.map(objectSource),
   ]);
 

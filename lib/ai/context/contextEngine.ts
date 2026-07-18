@@ -1,4 +1,5 @@
 import { AITask } from "@/lib/ai/types";
+import { memoryService } from "@/lib/memory/memoryService";
 import { getWorld } from "./retriever";
 import { serializeContext } from "./contextBuilder";
 import { dedupeSources } from "./sources";
@@ -70,6 +71,7 @@ const EMPTY_CONTEXT = (signals: ContextSignals, strategy: string): AIContext => 
   objects: { relatedObjects: [] },
   timeline: { recentEvents: [] },
   insights: { previousInsights: [] },
+  knowledge: { lines: [], longTermMemories: [] },
   metadata: {
     generatedAt: Date.now(),
     confidence: 0,
@@ -110,6 +112,33 @@ export function buildAIContext(signals: ContextSignals): AIContext | null {
   }
   ctx.metadata.confidence = result.confidence;
 
+  // Memory & Knowledge Layer: every AI call automatically gets long-term
+  // memory — durable knowledge lines + relevant long-term memories.
+  try {
+    const focusName = ctx.objects.focus?.name;
+    const longTerm = memoryService.getRelevantMemoriesSync(
+      {
+        objectId: signals.objectId,
+        objectName: focusName,
+        query: signals.query,
+      },
+      5
+    );
+    ctx.knowledge.longTermMemories = longTerm.map((m) => ({
+      id: m.id,
+      date: new Date(m.timestamp).toISOString().slice(0, 10),
+      text: m.summary ?? m.content.slice(0, 80),
+    }));
+
+    const lines = signals.objectId
+      ? memoryService.getObjectKnowledgeSync(signals.objectId)
+      : memoryService.getSelfKnowledgeSync();
+    ctx.knowledge.lines = lines.slice(0, 6);
+  } catch (err) {
+    // Knowledge is best-effort; never break context building.
+    console.warn("[context] Memory knowledge unavailable:", err);
+  }
+
   return ctx;
 }
 
@@ -148,7 +177,9 @@ export function getSerializedContext(
     ctx.objects.focus !== undefined ||
     ctx.memories.recent.length > 0 ||
     ctx.goals.activeGoals.length > 0 ||
-    ctx.insights.previousInsights.length > 0;
+    ctx.insights.previousInsights.length > 0 ||
+    ctx.knowledge.lines.length > 0 ||
+    ctx.knowledge.longTermMemories.length > 0;
   if (!hasData) return null;
 
   const budget = DEEP_TASKS.has(signals.task)

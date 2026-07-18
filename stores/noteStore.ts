@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { Note } from "@/lib/types";
 import { storage } from "@/lib/storage";
+import { memoryService } from "@/lib/memory";
 import { subscribe } from "./storeEvents";
 
 interface NoteState {
@@ -48,6 +49,9 @@ export const useNoteStore = create<NoteState>((set, get) => {
       try {
         const created = await storage.createNote(note);
         set((state) => ({ notes: [created, ...state.notes], error: null }));
+        // Memory & Knowledge Layer: fire-and-forget pipeline (extract → link
+        // → importance → persist). Never blocks or breaks note saving.
+        void memoryService.ingestNote(created);
         return created;
       } catch (err) {
         const message =

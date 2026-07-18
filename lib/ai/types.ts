@@ -61,6 +61,8 @@ export const AITASKS = [
   "PATTERN",
   "TODAY_STORY",
   "MEMORY_UNDERSTANDING",
+  // Memory & Knowledge Layer
+  "MEMORY_EXTRACT",
   // Advisor
   "RELATIONSHIP",
   "WORKSPACE",

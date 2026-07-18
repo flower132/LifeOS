@@ -44,6 +44,10 @@ import {
   validateInputTag,
   validateInputTemplate,
 } from "@/lib/validation";
+import {
+  Memory as UnifiedMemory,
+  isValidMemory,
+} from "@/lib/memory/types";
 import { AppSettings, StorageAdapter } from "./types";
 import {
   getDefaultProperties,
@@ -79,6 +83,8 @@ const KEYS = {
   anniversaries: "lifeos_anniversaries",
   highlights: "lifeos_highlights",
   decisions: "lifeos_decisions",
+  // Unified Memory（记忆与知识层）
+  memories: "lifeos_unified_memories",
 };
 
 const DEFAULT_INTELLIGENCE_CACHE: IntelligenceCache = {
@@ -1458,6 +1464,53 @@ export class LocalStorageAdapter implements StorageAdapter {
     const valid = filterValid(decisions, isValidDecisionMemory, "decision");
     maybeBackup(KEYS.decisions);
     safeSetItem(KEYS.decisions, valid);
+  }
+
+  // ── Unified Memory（记忆与知识层）─────────────────────────────────────────
+  async getMemories(): Promise<UnifiedMemory[]> {
+    const items = safeGetItem<unknown[]>(KEYS.memories, []);
+    return filterValid(items, isValidMemory, "memory");
+  }
+
+  async createMemory(
+    memory: Omit<UnifiedMemory, "id" | "createdAt" | "updatedAt">
+  ): Promise<UnifiedMemory> {
+    const memories = await this.getMemories();
+    const created: UnifiedMemory = {
+      ...memory,
+      id: uuidv4(),
+      createdAt: now(),
+      updatedAt: now(),
+    };
+    maybeBackup(KEYS.memories);
+    safeSetItem(KEYS.memories, [...memories, created]);
+    return created;
+  }
+
+  async updateMemory(
+    id: string,
+    updates: Partial<Omit<UnifiedMemory, "id" | "createdAt">>
+  ): Promise<UnifiedMemory> {
+    const memories = await this.getMemories();
+    const index = memories.findIndex((m) => m.id === id);
+    if (index === -1) throw new StorageError("Memory not found", "validation");
+    const updated: UnifiedMemory = { ...memories[index], ...updates, updatedAt: now() };
+    memories[index] = updated;
+    maybeBackup(KEYS.memories);
+    safeSetItem(KEYS.memories, memories);
+    return updated;
+  }
+
+  async deleteMemory(id: string): Promise<void> {
+    const memories = (await this.getMemories()).filter((m) => m.id !== id);
+    maybeBackup(KEYS.memories);
+    safeSetItem(KEYS.memories, memories);
+  }
+
+  async setMemories(memories: UnifiedMemory[]): Promise<void> {
+    const valid = filterValid(memories, isValidMemory, "memory");
+    maybeBackup(KEYS.memories);
+    safeSetItem(KEYS.memories, valid);
   }
 }
 

@@ -53,6 +53,7 @@ export async function buildLocalSnapshot(): Promise<SyncSnapshot> {
     anniversaries,
     highlights,
     decisions,
+    memories,
   ] = await Promise.all([
     adapter.getObjects(),
     adapter.getNotes(),
@@ -67,6 +68,7 @@ export async function buildLocalSnapshot(): Promise<SyncSnapshot> {
     adapter.getAnniversaries(),
     adapter.getHighlights(),
     adapter.getDecisions(),
+    adapter.getMemories(),
   ]);
   return {
     objects,
@@ -82,6 +84,7 @@ export async function buildLocalSnapshot(): Promise<SyncSnapshot> {
     anniversaries,
     highlights,
     decisions,
+    memories,
   };
 }
 
@@ -102,6 +105,7 @@ export async function buildRemoteSnapshot(): Promise<SyncSnapshot> {
     anniversaries,
     highlights,
     decisions,
+    memories,
   ] = await Promise.all([
     adapter.getObjects(),
     adapter.getNotes(),
@@ -116,6 +120,7 @@ export async function buildRemoteSnapshot(): Promise<SyncSnapshot> {
     adapter.getAnniversaries(),
     adapter.getHighlights(),
     adapter.getDecisions(),
+    adapter.getMemories(),
   ]);
   return {
     objects,
@@ -131,6 +136,7 @@ export async function buildRemoteSnapshot(): Promise<SyncSnapshot> {
     anniversaries,
     highlights,
     decisions,
+    memories,
   };
 }
 
@@ -249,6 +255,7 @@ export async function resolveConflict(strategy: ConflictStrategy): Promise<void>
       adapter.setAnniversaries(merged.anniversaries),
       adapter.setHighlights(merged.highlights),
       adapter.setDecisions(merged.decisions),
+      adapter.setMemories(merged.memories),
     ]);
 
     await localStorageAdapter.setObjects(merged.objects);
@@ -264,6 +271,7 @@ export async function resolveConflict(strategy: ConflictStrategy): Promise<void>
     await localStorageAdapter.setAnniversaries(merged.anniversaries);
     await localStorageAdapter.setHighlights(merged.highlights);
     await localStorageAdapter.setDecisions(merged.decisions);
+    await localStorageAdapter.setMemories(merged.memories);
 
     syncService.setConflictStrategy("merge");
   }

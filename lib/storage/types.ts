@@ -22,6 +22,7 @@ import {
 } from "@/lib/types";
 
 import { AccentColorId } from "@/lib/theme/accentColors";
+import { Memory as UnifiedMemory } from "@/lib/memory/types";
 
 export type DateFormat = "YYYY-MM-DD" | "MM/DD/YYYY" | "DD/MM/YYYY";
 export type TimeFormat = "24h" | "12h";
@@ -161,6 +162,13 @@ export interface StorageAdapter {
   updateDecision(id: string, updates: Partial<Omit<DecisionMemory, "id" | "createdAt">>): Promise<DecisionMemory>;
   deleteDecision(id: string): Promise<void>;
   setDecisions(decisions: DecisionMemory[]): Promise<void>;
+
+  // Unified Memory（记忆与知识层：统一核心记录，实体/关系/洞察内嵌）
+  getMemories(): Promise<UnifiedMemory[]>;
+  createMemory(memory: Omit<UnifiedMemory, "id" | "createdAt" | "updatedAt">): Promise<UnifiedMemory>;
+  updateMemory(id: string, updates: Partial<Omit<UnifiedMemory, "id" | "createdAt">>): Promise<UnifiedMemory>;
+  deleteMemory(id: string): Promise<void>;
+  setMemories(memories: UnifiedMemory[]): Promise<void>;
 }
 
 export interface StorageConfig {

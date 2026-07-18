@@ -64,6 +64,12 @@ export interface AIContext {
   insights: {
     previousInsights: string[];
   };
+  /** Memory & Knowledge Layer: long-term memories + durable knowledge. */
+  knowledge: {
+    /** Durable knowledge lines (e.g. "老板偏好风险控制"). */
+    lines: string[];
+    longTermMemories: { id: string; date: string; text: string }[];
+  };
   metadata: {
     generatedAt: number;
     /** 0..1 — how much real data backed this context. */

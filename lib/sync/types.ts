@@ -13,6 +13,7 @@ import {
   DecisionMemory,
 } from "@/lib/types";
 import { AppSettings } from "@/lib/storage/types";
+import { Memory as UnifiedMemory } from "@/lib/memory/types";
 
 export type SyncEntity =
   | "objects"
@@ -27,7 +28,8 @@ export type SyncEntity =
   | "memoryRelations"
   | "anniversaries"
   | "highlights"
-  | "decisions";
+  | "decisions"
+  | "memories";
 
 export type SyncStatus = "idle" | "syncing" | "synced" | "pending" | "error";
 
@@ -47,6 +49,7 @@ export interface SyncSnapshot {
   anniversaries: Anniversary[];
   highlights: Highlight[];
   decisions: DecisionMemory[];
+  memories: UnifiedMemory[];
 }
 
 export interface QueueItem {

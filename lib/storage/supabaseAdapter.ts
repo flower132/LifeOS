@@ -22,6 +22,10 @@ import {
   isValidHighlight,
   isValidDecisionMemory,
 } from "@/lib/validation";
+import {
+  Memory as UnifiedMemory,
+  isValidMemory,
+} from "@/lib/memory/types";
 
 const toISO = (d: unknown) =>
   d ? new Date(d as string | number).toISOString() : new Date().toISOString();
@@ -230,6 +234,25 @@ function mapTodayStory(r: DbRow): IntelligenceTodayStory {
 }
 
 // ---------- Long-term Memory mappers ----------
+function mapMemory(r: DbRow): UnifiedMemory {
+  return {
+    id: getString(r, "id"),
+    type: getString(r, "type") as UnifiedMemory["type"],
+    content: getString(r, "content"),
+    summary: getOptionalString(r, "summary"),
+    entities: (r.entities ?? { people: [], projects: [], goals: [], places: [] }) as UnifiedMemory["entities"],
+    topics: getArray<string>(r, "topics"),
+    emotions: getArray<string>(r, "emotions"),
+    insights: getArray<string>(r, "insights"),
+    importance: typeof r.importance === "number" ? r.importance : 0,
+    timestamp: typeof r.timestamp_ms === "number" ? r.timestamp_ms : 0,
+    source: (r.source ?? { type: "text" }) as UnifiedMemory["source"],
+    relations: getArray<UnifiedMemory["relations"][number]>(r, "relations"),
+    createdAt: toISO(r.created_at),
+    updatedAt: toISO(r.updated_at),
+  };
+}
+
 function mapMoment(r: DbRow): MemoryMoment {
   return {
     id: getString(r, "id"),
@@ -358,12 +381,13 @@ export class SupabaseAdapter implements StorageAdapter {
     anniversaries: Anniversary[];
     highlights: Highlight[];
     decisions: DecisionMemory[];
+    memories: UnifiedMemory[];
     _loaded: boolean;
   } = { objects: [], notes: [], relations: [], tags: [], templates: [], settings: {}, aiAnalysisHistory: [], intelligenceCache: emptyIntelligenceCache(), intelligenceMeta: {
     lastFullAnalysisAt: null, lastIncrementalAnalysisAt: null, analysisVersion: "1.0.0", pendingUpdate: false,
   }, todayStories: [], companionMeta: {
     lastFocusDate: null, lastReminderDate: null, lastReflectionDate: null, lastWeeklyWeekKey: null, lastMonthlyMonthKey: null, consecutiveRejections: 0, lastAppearanceAt: null, appearanceCountToday: 0,
-  }, moments: [], chapters: [], memoryRelations: [], anniversaries: [], highlights: [], decisions: [], _loaded: false };
+  }, moments: [], chapters: [], memoryRelations: [], anniversaries: [], highlights: [], decisions: [], memories: [], _loaded: false };
 
   private _initPromise: Promise<void> | null = null;
 
@@ -381,7 +405,7 @@ export class SupabaseAdapter implements StorageAdapter {
               lastFullAnalysisAt: null, lastIncrementalAnalysisAt: null, analysisVersion: "1.0.0", pendingUpdate: false,
             }, todayStories: [], companionMeta: {
               lastFocusDate: null, lastReminderDate: null, lastReflectionDate: null, lastWeeklyWeekKey: null, lastMonthlyMonthKey: null, consecutiveRejections: 0, lastAppearanceAt: null, appearanceCountToday: 0,
-            }, moments: [], chapters: [], memoryRelations: [], anniversaries: [], highlights: [], decisions: [], _loaded: false };
+            }, moments: [], chapters: [], memoryRelations: [], anniversaries: [], highlights: [], decisions: [], memories: [], _loaded: false };
             resetSupabase();
           }
         });
@@ -414,7 +438,7 @@ export class SupabaseAdapter implements StorageAdapter {
     if (!uid) return;
 
     const client = getSupabase();
-    const [objs, notes, rels, tags, tpls, sets, history, intelCache, intelMeta, stories, companionMeta, moments, chapters, memoryRelations, anniversaries, highlights, decisions] = await Promise.all([
+    const [objs, notes, rels, tags, tpls, sets, history, intelCache, intelMeta, stories, companionMeta, moments, chapters, memoryRelations, anniversaries, highlights, decisions, memories] = await Promise.all([
       client.from("objects").select("*").eq("user_id", uid),
       client.from("notes").select("*").eq("user_id", uid),
       client.from("relations").select("*").eq("user_id", uid),
@@ -432,6 +456,10 @@ export class SupabaseAdapter implements StorageAdapter {
       client.from("anniversaries").select("*").eq("user_id", uid),
       client.from("highlights").select("*").eq("user_id", uid),
       client.from("decisions").select("*").eq("user_id", uid),
+      // Tolerant: the unified memories table may not exist yet (see the DDL
+      // note above the memories section) — degrade to empty, never break init.
+      client.from("memories").select("*").eq("user_id", uid)
+        .then((r) => r, () => ({ data: [] as never[] })),
     ]);
 
     this.cache.objects    = (objs.data  || []).map(mapObject);
@@ -451,6 +479,7 @@ export class SupabaseAdapter implements StorageAdapter {
     this.cache.anniversaries = ((anniversaries.data || []) as DbRow[]).map(mapAnniversary).filter(isValidAnniversary);
     this.cache.highlights = ((highlights.data || []) as DbRow[]).map(mapHighlight).filter(isValidHighlight);
     this.cache.decisions = ((decisions.data || []) as DbRow[]).map(mapDecision).filter(isValidDecisionMemory);
+    this.cache.memories = ((memories.data || []) as DbRow[]).map(mapMemory).filter(isValidMemory);
   }
 
   // ---------- version ----------
@@ -1788,4 +1817,150 @@ export class SupabaseAdapter implements StorageAdapter {
     }
     this.cache.decisions = decisions;
   }
+
+  // ---------- Unified Memory（记忆与知识层） ----------
+  //
+  // Requires this table in Supabase (Local Mode works without it; the
+  // adapter degrades gracefully when it is missing):
+  //
+  //   create table memories (
+  //     id uuid primary key,
+  //     user_id uuid not null,
+  //     type text not null,
+  //     content text not null,
+  //     summary text,
+  //     entities jsonb not null default '{"people":[],"projects":[],"goals":[],"places":[]}',
+  //     topics jsonb not null default '[]',
+  //     emotions jsonb,
+  //     insights jsonb not null default '[]',
+  //     importance double precision not null default 0,
+  //     timestamp_ms bigint not null,
+  //     source jsonb not null default '{"type":"text"}',
+  //     relations jsonb not null default '[]',
+  //     created_at timestamptz not null default now(),
+  //     updated_at timestamptz not null default now()
+  //   );
+  //   alter table memories enable row level security;
+  //   create policy "memories_owner" on memories for all
+  //     using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+  /** Run a memories-table call, degrading to `fallback` when the table is absent. */
+  private async memoriesCall<T>(
+    fn: (client: ReturnType<typeof getSupabase>) => Promise<T>,
+    fallback: T
+  ): Promise<T> {
+    try {
+      return await fn(getSupabase());
+    } catch (err) {
+      console.warn(
+        "[storage] memories table unavailable — running degraded. " +
+          "Create the table (see DDL note in supabaseAdapter).",
+        err
+      );
+      return fallback;
+    }
+  }
+
+  async getMemories(): Promise<UnifiedMemory[]> {
+    await this.init();
+    return [...this.cache.memories];
+  }
+
+  async createMemory(
+    memory: Omit<UnifiedMemory, "id" | "createdAt" | "updatedAt">
+  ): Promise<UnifiedMemory> {
+    await this.init();
+    const uid = await getUid();
+    if (!uid) throw new Error("Not authenticated");
+    const now = new Date().toISOString();
+    const created: UnifiedMemory = {
+      ...memory,
+      id: generateId(),
+      createdAt: now,
+      updatedAt: now,
+    };
+    await this.memoriesCall(async (client) => {
+      const { error } = await client.from("memories").insert(memoryToRow(created, uid));
+      if (error) throw error;
+    }, undefined);
+    this.cache.memories = [...this.cache.memories, created];
+    return created;
+  }
+
+  async updateMemory(
+    id: string,
+    updates: Partial<Omit<UnifiedMemory, "id" | "createdAt">>
+  ): Promise<UnifiedMemory> {
+    await this.init();
+    const uid = await getUid();
+    if (!uid) throw new Error("Not authenticated");
+    const existing = this.cache.memories.find((m) => m.id === id);
+    if (!existing) throw new Error("Memory not found");
+    const updated: UnifiedMemory = {
+      ...existing,
+      ...updates,
+      updatedAt: new Date().toISOString(),
+    };
+    await this.memoriesCall(async (client) => {
+      const { error } = await client
+        .from("memories")
+        .update(memoryToRow(updated, uid))
+        .eq("id", id)
+        .eq("user_id", uid);
+      if (error) throw error;
+    }, undefined);
+    this.cache.memories = this.cache.memories.map((m) => (m.id === id ? updated : m));
+    return updated;
+  }
+
+  async deleteMemory(id: string): Promise<void> {
+    await this.init();
+    const uid = await getUid();
+    if (uid) {
+      await this.memoriesCall(async (client) => {
+        await client.from("memories").delete().eq("id", id).eq("user_id", uid);
+      }, undefined);
+    }
+    this.cache.memories = this.cache.memories.filter((m) => m.id !== id);
+  }
+
+  async setMemories(memories: UnifiedMemory[]): Promise<void> {
+    await this.init();
+    const uid = await getUid();
+    if (!uid) throw new Error("Not authenticated");
+    await this.memoriesCall(async (client) => {
+      const currentIds = new Set(this.cache.memories.map((m) => m.id));
+      const nextIds = new Set(memories.map((m) => m.id));
+      const idsToDelete = Array.from(currentIds).filter((id) => !nextIds.has(id));
+      if (idsToDelete.length > 0) {
+        await client.from("memories").delete().in("id", idsToDelete).eq("user_id", uid);
+      }
+      const rows = memories.map((m) => memoryToRow(m, uid));
+      if (rows.length > 0) {
+        const { error } = await client.from("memories").upsert(rows, { onConflict: "id" });
+        if (error) throw error;
+      }
+    }, undefined);
+    this.cache.memories = memories;
+  }
+}
+
+function memoryToRow(memory: UnifiedMemory, uid: string): DbRow {
+  return {
+    id: memory.id,
+    user_id: uid,
+    type: memory.type,
+    content: memory.content,
+    summary: memory.summary ?? null,
+    entities: memory.entities,
+    topics: memory.topics,
+    emotions: memory.emotions ?? null,
+    insights: memory.insights,
+    importance: memory.importance,
+    timestamp_ms: memory.timestamp,
+    source: memory.source,
+    relations: memory.relations,
+    created_at: memory.createdAt,
+    updated_at: memory.updatedAt,
+  };
 }
