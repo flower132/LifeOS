@@ -23,8 +23,9 @@ import { Dialog } from "@/components/ui/Dialog";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/Textarea";
-import { Sparkles, Pencil, Trash2, User, Info, Check, X } from "lucide-react";
+import { Sparkles, Pencil, Trash2, User, Info, Check, X, History } from "lucide-react";
 import { useTranslation } from "@/lib/useTranslation";
+import { RelationTimelineDialog } from "./RelationTimelineDialog";
 
 interface RelationListProps {
   objectId: string;
@@ -62,6 +63,7 @@ export function RelationList({ objectId, relations }: RelationListProps) {
   const [editNote, setEditNote] = useState("");
   const [saving, setSaving] = useState(false);
   const [explaining, setExplaining] = useState<RelationExplanation | null>(null);
+  const [timelineRelation, setTimelineRelation] = useState<Relation | null>(null);
 
   // AI-computed strength per relation (memoized per relation id).
   const strengths = useMemo(() => {
@@ -247,6 +249,14 @@ export function RelationList({ objectId, relations }: RelationListProps) {
                   </div>
                   <button
                     type="button"
+                    onClick={() => setTimelineRelation(relation)}
+                    className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+                    title={t("relationTimeline") ?? "关系时间线"}
+                  >
+                    <History className="h-3.5 w-3.5" />
+                  </button>
+                  <button
+                    type="button"
                     onClick={() => handleExplain(relation)}
                     className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
                     title={t("explainRelation") ?? "解释这条关系"}
@@ -325,6 +335,13 @@ export function RelationList({ objectId, relations }: RelationListProps) {
           </Button>
         </div>
       </Dialog>
+
+      {/* Relation timeline dialog */}
+      <RelationTimelineDialog
+        relation={timelineRelation}
+        focusObjectId={objectId}
+        onClose={() => setTimelineRelation(null)}
+      />
 
       {/* Explain dialog — fully transparent, data-only */}
       <Dialog

@@ -20,11 +20,12 @@ import { AISuggestionsTab } from "./tabs/AISuggestionsTab";
 import { MemoriesTab } from "./tabs/MemoriesTab";
 import { HistoryTab } from "./tabs/HistoryTab";
 import { GrowthTab } from "./tabs/GrowthTab";
+import { TimelineTab } from "./tabs/TimelineTab";
 import { isAIProfileSupported } from "@/lib/ai/objectIntelligence/profiles";
 import { AISummaryCard } from "@/components/object-intelligence/AISummaryCard";
 import { SkeletonBlock, SkeletonText } from "@/components/ui/Skeleton";
 
-type DetailTab = "overview" | "aiProfile" | "aiInsights" | "aiSuggestions" | "memories" | "history" | "growth";
+type DetailTab = "overview" | "aiProfile" | "aiInsights" | "aiSuggestions" | "memories" | "timeline" | "history" | "growth";
 
 const BASE_TABS: DetailTab[] = [
   "overview",
@@ -32,6 +33,7 @@ const BASE_TABS: DetailTab[] = [
   "aiInsights",
   "aiSuggestions",
   "memories",
+  "timeline",
   "history",
 ];
 
@@ -161,7 +163,8 @@ export default function ObjectDetailPage() {
       <nav className="mb-8 border-b border-border">
         <ul className="flex gap-1 overflow-x-auto">
           {tabs.map((tab) => {
-            const isDisabled = tab !== "overview" && tab !== "growth" && !hasAnyAIData;
+            const isDisabled =
+              tab !== "overview" && tab !== "growth" && tab !== "timeline" && !hasAnyAIData;
             return (
               <li key={tab}>
                 <button
@@ -196,6 +199,7 @@ export default function ObjectDetailPage() {
       {activeTab === "aiInsights" && <AIInsightsTab object={object} />}
       {activeTab === "aiSuggestions" && <AISuggestionsTab object={object} />}
       {activeTab === "memories" && <MemoriesTab object={object} />}
+      {activeTab === "timeline" && <TimelineTab object={object} />}
       {activeTab === "history" && <HistoryTab object={object} />}
       {activeTab === "growth" && object.type === "self" && <GrowthTab object={object} />}
     </WorkspaceLayout>

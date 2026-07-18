@@ -465,6 +465,7 @@ const translations: Record<Language, Record<string, string>> = {
     detailTab_aiInsights: "AI Insights",
     detailTab_aiSuggestions: "AI Suggestions",
     detailTab_memories: "Memories",
+    detailTab_timeline: "Timeline",
     detailTab_history: "History",
     detailTab_growth: "Growth",
 
@@ -1216,6 +1217,7 @@ const translations: Record<Language, Record<string, string>> = {
     detailTab_aiInsights: "AI 洞察",
     detailTab_aiSuggestions: "AI 建议",
     detailTab_memories: "记忆",
+    detailTab_timeline: "时间线",
     detailTab_history: "历史",
     detailTab_growth: "成长",
 

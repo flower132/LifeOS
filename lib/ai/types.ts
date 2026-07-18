@@ -68,6 +68,12 @@ export const AITASKS = [
   "PERSON_ADVICE",
   // Knowledge Graph Intelligence
   "GRAPH_SUMMARY",
+  // Graph Timeline
+  "TIMELINE_SUMMARY",
+  "TIMELINE_QUERY",
+  "LIFE_CHAPTER",
+  "LIFE_REPLAY",
+  "TIME_TRAVEL",
   // Advisor
   "RELATIONSHIP",
   "WORKSPACE",
