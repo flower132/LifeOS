@@ -1,6 +1,10 @@
 export type Language = "zh" | "en";
 
-const translations: Record<Language, Record<string, string>> = {
+/**
+ * Legacy catalogue retained while call sites are progressively moved to
+ * namespace.key keys. New UI text belongs in translations/*.ts instead.
+ */
+export const legacyTranslations: Record<Language, Record<string, string>> = {
   en: {
     appName: "LifeOS",
     appDescription: "Life Data Structure System",
@@ -1493,8 +1497,8 @@ const translations: Record<Language, Record<string, string>> = {
 };
 
 export function t(key: string, language: Language, vars: Record<string, string> = {}): string {
-  const dict = translations[language] || translations.en;
-  let text = dict[key] ?? translations.en[key] ?? key;
+  const dict = legacyTranslations[language] || legacyTranslations.en;
+  let text = dict[key] ?? legacyTranslations.en[key] ?? key;
   Object.entries(vars).forEach(([k, v]) => {
     text = text.replace(new RegExp(`\\{${k}\\}`, "g"), v);
   });

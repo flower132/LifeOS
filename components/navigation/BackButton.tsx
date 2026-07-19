@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "@/lib/useTranslation";
 
 interface BackButtonProps {
   href?: string;
@@ -19,6 +20,7 @@ export function BackButton({
   className,
   iconSize = 24,
 }: BackButtonProps) {
+  const { t } = useTranslation();
   const content = (
     <span
       className={cn(
@@ -28,7 +30,7 @@ export function BackButton({
         label ? "px-3" : "w-11 justify-center",
         className
       )}
-      aria-label={label ?? "返回"}
+      aria-label={label ?? t("common.back")}
     >
       <ArrowLeft
         style={{ width: iconSize, height: iconSize, flexShrink: 0 }}

@@ -578,6 +578,7 @@ export class LocalStorageAdapter implements StorageAdapter {
       const contentChanged =
         migratedContent !== template.content ||
         template.name !== latest.name ||
+        template.content !== latest.content ||
         needsUpgrade;
 
       if (contentChanged) {
@@ -585,7 +586,7 @@ export class LocalStorageAdapter implements StorageAdapter {
         nextTemplates.push({
           ...template,
           name: latest.name,
-          content: migratedContent,
+          content: latest.content,
           templateVersion: CURRENT_TEMPLATE_VERSION,
           updatedAt: now(),
         });

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { ScanLine, Sparkles, ArrowLeft } from "lucide-react";
 import { Spinner } from "@/components/ui/Spinner";
@@ -9,7 +9,6 @@ import { extractNamesFromImages } from "@/lib/ai/objectIntelligence/multiObjectE
 import { AIImageUploader } from "./AIImageUploader";
 import { DraftObjectList } from "./DraftObjectList";
 import { useTranslation } from "@/lib/useTranslation";
-import { useSettingsStore } from "@/stores/settingsStore";
 import {
   CreationDraft,
   createDraftId,
@@ -24,15 +23,13 @@ import { StepTransition } from "@/components/navigation/StepTransition";
 import { ConfirmDialog } from "@/components/navigation/ConfirmDialog";
 import { useStepController } from "@/hooks/useStepController";
 
-const steps = [
-  { key: "upload", label: "上传截图" },
-  { key: "review", label: "审阅结果" },
-];
-
 export function OCRCreateFlow() {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const router = useRouter();
-  const language = useSettingsStore((s) => s.language);
+  const steps = useMemo(() => [
+    { key: "upload", label: t("create.step.upload") },
+    { key: "review", label: t("create.step.review") },
+  ], [t]);
   const objects = useObjectStore((s) => s.objects);
   const setLastCreation = useLastCreationStore((s) => s.setLastCreation);
 

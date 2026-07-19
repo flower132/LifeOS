@@ -1,6 +1,7 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "./Button";
+import { useTranslation } from "@/lib/useTranslation";
 
 export interface ErrorStateProps {
   title?: string;
@@ -14,9 +15,10 @@ export function ErrorState({
   title,
   description,
   onRetry,
-  retryLabel = "再试一次",
+  retryLabel,
   className,
 }: ErrorStateProps) {
+  const { t } = useTranslation();
   return (
     <div
       className={cn(
@@ -40,7 +42,7 @@ export function ErrorState({
             onClick={onRetry}
             className="shrink-0"
           >
-            {retryLabel}
+            {retryLabel ?? t("dialog.retry")}
           </Button>
         )}
       </div>

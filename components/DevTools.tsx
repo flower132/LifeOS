@@ -8,6 +8,7 @@ import { useTagStore } from "@/stores/tagStore";
 import { useSettingsStore } from "@/stores/settingsStore";
 import { storage, STORAGE_VERSION } from "@/lib/storage";
 import { ENTITY_KEYS } from "@/lib/storage/localStorageAdapter";
+import { useTranslation } from "@/lib/useTranslation";
 
 function formatBytes(bytes: number): string {
   if (bytes === 0) return "0 B";
@@ -30,6 +31,7 @@ function calculateStorageUsage(): number {
 }
 
 export function DevTools() {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const objects = useObjectStore((state) => state.objects);
   const notes = useNoteStore((state) => state.notes);
@@ -62,37 +64,37 @@ export function DevTools() {
           onClick={() => setOpen(false)}
           className="text-xs text-muted-foreground hover:text-foreground"
         >
-          Close
+          {t("dev.close")}
         </button>
       </div>
 
       <div className="space-y-2 text-xs">
         <div className="flex justify-between rounded bg-muted px-2 py-1">
-          <span className="text-muted-foreground">Objects</span>
+          <span className="text-muted-foreground">{t("dev.objects")}</span>
           <span className="font-medium text-foreground">{objects.length}</span>
         </div>
         <div className="flex justify-between rounded bg-muted px-2 py-1">
-          <span className="text-muted-foreground">Notes</span>
+          <span className="text-muted-foreground">{t("dev.notes")}</span>
           <span className="font-medium text-foreground">{notes.length}</span>
         </div>
         <div className="flex justify-between rounded bg-muted px-2 py-1">
-          <span className="text-muted-foreground">Relations</span>
+          <span className="text-muted-foreground">{t("dev.relations")}</span>
           <span className="font-medium text-foreground">{relations.length}</span>
         </div>
         <div className="flex justify-between rounded bg-muted px-2 py-1">
-          <span className="text-muted-foreground">Tags</span>
+          <span className="text-muted-foreground">{t("dev.tags")}</span>
           <span className="font-medium text-foreground">{tags.length}</span>
         </div>
         <div className="flex justify-between rounded bg-muted px-2 py-1">
-          <span className="text-muted-foreground">Storage usage</span>
+          <span className="text-muted-foreground">{t("dev.storageUsage")}</span>
           <span className="font-medium text-foreground">{formatBytes(calculateStorageUsage())}</span>
         </div>
         <div className="flex justify-between rounded bg-muted px-2 py-1">
-          <span className="text-muted-foreground">Hydrated</span>
-          <span className="font-medium text-foreground">{settingsLoaded ? "yes" : "no"}</span>
+          <span className="text-muted-foreground">{t("dev.hydrated")}</span>
+          <span className="font-medium text-foreground">{settingsLoaded ? t("dev.yes") : t("dev.no")}</span>
         </div>
         <div className="flex justify-between rounded bg-muted px-2 py-1">
-          <span className="text-muted-foreground">Storage version</span>
+          <span className="text-muted-foreground">{t("dev.storageVersion")}</span>
           <span className="font-medium text-foreground">{STORAGE_VERSION}</span>
         </div>
       </div>
@@ -121,12 +123,12 @@ export function DevTools() {
           }}
           className="w-full rounded-lg bg-accent px-3 py-2 text-xs font-medium text-accent-foreground hover:bg-accent/90"
         >
-          Export data
+          {t("dev.export")}
         </button>
         <button
           type="button"
           onClick={async () => {
-            if (confirm("Clear all localStorage data? This cannot be undone.")) {
+            if (confirm(t("dev.clearConfirm"))) {
               ENTITY_KEYS.forEach((key) => localStorage.removeItem(key));
               await storage.setStorageVersion(0);
               window.location.reload();
@@ -134,7 +136,7 @@ export function DevTools() {
           }}
           className="w-full rounded-lg border border-destructive/20 bg-destructive/10 px-3 py-2 text-xs font-medium text-destructive hover:bg-destructive/20"
         >
-          Clear all data
+          {t("dev.clear")}
         </button>
       </div>
     </div>

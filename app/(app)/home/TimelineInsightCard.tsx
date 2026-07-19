@@ -18,7 +18,7 @@ import { TimelineExplorerDialog, ExplorerTab } from "./TimelineExplorerDialog";
  * Travel / Life Replay / Timeline Search / Life Chapters.
  */
 export function TimelineInsightCard() {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   // Subscribe to underlying data so insights refresh with it.
   const objects = useObjectStore((s) => s.objects);
   const memories = useMemoryStore((s) => s.memories);
@@ -27,9 +27,9 @@ export function TimelineInsightCard() {
   const [openTab, setOpenTab] = useState<ExplorerTab | null>(null);
 
   const insights = useMemo(
-    () => computeTimelineInsights(),
+    () => computeTimelineInsights(language),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [objects, memories, notes]
+    [objects, memories, notes, language]
   );
 
   return (
@@ -37,7 +37,7 @@ export function TimelineInsightCard() {
       <Card variant="ai" className="space-y-3">
         <div className="flex items-center gap-2 text-sm font-medium text-foreground">
           <History className="h-4 w-4 text-accent" />
-          {t("timelineInsights") ?? "时间线洞察"}
+          {t("timelineInsights")}
         </div>
 
         {insights.length > 0 ? (
@@ -66,26 +66,26 @@ export function TimelineInsightCard() {
           </ul>
         ) : (
           <p className="text-xs text-muted-foreground">
-            {t("timelineInsightsEmpty") ?? "随着记录增加，这里会出现你的时间线洞察。"}
+            {t("timelineInsightsEmpty")}
           </p>
         )}
 
         <div className="flex flex-wrap gap-2 pt-1">
           <Button variant="ghost" size="sm" onClick={() => setOpenTab("travel")}>
             <Clock3 className="h-3.5 w-3.5" />
-            {t("timeTravel") ?? "时间旅行"}
+            {t("timeTravel")}
           </Button>
           <Button variant="ghost" size="sm" onClick={() => setOpenTab("replay")}>
             <RotateCcw className="h-3.5 w-3.5" />
-            {t("lifeReplay") ?? "人生回放"}
+            {t("lifeReplay")}
           </Button>
           <Button variant="ghost" size="sm" onClick={() => setOpenTab("search")}>
             <Search className="h-3.5 w-3.5" />
-            {t("timelineSearch") ?? "时间线搜索"}
+            {t("timelineSearch")}
           </Button>
           <Button variant="ghost" size="sm" onClick={() => setOpenTab("chapters")}>
             <BookOpen className="h-3.5 w-3.5" />
-            {t("lifeChapters") ?? "人生章节"}
+            {t("lifeChapters")}
           </Button>
         </div>
       </Card>

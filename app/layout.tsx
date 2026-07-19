@@ -37,9 +37,9 @@ export default function RootLayout({
       className="h-full antialiased"
     >
       <body className="min-h-full flex flex-col" suppressHydrationWarning>
-        <ErrorBoundary>
-          <ClientProviders>{children}</ClientProviders>
-        </ErrorBoundary>
+        <ClientProviders>
+          <ErrorBoundary>{children}</ErrorBoundary>
+        </ClientProviders>
       </body>
     </html>
   );

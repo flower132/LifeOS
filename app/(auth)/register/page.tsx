@@ -5,11 +5,13 @@ import Link from "next/link";
 import { AuthPageShell } from "@/components/auth/AuthPageShell";
 import { useAuthActions } from "@/lib/auth/useAuthActions";
 import { ErrorState } from "@/components/ui/ErrorState";
+import { useTranslation } from "@/lib/useTranslation";
 
 export default function RegisterPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const { signUp, loading, error, successMsg } = useAuthActions();
+  const { t } = useTranslation();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,12 +23,12 @@ export default function RegisterPage() {
       mode="register"
       footerLink={
         <>
-          已有账号？{" "}
+          {t("auth.hasAccount")} {" "}
           <Link
             href="/login"
             className="font-medium text-accent underline-offset-4 hover:underline"
           >
-            登录
+            {t("auth.signIn")}
           </Link>
         </>
       }
@@ -34,7 +36,7 @@ export default function RegisterPage() {
       <form onSubmit={handleSubmit} className="space-y-4">
         <input
           type="email"
-          placeholder="邮箱"
+          placeholder={t("auth.email")}
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
@@ -42,7 +44,7 @@ export default function RegisterPage() {
         />
         <input
           type="password"
-          placeholder="密码（至少6位）"
+          placeholder={t("auth.passwordHint")}
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
@@ -64,7 +66,7 @@ export default function RegisterPage() {
           disabled={loading || !email || !password}
           className="w-full rounded-xl bg-accent px-4 py-3 text-sm font-semibold text-accent-foreground shadow-sm transition-all hover:bg-accent/90 disabled:opacity-50 active:scale-[0.98]"
         >
-          {loading ? "注册中…" : "注册"}
+          {loading ? t("auth.signingUp") : t("auth.signUp")}
         </button>
       </form>
     </AuthPageShell>

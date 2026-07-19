@@ -8,7 +8,6 @@ import { extractObjectsFromInput } from "@/lib/ai/objectIntelligence/multiObject
 import { AIImageUploader } from "./AIImageUploader";
 import { DraftObjectList } from "./DraftObjectList";
 import { useTranslation } from "@/lib/useTranslation";
-import { useSettingsStore } from "@/stores/settingsStore";
 import { WorkspaceLayout } from "@/components/layout/WorkspaceLayout";
 import { NavigationStepper } from "@/components/navigation/NavigationStepper";
 import { StepTransition } from "@/components/navigation/StepTransition";
@@ -25,15 +24,13 @@ import { createObjectsFromDrafts, enrichDraft } from "@/lib/create/createObjects
 import { useLastCreationStore } from "@/stores/lastCreationStore";
 import { useObjectStore } from "@/stores/objectStore";
 
-const steps = [
-  { key: "input", label: "输入素材" },
-  { key: "review", label: "审阅结果" },
-];
-
 export function AICreateFlow() {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const router = useRouter();
-  const language = useSettingsStore((s) => s.language);
+  const steps = useMemo(() => [
+    { key: "input", label: t("create.step.input") },
+    { key: "review", label: t("create.step.review") },
+  ], [t]);
   const objects = useObjectStore((s) => s.objects);
   const setLastCreation = useLastCreationStore((s) => s.setLastCreation);
 

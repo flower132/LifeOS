@@ -101,7 +101,7 @@ export function TodayFocusCard() {
       <div className="rounded-xl border border-accent/20 bg-accent/[0.03] p-5">
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Spinner size="sm" />
-          {t("todayFocusLoading") ?? "正在生成今日焦点..."}
+          {t("todayFocusLoading")}
         </div>
       </div>
     );
@@ -131,7 +131,7 @@ export function TodayFocusCard() {
         <div className="flex items-center gap-2">
           <Compass className="h-4 w-4 text-accent" />
           <h2 className="text-sm font-semibold uppercase tracking-wide text-foreground">
-            {t("todayFocus") ?? "Today's Focus"}
+            {t("todayFocus")}
           </h2>
         </div>
         {focus.objectId && (
@@ -159,7 +159,7 @@ export function TodayFocusCard() {
       {focus.whyNow && (
         <div className="rounded-lg border border-border bg-card p-3">
           <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            {t("whyNow") ?? "Why Now"}
+            {t("whyNow")}
           </h3>
           <p className="text-sm leading-relaxed text-foreground">{focus.whyNow}</p>
         </div>
@@ -174,7 +174,7 @@ export function TodayFocusCard() {
           className="inline-flex items-center gap-1 rounded-lg bg-accent px-3 py-1.5 text-xs font-medium text-accent-foreground hover:bg-accent/90"
         >
           <Check className="h-3.5 w-3.5" />
-          {t("done") ?? "完成"}
+          {t("done")}
         </button>
         <button
           type="button"
@@ -182,7 +182,7 @@ export function TodayFocusCard() {
           className="inline-flex items-center gap-1 rounded-lg border border-input bg-background px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-muted"
         >
           <X className="h-3.5 w-3.5" />
-          {t("dismiss") ?? "忽略"}
+          {t("dismiss")}
         </button>
       </div>
     </div>

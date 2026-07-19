@@ -1,6 +1,19 @@
 import { useObjectStore } from "@/stores/objectStore";
+import { useSettingsStore } from "@/stores/settingsStore";
 import { TimelineEvent } from "./types";
 import { getTimelineEvents } from "./timelineBuilder";
+import { resolveTranslation, interpolate, localeFromLanguage } from "@/translations";
+
+/** Translate an insight key in the given language (falls back to key). */
+function tt(
+  key: string,
+  language: "zh" | "en",
+  vars: Record<string, string | number> = {}
+): string {
+  const locale = localeFromLanguage(language);
+  const text = resolveTranslation(key, locale, vars);
+  return interpolate(text ?? key, vars);
+}
 
 // ---------------------------------------------------------------------------
 // Timeline Insights — rule-based insights for the home card, all derived
@@ -40,8 +53,9 @@ function streakDays(events: TimelineEvent[], objectId: string): number {
   return streak;
 }
 
-export function computeTimelineInsights(): TimelineInsight[] {
+export function computeTimelineInsights(language?: "zh" | "en"): TimelineInsight[] {
   if (typeof window === "undefined") return [];
+  const lang = language ?? useSettingsStore.getState().language ?? "en";
   const events = getTimelineEvents();
   const objects = useObjectStore.getState().objects;
   const insights: TimelineInsight[] = [];
@@ -57,8 +71,8 @@ export function computeTimelineInsights(): TimelineInsight[] {
     insights.push({
       id: `streak:${bestStreak.objectId}`,
       kind: "streak",
-      title: `你已经连续推进：${bestStreak.name} ${bestStreak.days} 天。`,
-      detail: "保持节奏。",
+      title: tt("insight.streak.title", lang, { name: bestStreak.name, days: String(bestStreak.days) }),
+      detail: tt("insight.streak.detail", lang),
       objectId: bestStreak.objectId,
     });
   }
@@ -85,8 +99,8 @@ export function computeTimelineInsights(): TimelineInsight[] {
     insights.push({
       id: `growing:${fastest.objectId}`,
       kind: "fastest_growing",
-      title: `最近联系增长最快的是：${fastest.name}。`,
-      detail: `最近 30 天互动 +${fastest.delta} 次。`,
+      title: tt("insight.growing.title", lang, { name: fastest.name }),
+      detail: tt("insight.growing.detail", lang, { delta: String(fastest.delta) }),
       objectId: fastest.objectId,
     });
   }
@@ -99,8 +113,8 @@ export function computeTimelineInsights(): TimelineInsight[] {
       insights.push({
         id: `slowing:${o.id}`,
         kind: "slowing_down",
-        title: `最近一个月：「${o.name}」推进速度下降。`,
-        detail: "建议重新安排优先级。",
+        title: tt("insight.slowing.title", lang, { name: o.name }),
+        detail: tt("insight.slowing.detail", lang),
         objectId: o.id,
       });
     }

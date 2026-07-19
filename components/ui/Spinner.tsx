@@ -1,6 +1,7 @@
 import * as React from "react";
 import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "@/lib/useTranslation";
 
 export interface SpinnerProps
   extends React.HTMLAttributes<HTMLSpanElement> {
@@ -18,11 +19,12 @@ export function Spinner({
   size = "md",
   ...props
 }: SpinnerProps) {
+  const { t } = useTranslation();
   return (
     <span
       className={cn("inline-flex items-center justify-center", className)}
       {...props}
-      aria-label="Loading"
+      aria-label={t("common.loading")}
       role="status"
     >
       <Loader2

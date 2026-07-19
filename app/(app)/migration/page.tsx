@@ -6,6 +6,7 @@ import { CheckCircle2 } from "lucide-react";
 import { MigrationDialog } from "@/components/sync/MigrationDialog";
 import { ConflictResolutionDialog } from "@/components/sync/ConflictResolutionDialog";
 import { PageLoader } from "@/components/ui/PageLoader";
+import { useTranslation } from "@/lib/useTranslation";
 import {
   checkMigration,
   migrateLocalToRemote,
@@ -17,6 +18,7 @@ import {
 
 export default function MigrationPage() {
   const router = useRouter();
+  const { t } = useTranslation();
   const [result, setResult] = useState<MigrationCheckResult | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
@@ -30,11 +32,11 @@ export default function MigrationPage() {
       setIsComplete(true);
       setTimeout(() => router.replace("/home"), 1500);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "同步失败");
+      setError(err instanceof Error ? err.message : t("sync.failed"));
     } finally {
       setIsProcessing(false);
     }
-  }, [router]);
+  }, [router, t]);
 
   const handlePullRemote = useCallback(async () => {
     setIsProcessing(true);
@@ -44,11 +46,11 @@ export default function MigrationPage() {
       setIsComplete(true);
       setTimeout(() => router.replace("/home"), 1500);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "拉取失败");
+      setError(err instanceof Error ? err.message : t("sync.pullFailed"));
     } finally {
       setIsProcessing(false);
     }
-  }, [router]);
+  }, [router, t]);
 
   const handleResolve = useCallback(async (strategy: "merge" | "local" | "remote") => {
     setIsProcessing(true);
@@ -58,11 +60,11 @@ export default function MigrationPage() {
       setIsComplete(true);
       setTimeout(() => router.replace("/home"), 1500);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "合并失败");
+      setError(err instanceof Error ? err.message : t("sync.mergeFailed"));
     } finally {
       setIsProcessing(false);
     }
-  }, [router]);
+  }, [router, t]);
 
   useEffect(() => {
     if (!shouldRedirectToMigration()) {
@@ -86,21 +88,21 @@ export default function MigrationPage() {
       })
       .catch((err) => {
         if (!cancelled) {
-          setError(err instanceof Error ? err.message : "检测失败");
+          setError(err instanceof Error ? err.message : t("sync.checkFailed"));
         }
       });
 
     return () => {
       cancelled = true;
     };
-  }, [router, handlePullRemote]);
+  }, [router, handlePullRemote, t]);
 
   if (!result) {
-    return <PageLoader message="正在检测数据…" />;
+    return <PageLoader message={t("sync.checking")} />;
   }
 
   if (isProcessing) {
-    return <PageLoader message="正在同步数据…" />;
+    return <PageLoader message={t("sync.syncing")} />;
   }
 
   if (isComplete) {
@@ -109,10 +111,10 @@ export default function MigrationPage() {
         <div className="text-center">
           <CheckCircle2 className="mx-auto h-12 w-12 text-emerald-500" />
           <p className="mt-4 text-base font-medium text-foreground">
-            你的 LifeOS 已开始同步。
+            {t("migrationStarted")}
           </p>
           <p className="mt-1 text-sm text-muted-foreground">
-            以后所有数据都会保存到账号。
+            {t("migrationFutureData")}
           </p>
         </div>
       </div>
@@ -129,7 +131,7 @@ export default function MigrationPage() {
             onClick={() => router.replace("/home")}
             className="mt-4 w-full rounded-xl bg-accent px-4 py-2.5 text-sm font-semibold text-accent-foreground"
           >
-            返回首页
+            {t("backToHome")}
           </button>
         </div>
       </div>

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { AlertTriangle, CheckCircle2 } from "lucide-react";
 import { DataStats, RemoteSummary } from "@/lib/sync/types";
+import { useTranslation } from "@/lib/useTranslation";
 
 interface ConflictResolutionDialogProps {
   localStats: DataStats;
@@ -15,6 +16,7 @@ export function ConflictResolutionDialog({
   remoteSummary,
   onResolve,
 }: ConflictResolutionDialogProps) {
+  const { t } = useTranslation();
   const [selected, setSelected] = useState<"merge" | "local" | "remote">("merge");
 
   return (
@@ -23,32 +25,32 @@ export function ConflictResolutionDialog({
         <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-600">
           <AlertTriangle className="h-6 w-6" />
         </div>
-        <h2 className="text-lg font-semibold text-foreground">发现两份数据</h2>
-        <p className="mt-1 text-sm text-muted-foreground">请选择如何处理</p>
+        <h2 className="text-lg font-semibold text-foreground">{t("sync.conflict.title")}</h2>
+        <p className="mt-1 text-sm text-muted-foreground">{t("sync.conflict.description")}</p>
       </div>
 
       <div className="grid grid-cols-2 gap-3">
-        <DataBox title="本地数据" stats={localStats} />
-        <DataBox title="账号数据" summary={remoteSummary} />
+        <DataBox title={t("sync.conflict.localData")} stats={localStats} />
+        <DataBox title={t("sync.conflict.accountData")} summary={remoteSummary} />
       </div>
 
       <div className="space-y-2">
         <Option
-          label="合并（推荐）"
-          description="UUID 不同全部保留，UUID 相同以更新时间新的为准。"
+          label={t("sync.conflict.merge")}
+          description={t("sync.conflict.mergeDescription")}
           selected={selected === "merge"}
           onClick={() => setSelected("merge")}
           recommended
         />
         <Option
-          label="使用账号数据"
-          description="用账号中的数据覆盖本地数据。"
+          label={t("sync.conflict.useAccount")}
+          description={t("sync.conflict.useAccountDescription")}
           selected={selected === "remote"}
           onClick={() => setSelected("remote")}
         />
         <Option
-          label="使用本地数据"
-          description="用本地数据覆盖账号中的数据。"
+          label={t("sync.conflict.useLocal")}
+          description={t("sync.conflict.useLocalDescription")}
           selected={selected === "local"}
           onClick={() => setSelected("local")}
         />
@@ -59,7 +61,7 @@ export function ConflictResolutionDialog({
         onClick={() => onResolve(selected)}
         className="w-full rounded-xl bg-accent px-4 py-3 text-sm font-semibold text-accent-foreground shadow-sm transition-all hover:bg-accent/90 active:scale-[0.98]"
       >
-        确认选择
+        {t("sync.conflict.confirm")}
       </button>
     </div>
   );
@@ -74,19 +76,20 @@ function DataBox({
   stats?: DataStats;
   summary?: RemoteSummary;
 }) {
+  const { t } = useTranslation();
   const items = stats
     ? [
-        { label: "Objects", value: stats.objects },
-        { label: "Memories", value: stats.memories },
-        { label: "Notes", value: stats.notes },
-        { label: "Relations", value: stats.relations },
+        { label: t("objectsTitle"), value: stats.objects },
+        { label: t("memory"), value: stats.memories },
+        { label: t("notes"), value: stats.notes },
+        { label: t("relations"), value: stats.relations },
       ]
     : summary
     ? [
-        { label: "Objects", value: summary.objects },
-        { label: "Notes", value: summary.notes },
-        { label: "Relations", value: summary.relations },
-        { label: "Tags", value: summary.tags },
+        { label: t("objectsTitle"), value: summary.objects },
+        { label: t("notes"), value: summary.notes },
+        { label: t("relations"), value: summary.relations },
+        { label: t("tags"), value: summary.tags },
       ]
     : [];
 
@@ -118,6 +121,7 @@ function Option({
   onClick: () => void;
   recommended?: boolean;
 }) {
+  const { t } = useTranslation();
   return (
     <button
       type="button"
@@ -140,7 +144,7 @@ function Option({
           <span className="text-sm font-medium text-foreground">{label}</span>
           {recommended && (
             <span className="rounded-full bg-accent/10 px-2 py-0.5 text-[10px] font-medium text-accent">
-              推荐
+              {t("sync.conflict.recommended")}
             </span>
           )}
         </div>

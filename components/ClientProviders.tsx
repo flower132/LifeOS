@@ -14,6 +14,8 @@ import {
 } from "@/lib/theme/accentColors";
 import { DevTools } from "./DevTools";
 import { Spinner } from "@/components/ui/Spinner";
+import { TranslationProvider } from "@/components/i18n/TranslationProvider";
+import { useTranslation } from "@/lib/useTranslation";
 
 function getEffectiveThemeColor(
   theme: "light" | "dark" | "system"
@@ -67,11 +69,12 @@ function applySettings(settings: ReturnType<typeof useSettingsStore.getState>): 
 }
 
 function HydrationSkeleton() {
+  const { t } = useTranslation();
   return (
     <div className="flex min-h-screen items-center justify-center bg-background">
       <div className="space-y-3 text-center">
         <Spinner size="md" />
-        <p className="text-sm text-muted-foreground">Loading LifeOS...</p>
+        <p className="text-sm text-muted-foreground">{t("app.loading")}</p>
       </div>
     </div>
   );
@@ -166,9 +169,9 @@ export function ClientProviders({ children }: { children: React.ReactNode }) {
   }, [hydrated]);
 
   return (
-    <>
+    <TranslationProvider>
       {hydrated ? children : <HydrationSkeleton />}
       <DevTools />
-    </>
+    </TranslationProvider>
   );
 }

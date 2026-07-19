@@ -4,6 +4,7 @@ import Link from "next/link";
 import { User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSyncStore } from "@/stores/syncStore";
+import { useTranslation } from "@/lib/useTranslation";
 
 interface UserAvatarProps {
   size?: "sm" | "md" | "lg";
@@ -31,6 +32,7 @@ const sizeClass: Record<string, { wrapper: string; emoji: string; fallback: stri
 
 export function UserAvatar({ size = "md", className, href }: UserAvatarProps) {
   const profile = useSyncStore((s) => s.profile);
+  const { t } = useTranslation();
   const { wrapper, emoji, fallback } = sizeClass[size];
 
   const initials =
@@ -45,7 +47,7 @@ export function UserAvatar({ size = "md", className, href }: UserAvatarProps) {
         wrapper,
         className
       )}
-      aria-label={profile?.displayName ?? "用户头像"}
+      aria-label={profile?.displayName ?? t("a11y.userAvatar")}
     >
       {profile?.avatarEmoji ? (
         <span className={emoji}>{profile.avatarEmoji}</span>

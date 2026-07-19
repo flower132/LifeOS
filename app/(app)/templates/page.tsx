@@ -17,7 +17,7 @@ import { TemplateForm } from "@/components/template/TemplateForm";
 import { SkeletonBlock, SkeletonText } from "@/components/ui/Skeleton";
 
 export default function TemplatesPage() {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const templates = useTemplateStore((s) => s.templates);
   const loaded = useTemplateStore((s) => s.loaded);
   const addTemplate = useTemplateStore((s) => s.addTemplate);
@@ -34,12 +34,13 @@ export default function TemplatesPage() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    // Replenish missing or outdated default templates when entering the library.
+    // Replenish missing or outdated default templates when entering the library
+    // or when the language changes (template content is language-specific).
     void (async () => {
       await storage.ensureDefaultTemplates();
       await useTemplateStore.getState().load();
     })();
-  }, []);
+  }, [language]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();

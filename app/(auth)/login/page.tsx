@@ -5,11 +5,13 @@ import Link from "next/link";
 import { AuthPageShell } from "@/components/auth/AuthPageShell";
 import { useAuthActions } from "@/lib/auth/useAuthActions";
 import { ErrorState } from "@/components/ui/ErrorState";
+import { useTranslation } from "@/lib/useTranslation";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const { signIn, loading, error, successMsg } = useAuthActions();
+  const { t } = useTranslation();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,12 +23,12 @@ export default function LoginPage() {
       mode="login"
       footerLink={
         <>
-          没有账号？{" "}
+          {t("auth.noAccount")} {" "}
           <Link
             href="/register"
             className="font-medium text-accent underline-offset-4 hover:underline"
           >
-            注册
+            {t("auth.signUp")}
           </Link>
         </>
       }
@@ -34,7 +36,7 @@ export default function LoginPage() {
       <form onSubmit={handleSubmit} className="space-y-4">
         <input
           type="email"
-          placeholder="邮箱"
+          placeholder={t("auth.email")}
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
@@ -42,7 +44,7 @@ export default function LoginPage() {
         />
         <input
           type="password"
-          placeholder="密码"
+          placeholder={t("auth.password")}
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
@@ -64,7 +66,7 @@ export default function LoginPage() {
           disabled={loading || !email || !password}
           className="w-full rounded-xl bg-accent px-4 py-3 text-sm font-semibold text-accent-foreground shadow-sm transition-all hover:bg-accent/90 disabled:opacity-50 active:scale-[0.98]"
         >
-          {loading ? "登录中…" : "登录"}
+          {loading ? t("auth.signingIn") : t("auth.signIn")}
         </button>
       </form>
     </AuthPageShell>

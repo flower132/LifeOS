@@ -16,6 +16,18 @@ import { daysBetween } from "./utils/date";
 import { buildFocusPrompt, buildMockFocusOutput } from "@/lib/ai/prompts/todayFocus";
 import { focusOutputSchema } from "./schemas";
 import { applyPenalty } from "./learning";
+import { resolveTranslation, interpolate, localeFromLanguage } from "@/translations";
+
+/** Translate a focus key in the given language (falls back to key). */
+function tt(
+  key: string,
+  language: "zh" | "en",
+  vars: Record<string, string | number> = {}
+): string {
+  const locale = localeFromLanguage(language);
+  const text = resolveTranslation(key, locale, vars);
+  return interpolate(text ?? key, vars);
+}
 
 // ── Keywords for heuristic signals ───────────────────────────────────────────
 
@@ -102,7 +114,7 @@ function buildRelationshipCandidates(context: CompanionContext): FocusCandidate[
   return context.relations.map((relation) => {
     const source = context.objects.find((o) => o.id === relation.source_object_id);
     const target = context.objects.find((o) => o.id === relation.target_object_id);
-    const names = [source?.name, target?.name].filter(Boolean).join(" 与 ");
+    const names = [source?.name, target?.name].filter(Boolean).join(tt("focus.relationshipAnd", context.language));
     const relatedNotes = context.notes.filter(
       (n) =>
         n.object_id === relation.source_object_id ||
@@ -111,7 +123,7 @@ function buildRelationshipCandidates(context: CompanionContext): FocusCandidate[
     return {
       sourceType: "relationship" as const,
       relationId: relation.id,
-      title: names || "一段关系",
+      title: names || tt("focus.aRelationship", context.language),
       score: 0,
       anchorNote: latestNote(relatedNotes),
       relatedNotes,
@@ -133,7 +145,7 @@ function buildMemoryCandidates(context: CompanionContext): FocusCandidate[] {
     .map((note) => ({
       sourceType: "memory" as const,
       memoryId: note.id,
-      title: note.content.slice(0, 15) || "一段记忆",
+      title: note.content.slice(0, 15) || tt("focus.aMemory", context.language),
       score: 0,
       anchorNote: note,
       relatedNotes: [note],
@@ -298,7 +310,7 @@ async function generateFocusWithAI(
 }> {
   const selected = selectProviderForTask("TODAY_FOCUS");
   if (selected.isMock) {
-    return buildMockFocusOutput(candidate);
+    return buildMockFocusOutput(candidate, context.language);
   }
 
   const prompt = buildFocusPrompt(context, candidate);
@@ -312,11 +324,11 @@ async function generateFocusWithAI(
     const parsed = focusOutputSchema.safeParse(raw);
     if (!parsed.success) {
       console.error("[Companion Focus] Schema parse error:", parsed.error);
-      return buildMockFocusOutput(candidate);
+      return buildMockFocusOutput(candidate, context.language);
     }
     return parsed.data;
   } catch {
-    return buildMockFocusOutput(candidate);
+    return buildMockFocusOutput(candidate, context.language);
   }
 }
 
@@ -330,9 +342,9 @@ function createFallbackFocus(context: CompanionContext, today: string): TodayFoc
       date: today,
       sourceType: "self",
       objectId: self.id,
-      title: "自己",
-      explanation: "最近没有太多记录，也许可以先看看自己。",
-      whyNow: "当生活比较安静时，关注自己的状态也是一种温柔的陪伴。",
+      title: tt("focus.fallbackSelfTitle", context.language),
+      explanation: tt("focus.fallbackSelfExplanation", context.language),
+      whyNow: tt("focus.fallbackSelfWhyNow", context.language),
       evidence: [],
       status: "active",
       createdAt: now(),
@@ -344,9 +356,9 @@ function createFallbackFocus(context: CompanionContext, today: string): TodayFoc
     id: uuidv4(),
     date: today,
     sourceType: "memory",
-    title: "记录一件小事",
-    explanation: "记忆越多，我越懂你。",
-    whyNow: "现在还没有足够的记录，一件小事也能成为理解的开始。",
+    title: tt("focus.fallbackMemoryTitle", context.language),
+    explanation: tt("focus.fallbackMemoryExplanation", context.language),
+    whyNow: tt("focus.fallbackMemoryWhyNow", context.language),
     evidence: [],
     status: "active",
     createdAt: now(),
@@ -371,7 +383,7 @@ export async function generateFocus(
       focus: fallback,
       candidate: top ?? {
         sourceType: "memory",
-        title: "记录一件小事",
+        title: tt("focus.fallbackMemoryTitle", context.language),
         score: 0,
         anchorNote: null,
         relatedNotes: [],
@@ -391,8 +403,8 @@ export async function generateFocus(
     placeId: top.placeId,
     habitId: top.habitId,
     title: aiOutput.title || top.title.slice(0, 15),
-    explanation: aiOutput.explanation || "今天也许可以多留意这个主题。",
-    whyNow: aiOutput.whyNow || "它最近出现在你的记录里。",
+    explanation: aiOutput.explanation || tt("focus.defaultExplanation", context.language),
+    whyNow: aiOutput.whyNow || tt("focus.defaultWhyNow", context.language),
     evidence: aiOutput.evidence,
     status: "active",
     createdAt: now(),

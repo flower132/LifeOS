@@ -6,6 +6,7 @@ import {
   UseStepControllerOptions,
   UseStepControllerReturn,
 } from "@/lib/navigation/stepTypes";
+import { useTranslation } from "@/lib/useTranslation";
 
 export function useStepController<TStep extends StepItem = StepItem>({
   steps,
@@ -14,6 +15,7 @@ export function useStepController<TStep extends StepItem = StepItem>({
   isDirty,
   confirmLeave,
 }: UseStepControllerOptions<TStep>): UseStepControllerReturn<TStep> {
+  const { t } = useTranslation();
   const safeInitial = Math.max(
     homeIndex,
     Math.min(initialStepIndex ?? homeIndex, steps.length - 1)
@@ -77,10 +79,10 @@ export function useStepController<TStep extends StepItem = StepItem>({
     if (dirty) {
       const confirmed =
         (await confirmLeave?.({
-          title: "放弃当前创建？",
-          message: "你填写的内容还没有保存。",
-          confirmLabel: "放弃并返回",
-          cancelLabel: "继续编辑",
+          title: t("confirmDiscardTitle"),
+          message: t("confirmDiscardMessage"),
+          confirmLabel: t("discardAndReturn"),
+          cancelLabel: t("continueEditing"),
         })) ?? false;
       if (!confirmed) return;
     }
@@ -90,7 +92,7 @@ export function useStepController<TStep extends StepItem = StepItem>({
     window.setTimeout(() => {
       reset();
     }, 280);
-  }, [currentStepIndex, homeIndex, isDirty, confirmLeave, reset]);
+  }, [currentStepIndex, homeIndex, isDirty, confirmLeave, reset, t]);
 
   return {
     steps,

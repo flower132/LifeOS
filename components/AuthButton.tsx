@@ -2,9 +2,11 @@
 
 import { useAuthActions } from "@/lib/auth/useAuthActions";
 import { SyncStatusBadge } from "@/components/settings/SyncStatusBadge";
+import { useTranslation } from "@/lib/useTranslation";
 
 export default function AuthButton() {
   const { user, signOut } = useAuthActions();
+  const { t } = useTranslation();
 
   if (!user) {
     return (
@@ -12,7 +14,7 @@ export default function AuthButton() {
         href="/login"
         className="inline-flex rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:bg-accent/90"
       >
-        登录以同步
+        {t("auth.signInToSync")}
       </a>
     );
   }
@@ -31,7 +33,7 @@ export default function AuthButton() {
         onClick={signOut}
         className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted"
       >
-        退出登录
+        {t("auth.signOut")}
       </button>
     </div>
   );
