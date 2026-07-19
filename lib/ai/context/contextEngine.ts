@@ -1,9 +1,10 @@
 import { AITask } from "@/lib/ai/types";
 import { memoryService } from "@/lib/memory/memoryService";
 import { buildGraphContext } from "@/lib/graph/contextBuilder";
+import { taskToIntent, decideLayers } from "@/lib/lifebrain/brainDecision";
+import { retrieveContext } from "@/lib/lifebrain/brainRetriever";
+import { createBrainContext, serializeBrainContext } from "@/lib/lifebrain/brainContext";
 import { getWorld } from "./retriever";
-import { serializeContext } from "./contextBuilder";
-import { dedupeSources } from "./sources";
 import { objectStrategy } from "./strategies/objectStrategy";
 import { relationshipStrategy } from "./strategies/relationshipStrategy";
 import { goalStrategy } from "./strategies/goalStrategy";
@@ -27,20 +28,6 @@ import { AIContext, ContextSignals, SerializedContext } from "./types";
 // the server router. Mock/privacy paths never reach this engine's output —
 // they never call the server at all.
 // ---------------------------------------------------------------------------
-
-/** Context token budgets per task depth. */
-const NORMAL_BUDGET_TOKENS = 5_000;
-const DEEP_BUDGET_TOKENS = 20_000;
-
-const DEEP_TASKS: ReadonlySet<AITask> = new Set([
-  "OBJECT_ANALYSIS",
-  "OBJECT_UPDATE",
-  "PERSON_UPDATE",
-  "RELATIONSHIP",
-  "WEEKLY_REVIEW",
-  "MONTHLY_STORY",
-  "PATTERN",
-]);
 
 /** Task → strategy. Tasks absent here get NO context injection. */
 const STRATEGY_MAP: Partial<Record<AITask, { name: string; fn: ContextStrategy }>> = {
@@ -184,6 +171,12 @@ function cacheKey(signals: ContextSignals): string {
 
 /**
  * Build (or reuse) the serialized context block for an AI request.
+ *
+ * LIFE BRAIN INTEGRATION: context assembly is delegated to Life Brain — the
+ * single AI Context Provider (decide → retrieve → rank → compress). Legacy
+ * engines keep calling this function unchanged; every AI call in the product
+ * now flows through Brain for its world model.
+ *
  * Returns null when the task gets no injection or no data exists.
  */
 export function getSerializedContext(
@@ -195,27 +188,41 @@ export function getSerializedContext(
     return hit.value;
   }
 
-  const ctx = buildAIContext(signals);
-  if (!ctx) return null;
+  const intent = taskToIntent(signals.task);
+  if (!intent) return null;
 
-  // Skip injection when there is genuinely nothing to say — the model must
-  // then honestly report missing information instead of being nudged.
-  const hasData =
-    ctx.objects.focus !== undefined ||
-    ctx.memories.recent.length > 0 ||
-    ctx.goals.activeGoals.length > 0 ||
-    ctx.insights.previousInsights.length > 0 ||
-    ctx.knowledge.lines.length > 0 ||
-    ctx.knowledge.longTermMemories.length > 0 ||
-    ctx.graph.neighbors.length > 0;
-  if (!hasData) return null;
+  try {
+    const decision = decideLayers(intent);
+    const retrieval = retrieveContext({
+      question: signals.query ?? "",
+      decision,
+      focusObjectId: signals.objectId,
+    });
+    const context = createBrainContext({ retrieval, decision });
+    const serialized = serializeBrainContext(context);
 
-  const budget = DEEP_TASKS.has(signals.task)
-    ? DEEP_BUDGET_TOKENS
-    : NORMAL_BUDGET_TOKENS;
+    // Skip injection when there is genuinely nothing beyond the user line —
+    // the model must then honestly report missing information.
+    const hasData =
+      retrieval.focusObject !== undefined ||
+      retrieval.relatedObjects.length > 0 ||
+      retrieval.memories.length > 0 ||
+      retrieval.timelineEvents.length > 0 ||
+      retrieval.knowledgeLines.length > 0 ||
+      retrieval.insightLines.length > 0;
+    if (!hasData) return null;
 
-  const serialized = serializeContext(ctx, budget);
-  serialized.sources = dedupeSources(serialized.sources);
-  cache.set(key, { at: Date.now(), value: serialized });
-  return serialized;
+    const value: SerializedContext = {
+      block: serialized.block,
+      sources: serialized.sources,
+      truncated: serialized.truncated,
+      estimatedTokens: serialized.estimatedTokens,
+    };
+    cache.set(key, { at: Date.now(), value });
+    return value;
+  } catch (err) {
+    // Context is best-effort: never fail an AI call because of it.
+    console.warn("[context] Brain context failed, continuing without:", err);
+    return null;
+  }
 }
