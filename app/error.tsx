@@ -15,37 +15,39 @@ export default function GlobalError({
   const { t } = useTranslation();
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-background px-6 text-center">
-      <div className="max-w-md space-y-4">
-        <h1 className="text-2xl font-semibold text-foreground">{t("errorTitle")}</h1>
-        <p className="text-sm text-muted-foreground">{t("errorDescription")}</p>
-        <p className="text-xs text-muted-foreground">{t("errorDataSafe")}</p>
-        {error?.message && (
-          <ErrorState description={error.message} />
-        )}
+    <main
+      role="alert"
+      aria-live="assertive"
+      className="flex min-h-screen flex-col items-center justify-center bg-background px-6 text-center"
+    >
+      <div className="w-full max-w-md space-y-6">
+        <h1 className="text-h1 text-primary">{t("errorTitle")}</h1>
+
+        <ErrorState
+          title={error?.message}
+          description={t("errorDescription")}
+        />
+
+        <p className="text-body-small text-secondary">{t("errorDataSafe")}</p>
+
         <div className="flex items-center justify-center gap-3 pt-2">
           <Link
             href="/home"
-            className="inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:bg-accent/90"
+            className="inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-3 text-sm font-medium text-accent-foreground transition-colors hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-accent/15"
           >
             <Home className="h-4 w-4" />
             {t("backToHome")}
           </Link>
           <button
             type="button"
-            onClick={() => {
-              reset();
-              if (typeof window !== "undefined") {
-                window.location.reload();
-              }
-            }}
-            className="inline-flex items-center gap-2 rounded-lg border border-input bg-background px-4 py-2 text-sm font-medium text-foreground hover:bg-muted"
+            onClick={() => reset()}
+            className="inline-flex items-center gap-2 rounded-lg border border-border bg-surface px-4 py-3 text-sm font-medium text-primary transition-colors hover:bg-background focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-accent/15"
           >
             <RotateCcw className="h-4 w-4" />
             {t("reload")}
           </button>
         </div>
       </div>
-    </div>
+    </main>
   );
 }

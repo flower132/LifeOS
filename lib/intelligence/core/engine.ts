@@ -97,7 +97,7 @@ export class IntelligenceService {
   async runIncremental(opts?: IntelligenceRunOptions): Promise<void> {
     const { provider, isMock } = selectProviderForTask("PATTERN");
     if (isMock && !opts?.force) {
-      console.log("[Intelligence] Skipping incremental analysis: mock provider.");
+      // Development: skipping incremental analysis with mock provider
       return;
     }
 
@@ -128,7 +128,7 @@ export class IntelligenceService {
   async runFull(opts?: IntelligenceRunOptions): Promise<void> {
     const { provider, isMock } = selectProviderForTask("PATTERN");
     if (isMock && !opts?.force) {
-      console.log("[Intelligence] Skipping full analysis: mock provider.");
+      // Development: skipping full analysis with mock provider
       return;
     }
 

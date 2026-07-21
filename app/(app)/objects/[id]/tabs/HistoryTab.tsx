@@ -7,7 +7,6 @@ import { getAIAnalysisHistoryByObjectId } from "@/lib/ai/objectIntelligence/hist
 import { formatDateTime } from "@/lib/utils";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { SkeletonBlock } from "@/components/ui/Skeleton";
-import { Card } from "@/components/ui/Card";
 
 interface HistoryTabProps {
   object: LifeObject;

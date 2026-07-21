@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useCallback, useContext, useMemo, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, type ReactNode } from "react";
 import { useSettingsStore } from "@/stores/settingsStore";
 import {
   interpolate,
@@ -34,6 +34,10 @@ export function TranslationProvider({ children }: { children: ReactNode }) {
     }
     return interpolate(translated, values);
   }, [locale]);
+
+  useEffect(() => {
+    document.documentElement.lang = language === "zh" ? "zh-CN" : language === "ja" ? "ja" : "en";
+  }, [language]);
 
   const value = useMemo(() => ({ locale, language, t }), [language, locale, t]);
   return <TranslationContext.Provider value={value}>{children}</TranslationContext.Provider>;

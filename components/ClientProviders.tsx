@@ -148,8 +148,8 @@ export function ClientProviders({ children }: { children: React.ReactNode }) {
       const buildId = process.env.NEXT_PUBLIC_BUILD_ID || "dev";
       navigator.serviceWorker
         .register(`/sw.js?v=${buildId}`)
-        .then((registration) => {
-          console.log("[LifeOS] SW registered:", registration.scope);
+        .then(() => {
+          // PWA service worker registered successfully
         })
         .catch((error) => {
           console.error("[LifeOS] SW registration failed:", error);
