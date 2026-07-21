@@ -15,7 +15,6 @@ import {
   replayRange,
   splitChapter,
   ReplayPeriod,
-  TimeSnapshot,
   TimeTravelPreset,
 } from "@/lib/graph/timeline";
 import { computeTimelineStats } from "@/lib/graph/timeline/timelineDiff";
@@ -102,17 +101,24 @@ export function TimelineExplorerDialog({ tab, onClose }: TimelineExplorerDialogP
 function TravelTab() {
   const { t } = useTranslation();
   const [preset, setPreset] = useState<TimeTravelPreset>("month");
-  const [snapshot, setSnapshot] = useState<TimeSnapshot | null>(() =>
-    getSnapshotAt(presetDate("month"))
-  );
   const [advice, setAdvice] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // 初始建议：仅异步 setState（effect 内不同步 setState，遵循 react-hooks 规则）。
+  // Track store hydration — triggers re-render when data becomes available
+  const objectsLoaded = useObjectStore((s) => s.loaded);
+
+  // Compute snapshot during render — re-runs when preset or store data changes
+  const date = useMemo(() => presetDate(preset), [preset]);
+  const snapshot = useMemo(
+    () => getSnapshotAt(date),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [date, objectsLoaded, preset]
+  );
+
+  // AI advice generation — triggered by preset or store hydration
   useEffect(() => {
     let cancelled = false;
-    const snap = getSnapshotAt(presetDate("month"));
-    void generateTimeTravelAdvice(snap).then((text) => {
+    void generateTimeTravelAdvice(snapshot).then((text) => {
       if (cancelled) return;
       setAdvice(text);
       setLoading(false);
@@ -120,19 +126,13 @@ function TravelTab() {
     return () => {
       cancelled = true;
     };
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [preset, objectsLoaded]);
 
-  // 事件处理器中可以自由 setState。
   const load = (p: TimeTravelPreset) => {
     setPreset(p);
-    const snap = getSnapshotAt(presetDate(p));
-    setSnapshot(snap);
     setAdvice(null);
     setLoading(true);
-    void generateTimeTravelAdvice(snap).then((text) => {
-      setAdvice(text);
-      setLoading(false);
-    });
   };
 
   const PRESETS: { key: TimeTravelPreset; label: string }[] = [
@@ -141,70 +141,243 @@ function TravelTab() {
     { key: "year", label: t("oneYearAgo") },
   ];
 
+  const hasAnyData = snapshot
+    ? snapshot.activeGoals.length > 0 ||
+      snapshot.activeProjects.length > 0 ||
+      snapshot.peopleContacted.length > 0 ||
+      snapshot.memoriesThatWeek.length > 0 ||
+      snapshot.todayFocusTitle != null ||
+      snapshot.reflectionQuestion != null
+    : false;
+
+  const totalDataPoints = snapshot
+    ? snapshot.activeGoals.length +
+      snapshot.activeProjects.length +
+      snapshot.peopleContacted.length +
+      snapshot.memoriesThatWeek.length +
+      snapshot.events.length
+    : 0;
+
+  const isSparseData = hasAnyData && totalDataPoints <= 2;
+
   return (
     <div className="space-y-3">
-      <div className="flex gap-2">
+      {/* Period selector */}
+      <div className="flex gap-1 rounded-lg bg-muted/40 p-1">
         {PRESETS.map((p) => (
-          <Button
+          <button
             key={p.key}
-            variant={preset === p.key ? "primary" : "secondary"}
-            size="sm"
+            type="button"
             onClick={() => void load(p.key)}
+            className={`flex-1 rounded-md px-3 py-2 text-sm font-medium transition-all duration-fast ${
+              preset === p.key
+                ? "bg-surface text-primary shadow-sm"
+                : "text-secondary hover:text-primary"
+            }`}
           >
             {p.label}
-          </Button>
+          </button>
         ))}
       </div>
 
-      {snapshot && (
-        <div className="space-y-2 text-sm">
-          <p className="text-xs text-muted-foreground">
-            {snapshot.date} · {t("readOnly")}
-          </p>
+      {/* Stores still loading */}
+      {!objectsLoaded ? (
+        <div className="flex flex-col items-center gap-3 py-10">
+          <Loader2 className="h-6 w-6 animate-spin text-accent" />
+          <p className="text-sm text-secondary">{t("common.loading")}</p>
+        </div>
+      ) : snapshot && hasAnyData ? (
+        <div className="space-y-3 animate-fade-in">
+          {/* ── Date header + graph size ── */}
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-accent/10">
+              <CalendarDays className="h-4 w-4 text-accent" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-primary">{snapshot.date}</p>
+              <p className="text-xs text-tertiary">
+                {snapshot.graphSize.objects} {t("dev.objects")} ·{" "}
+                {snapshot.graphSize.relations} {t("common.object_other", { count: 0 }).replace("0 ", "")}
+                {" · "}{t("readOnly")}
+              </p>
+            </div>
+          </div>
+
+          {/* Sparse data notice */}
+          {isSparseData && (
+            <div className="rounded-lg border border-warning/20 bg-warning/5 px-3 py-2 text-xs text-secondary">
+              {t("travelSparseData")}
+            </div>
+          )}
+
+          {/* Today Focus (if existed) */}
           {snapshot.todayFocusTitle && (
-            <p className="text-foreground">🎯 {snapshot.todayFocusTitle}</p>
+            <div className="rounded-lg border border-accent/10 bg-accent/[0.03] px-3 py-2.5">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-accent">
+                {t("todayFocusLabel") ?? "Today's Focus"}
+              </p>
+              <p className="mt-0.5 text-sm text-primary">🎯 {snapshot.todayFocusTitle}</p>
+            </div>
           )}
+
+          {/* Reflection (if existed) */}
+          {snapshot.reflectionQuestion && (
+            <div className="rounded-lg border border-border bg-surface px-3 py-2.5">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-tertiary">
+                {t("eveningReflection")}
+              </p>
+              <p className="mt-0.5 text-sm text-primary">💭 {snapshot.reflectionQuestion}</p>
+            </div>
+          )}
+
+          {/* Active Goals */}
           {snapshot.activeGoals.length > 0 && (
-            <p className="text-muted-foreground">
-              {t("activeGoals")}：
-              {snapshot.activeGoals.map((g) => g.name).join("、")}
-            </p>
+            <EntitySection
+              icon={<Target className="h-3.5 w-3.5" />}
+              title={t("activeGoals")}
+            >
+              <div className="flex flex-wrap gap-1.5">
+                {snapshot.activeGoals.map((g) => (
+                  <Link
+                    key={g.id}
+                    href={`/objects/${g.id}`}
+                    className="inline-flex items-center gap-1 rounded-full border border-border bg-surface px-2.5 py-1 text-xs font-medium text-primary transition-all hover:border-accent/30 hover:bg-accent/5 hover:text-accent"
+                  >
+                    {g.name}
+                    <span className="text-[10px] text-tertiary">{g.status}</span>
+                  </Link>
+                ))}
+              </div>
+            </EntitySection>
           )}
+
+          {/* Active Projects */}
           {snapshot.activeProjects.length > 0 && (
-            <p className="text-muted-foreground">
-              {t("activeProjects")}：
-              {snapshot.activeProjects.map((p) => p.name).join("、")}
-            </p>
+            <EntitySection
+              icon={<FolderKanban className="h-3.5 w-3.5" />}
+              title={t("activeProjects")}
+            >
+              <div className="flex flex-wrap gap-1.5">
+                {snapshot.activeProjects.map((p) => (
+                  <Link
+                    key={p.id}
+                    href={`/objects/${p.id}`}
+                    className="inline-flex items-center gap-1 rounded-full border border-border bg-surface px-2.5 py-1 text-xs font-medium text-primary transition-all hover:border-accent/30 hover:bg-accent/5 hover:text-accent"
+                  >
+                    {p.name}
+                    <span className="text-[10px] text-tertiary">{p.status}</span>
+                  </Link>
+                ))}
+              </div>
+            </EntitySection>
           )}
+
+          {/* People Contacted */}
           {snapshot.peopleContacted.length > 0 && (
-            <p className="text-muted-foreground">
-              {t("peopleContacted")}：
-              {snapshot.peopleContacted.map((p) => `${p.name}（${p.count}次）`).join("、")}
-            </p>
+            <EntitySection
+              icon={<Users className="h-3.5 w-3.5" />}
+              title={t("peopleContacted")}
+            >
+              <div className="flex flex-wrap gap-1.5">
+                {snapshot.peopleContacted.map((p) => (
+                  <Link
+                    key={p.id}
+                    href={`/objects/${p.id}`}
+                    className="inline-flex items-center gap-1 rounded-full border border-border bg-surface px-2.5 py-1 text-xs font-medium text-primary transition-all hover:border-accent/30 hover:bg-accent/5 hover:text-accent"
+                  >
+                    {p.name}
+                    <span className="text-[10px] text-tertiary">{p.count}{p.count === 1 ? " time" : " times"}</span>
+                  </Link>
+                ))}
+              </div>
+            </EntitySection>
           )}
+
+          {/* Memories */}
           {snapshot.memoriesThatWeek.length > 0 && (
-            <ul className="space-y-1 rounded-lg bg-muted/50 p-3 text-xs text-muted-foreground">
-              {snapshot.memoriesThatWeek.map((m) => (
-                <li key={m.id}>
-                  {m.date} · {m.text}
-                </li>
-              ))}
-            </ul>
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-2">
+                <div className="h-px flex-1 bg-border" />
+                <span className="text-xs font-medium text-tertiary">
+                  {t("replayMemories")}
+                </span>
+                <div className="h-px flex-1 bg-border" />
+              </div>
+              <div className="space-y-1">
+                {snapshot.memoriesThatWeek.map((m) => (
+                  <div
+                    key={m.id}
+                    className="rounded-lg px-2.5 py-1.5 text-xs text-secondary transition-colors hover:bg-muted/40"
+                  >
+                    <span className="mr-2 font-medium text-tertiary tabular-nums">{m.date}</span>
+                    {m.text}
+                  </div>
+                ))}
+              </div>
+            </div>
           )}
+
+          {/* Timeline Events */}
+          {snapshot.events.length > 0 && (
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-2">
+                <div className="h-px flex-1 bg-border" />
+                <span className="text-xs font-medium text-tertiary">
+                  {t("replayKeyMoments")}
+                </span>
+                <div className="h-px flex-1 bg-border" />
+              </div>
+              <div className="space-y-0.5">
+                {snapshot.events.slice(0, 8).map((event) => (
+                  <div
+                    key={event.id}
+                    className="flex items-start gap-2.5 rounded-lg px-2.5 py-1.5 text-xs transition-colors hover:bg-muted/40"
+                  >
+                    <span className="mt-0.5 shrink-0 text-[10px] text-tertiary tabular-nums">
+                      {new Date(event.timestamp).toLocaleDateString("zh-CN", {
+                        month: "short",
+                        day: "numeric",
+                      })}
+                    </span>
+                    <span className="min-w-0 break-words text-primary">
+                      {event.title}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* AI Advice */}
           {loading ? (
-            <p className="flex items-center gap-2 text-xs text-muted-foreground">
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              {t("analyzing")}
-            </p>
+            <div className="flex items-center gap-2 rounded-lg bg-muted/30 px-3 py-4">
+              <Loader2 className="h-4 w-4 animate-spin text-accent" />
+              <span className="text-xs text-secondary">{t("analyzing")}</span>
+            </div>
           ) : advice ? (
-            <div className="rounded-lg border border-accent/20 bg-accent/5 p-3 text-sm leading-relaxed text-foreground">
-              <p className="mb-1 flex items-center gap-1.5 text-xs font-medium text-accent">
+            <div className="rounded-xl border border-accent/15 bg-accent/[0.03] p-4">
+              <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-accent">
                 <Sparkles className="h-3.5 w-3.5" />
                 {t("ifBackToThatDay")}
               </p>
-              {advice}
+              <p className="text-sm leading-relaxed text-primary">{advice}</p>
             </div>
           ) : null}
+        </div>
+      ) : (
+        /* ── Empty state: no data at all for this period ── */
+        <div className="flex flex-col items-center gap-4 py-10 text-center">
+          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-muted">
+            <CalendarDays className="h-6 w-6 text-tertiary" />
+          </div>
+          <div className="space-y-1">
+            <p className="text-sm font-medium text-primary">
+              {t("travelEmptyTitle")}
+            </p>
+            <p className="max-w-xs text-xs text-secondary">
+              {t("travelEmptyDescription")}
+            </p>
+          </div>
         </div>
       )}
     </div>
