@@ -56,7 +56,7 @@ export { getSnapshotAt, presetDate, generateTimeTravelAdvice } from "./timeTrave
 export type { TimeTravelPreset } from "./timeTravel";
 
 // Life Replay
-export { getReplay, generateReplay } from "./replay";
+export { getReplay, generateReplay, replayRange } from "./replay";
 export type { ReplayPeriod } from "./replay";
 
 // Insights (home card)

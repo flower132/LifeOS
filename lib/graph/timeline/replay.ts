@@ -21,7 +21,7 @@ function getLanguage(): Language {
   return useSettingsStore.getState().language;
 }
 
-function replayRange(period: ReplayPeriod, at: Date): { from: number; to: number; key: string; label: string } {
+export function replayRange(period: ReplayPeriod, at: Date): { from: number; to: number; key: string; label: string } {
   const DAY = 24 * 60 * 60 * 1000;
   const to = at.getTime();
   if (period === "month") {

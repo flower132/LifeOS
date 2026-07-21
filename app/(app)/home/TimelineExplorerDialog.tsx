@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { LifeChapter } from "@/lib/types";
 import {
   generateAIChapters,
@@ -11,17 +12,31 @@ import {
   mergeChapters,
   presetDate,
   renameChapter,
+  replayRange,
   splitChapter,
   ReplayPeriod,
   TimeSnapshot,
   TimeTravelPreset,
 } from "@/lib/graph/timeline";
+import { computeTimelineStats } from "@/lib/graph/timeline/timelineDiff";
+import { queryTimeline } from "@/lib/graph/timeline/timelineQuery";
+import { rankTimelineEvents } from "@/lib/graph/timeline/timelineRank";
 import { answerTimelineQuestion } from "@/lib/graph/timeline/qa";
 import { useLongTermMemoryStore } from "@/stores/longTermMemoryStore";
+import { useObjectStore } from "@/stores/objectStore";
 import { Dialog } from "@/components/ui/Dialog";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
-import { Loader2, Sparkles } from "lucide-react";
+import {
+  Loader2,
+  Sparkles,
+  Users,
+  FolderKanban,
+  Target,
+  ChevronDown,
+  ChevronUp,
+  CalendarDays,
+} from "lucide-react";
 import { useTranslation } from "@/lib/useTranslation";
 
 export type ExplorerTab = "travel" | "replay" | "search" | "chapters";
@@ -198,13 +213,38 @@ function TravelTab() {
 
 // ── Life Replay ─────────────────────────────────────────────────────────────
 
+const INITIAL_EVENTS = 5;
+
 function ReplayTab() {
   const { t } = useTranslation();
   const [period, setPeriod] = useState<ReplayPeriod>("month");
   const [text, setText] = useState<string | null>(() => getReplay("month"));
   const [loading, setLoading] = useState(() => getReplay("month") === null);
+  const [expanded, setExpanded] = useState(false);
+  const [showAllEvents, setShowAllEvents] = useState(false);
 
-  // 初次生成：仅异步 setState。
+  const range = useMemo(() => replayRange(period, new Date()), [period]);
+
+  const { stats, topEvents } = useMemo(() => {
+    const s = computeTimelineStats(range.from, range.to, range.label);
+    const events = queryTimeline({ from: range.from, to: range.to, limit: 200 });
+    const top = rankTimelineEvents(events, 15);
+    return { stats: s, topEvents: top };
+  }, [range.from, range.to, range.label]);
+
+  // Resolve object IDs → names for goals (stats.goalsProgressed are IDs)
+  const objects = useObjectStore((s) => s.objects);
+  const goalNames = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const o of objects) {
+      map.set(o.id, o.name);
+    }
+    return stats.goalsProgressed
+      .map((id) => ({ id, name: map.get(id) ?? id }))
+      .filter((g) => g.name);
+  }, [objects, stats.goalsProgressed]);
+
+  // Initial generation
   useEffect(() => {
     if (getReplay("month") !== null) return;
     let cancelled = false;
@@ -220,6 +260,8 @@ function ReplayTab() {
 
   const load = (p: ReplayPeriod) => {
     setPeriod(p);
+    setExpanded(false);
+    setShowAllEvents(false);
     const cached = getReplay(p);
     if (cached) {
       setText(cached);
@@ -240,34 +282,256 @@ function ReplayTab() {
     { key: "year", label: t("thisYear") },
   ];
 
+  const hasContent = text || stats.totalEvents > 0;
+
   return (
-    <div className="space-y-3">
-      <div className="flex gap-2">
+    <div className="space-y-4">
+      {/* Period selector — pill style */}
+      <div className="flex gap-1 rounded-lg bg-muted/40 p-1">
         {PERIODS.map((p) => (
-          <Button
+          <button
             key={p.key}
-            variant={period === p.key ? "primary" : "secondary"}
-            size="sm"
+            type="button"
             onClick={() => void load(p.key)}
+            className={`flex-1 rounded-md px-3 py-2 text-sm font-medium transition-all duration-fast ${
+              period === p.key
+                ? "bg-surface text-primary shadow-sm"
+                : "text-secondary hover:text-primary"
+            }`}
           >
             {p.label}
-          </Button>
+          </button>
         ))}
       </div>
+
       {loading ? (
-        <p className="flex items-center gap-2 text-xs text-muted-foreground">
-          <Loader2 className="h-3.5 w-3.5 animate-spin" />
-          {t("analyzing")}
-        </p>
-      ) : text ? (
-        <p className="rounded-lg bg-muted/50 p-4 text-sm leading-relaxed text-foreground">
-          {text}
-        </p>
+        <div className="flex flex-col items-center gap-3 py-10">
+          <Loader2 className="h-6 w-6 animate-spin text-accent" />
+          <p className="text-sm text-secondary">{t("analyzing")}</p>
+        </div>
+      ) : hasContent ? (
+        <div className="space-y-4 animate-fade-in">
+          {/* ── Period header ── */}
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-accent/10">
+              <CalendarDays className="h-4 w-4 text-accent" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-primary">{range.label}</p>
+              <p className="text-xs text-tertiary">
+                {new Date(range.from).toLocaleDateString(
+                  "zh-CN",
+                  { year: "numeric", month: "short", day: "numeric" }
+                )}
+                {" — "}
+                {new Date(range.to).toLocaleDateString(
+                  "zh-CN",
+                  { year: "numeric", month: "short", day: "numeric" }
+                )}
+              </p>
+            </div>
+          </div>
+
+          {/* ── AI Summary card ── */}
+          {text && (
+            <div className="rounded-xl border border-accent/15 bg-accent/[0.03] p-4">
+              <div className="mb-2 flex items-center gap-1.5">
+                <Sparkles className="h-3.5 w-3.5 text-accent" />
+                <span className="text-xs font-semibold uppercase tracking-wide text-accent">
+                  {t("replayAIInsight")}
+                </span>
+              </div>
+              <div className={`text-sm leading-relaxed text-primary ${expanded ? "" : "line-clamp-4"}`}>
+                {text}
+              </div>
+              {text.length > 240 && (
+                <button
+                  type="button"
+                  onClick={() => setExpanded((v) => !v)}
+                  className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-accent hover:text-accent/80 transition-colors"
+                >
+                  {expanded ? t("replayShowLess") : t("expand")}
+                  {expanded ? (
+                    <ChevronUp className="h-3 w-3" />
+                  ) : (
+                    <ChevronDown className="h-3 w-3" />
+                  )}
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* ── Stats row ── */}
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+            <StatBadge label={t("replayEvents")} value={stats.totalEvents} />
+            <StatBadge label={t("replayMemories")} value={stats.memoriesCreated} />
+            <StatBadge label={t("replayNotes")} value={stats.notesCreated} />
+            <StatBadge
+              label={t("replayNewRelations")}
+              value={stats.newRelations + stats.discoveredRelations}
+            />
+          </div>
+
+          {/* ── Active People ── */}
+          {stats.activePeople.length > 0 && (
+            <EntitySection
+              icon={<Users className="h-3.5 w-3.5" />}
+              title={t("replayActivePeople")}
+            >
+              <div className="flex flex-wrap gap-1.5">
+                {stats.activePeople.map((p) => (
+                  <Link
+                    key={p.id}
+                    href={`/objects/${p.id}`}
+                    className="inline-flex items-center gap-1 rounded-full border border-border bg-surface px-2.5 py-1 text-xs font-medium text-primary transition-all hover:border-accent/30 hover:bg-accent/5 hover:text-accent"
+                  >
+                    {p.name}
+                    <span className="text-[10px] text-tertiary">{p.count}</span>
+                  </Link>
+                ))}
+              </div>
+            </EntitySection>
+          )}
+
+          {/* ── Active Projects ── */}
+          {stats.activeProjects.length > 0 && (
+            <EntitySection
+              icon={<FolderKanban className="h-3.5 w-3.5" />}
+              title={t("replayActiveProjects")}
+            >
+              <div className="flex flex-wrap gap-1.5">
+                {stats.activeProjects.map((p) => (
+                  <Link
+                    key={p.id}
+                    href={`/objects/${p.id}`}
+                    className="inline-flex items-center gap-1 rounded-full border border-border bg-surface px-2.5 py-1 text-xs font-medium text-primary transition-all hover:border-accent/30 hover:bg-accent/5 hover:text-accent"
+                  >
+                    {p.name}
+                    <span className="text-[10px] text-tertiary">{p.count}</span>
+                  </Link>
+                ))}
+              </div>
+            </EntitySection>
+          )}
+
+          {/* ── Goals Progressed ── */}
+          {goalNames.length > 0 && (
+            <EntitySection
+              icon={<Target className="h-3.5 w-3.5" />}
+              title={t("replayGoalsProgressed")}
+            >
+              <div className="flex flex-wrap gap-1.5">
+                {goalNames.map((g) => (
+                  <Link
+                    key={g.id}
+                    href={`/objects/${g.id}`}
+                    className="inline-flex items-center rounded-full border border-border bg-surface px-2.5 py-1 text-xs font-medium text-primary transition-all hover:border-accent/30 hover:bg-accent/5 hover:text-accent"
+                  >
+                    {g.name}
+                  </Link>
+                ))}
+              </div>
+            </EntitySection>
+          )}
+
+          {/* ── Key Moments ── */}
+          {topEvents.length > 0 && (
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <div className="h-px flex-1 bg-border" />
+                <span className="text-xs font-medium text-tertiary">
+                  {t("replayKeyMoments")}
+                </span>
+                <div className="h-px flex-1 bg-border" />
+              </div>
+              <div className="space-y-1">
+                {topEvents
+                  .slice(0, showAllEvents ? topEvents.length : INITIAL_EVENTS)
+                  .map((event) => (
+                    <div
+                      key={event.id}
+                      className="flex items-start gap-3 rounded-lg px-2.5 py-2 text-sm transition-colors hover:bg-muted/40"
+                    >
+                      <span className="mt-0.5 shrink-0 text-[10px] font-medium text-tertiary tabular-nums">
+                        {new Date(event.timestamp).toLocaleDateString(
+                          "zh-CN",
+                          { month: "short", day: "numeric" }
+                        )}
+                      </span>
+                      <span className="min-w-0 break-words text-primary">
+                        {event.title}
+                      </span>
+                      {event.objectId && event.objectType && (
+                        <Link
+                          href={`/objects/${event.objectId}`}
+                          className="ml-auto shrink-0 text-xs text-accent hover:text-accent/80 transition-colors"
+                        >
+                          {t("view")}
+                        </Link>
+                      )}
+                    </div>
+                  ))}
+              </div>
+              {topEvents.length > INITIAL_EVENTS && (
+                <button
+                  type="button"
+                  onClick={() => setShowAllEvents((v) => !v)}
+                  className="inline-flex w-full items-center justify-center gap-1 rounded-lg py-1.5 text-xs font-medium text-secondary transition-colors hover:bg-muted/40 hover:text-primary"
+                >
+                  {showAllEvents
+                    ? t("replayShowLess")
+                    : t("replayShowMore", { count: topEvents.length })}
+                  {showAllEvents ? (
+                    <ChevronUp className="h-3 w-3" />
+                  ) : (
+                    <ChevronDown className="h-3 w-3" />
+                  )}
+                </button>
+              )}
+            </div>
+          )}
+        </div>
       ) : (
-        <p className="text-xs text-muted-foreground">
-          {t("replayEmpty")}
-        </p>
+        <div className="flex flex-col items-center gap-3 py-10 text-center">
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+            <CalendarDays className="h-5 w-5 text-tertiary" />
+          </div>
+          <p className="max-w-xs text-sm text-secondary">
+            {t("replayEmpty")}
+          </p>
+        </div>
       )}
+    </div>
+  );
+}
+
+// ── ReplayTab sub-components ────────────────────────────────────────────────
+
+function StatBadge({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="rounded-lg border border-border bg-surface px-3 py-2.5 text-center">
+      <p className="text-lg font-semibold tabular-nums text-primary">{value}</p>
+      <p className="text-[11px] text-tertiary">{label}</p>
+    </div>
+  );
+}
+
+function EntitySection({
+  icon,
+  title,
+  children,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center gap-1.5">
+        <span className="text-tertiary">{icon}</span>
+        <span className="text-xs font-medium text-secondary">{title}</span>
+      </div>
+      {children}
     </div>
   );
 }
