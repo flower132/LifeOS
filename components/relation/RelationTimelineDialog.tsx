@@ -72,7 +72,7 @@ export function RelationTimelineDialog({
     <Dialog
       open={relation !== null}
       onClose={onClose}
-      title={`${t("relationTimeline") ?? "关系时间线"} · ${otherName}`}
+      title={`${t("relationTimeline")} · ${otherName}`}
       maxWidth="md"
     >
       <div className="max-h-[60vh] space-y-4 overflow-y-auto pr-1">
@@ -80,7 +80,7 @@ export function RelationTimelineDialog({
           <div className="rounded-lg border border-accent/20 bg-accent/5 p-3">
             <p className="mb-1 flex items-center gap-1.5 text-xs font-medium text-accent">
               <Sparkles className="h-3.5 w-3.5" />
-              {t("relationshipEvolution") ?? "关系演化"}
+              {t("relationshipEvolution")}
             </p>
             <p className="text-sm leading-relaxed text-foreground">{evolutionText}</p>
           </div>
@@ -88,7 +88,7 @@ export function RelationTimelineDialog({
 
         {events.length === 0 ? (
           <p className="text-xs text-muted-foreground">
-            {t("timelineEmpty") ?? "这条关系还没有时间线记录。"}
+            {t("timelineEmpty")}
           </p>
         ) : (
           <ol className="space-y-2">

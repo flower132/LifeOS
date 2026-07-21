@@ -21,7 +21,7 @@ import { resolveTranslation, interpolate, localeFromLanguage } from "@/translati
 /** Translate a focus key in the given language (falls back to key). */
 function tt(
   key: string,
-  language: "zh" | "en",
+  language: "zh" | "en" | "ja",
   vars: Record<string, string | number> = {}
 ): string {
   const locale = localeFromLanguage(language);

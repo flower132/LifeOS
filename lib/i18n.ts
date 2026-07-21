@@ -1,4 +1,4 @@
-export type Language = "zh" | "en";
+export type Language = "zh" | "en" | "ja";
 
 /**
  * Legacy catalogue retained while call sites are progressively moved to
@@ -1494,6 +1494,8 @@ export const legacyTranslations: Record<Language, Record<string, string>> = {
     migrationUseAccountData: "使用账号数据",
     migrationUseLocalData: "使用本地数据",
   },
+  /** Japanese legacy inherits English as fallback; new UI text uses translations/ja-JP.ts. */
+  ja: {} as Record<string, string>,
 };
 
 export function t(key: string, language: Language, vars: Record<string, string> = {}): string {

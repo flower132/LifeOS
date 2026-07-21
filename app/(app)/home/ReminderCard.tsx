@@ -103,7 +103,7 @@ export function ReminderCard() {
       <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Spinner size="sm" />
-          {t("reminderLoading") ?? "正在看看今天有什么值得提醒的事..."}
+          {t("reminderLoading")}
         </div>
       </div>
     );
@@ -126,7 +126,7 @@ export function ReminderCard() {
       <div className="mb-3 flex items-center gap-2">
         <Bell className="h-4 w-4 text-muted-foreground" />
         <h2 className="text-sm font-semibold uppercase tracking-wide text-foreground">
-          {t("todayReminder") ?? "今日提醒"}
+          {t("todayReminder")}
         </h2>
       </div>
 
@@ -142,7 +142,7 @@ export function ReminderCard() {
           className="inline-flex items-center gap-1 rounded-lg bg-accent px-3 py-1.5 text-xs font-medium text-accent-foreground hover:bg-accent/90"
         >
           <Check className="h-3.5 w-3.5" />
-          {t("done") ?? "完成"}
+          {t("done")}
         </button>
         <button
           type="button"
@@ -150,7 +150,7 @@ export function ReminderCard() {
           className="inline-flex items-center gap-1 rounded-lg border border-input bg-background px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted"
         >
           <Clock className="h-3.5 w-3.5" />
-          {t("later") ?? "稍后"}
+          {t("later")}
         </button>
         <button
           type="button"
@@ -158,7 +158,7 @@ export function ReminderCard() {
           className="inline-flex items-center gap-1 rounded-lg border border-input bg-background px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-muted"
         >
           <SkipForward className="h-3.5 w-3.5" />
-          {t("skip") ?? "跳过"}
+          {t("skip")}
         </button>
       </div>
     </div>

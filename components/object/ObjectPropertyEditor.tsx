@@ -73,7 +73,7 @@ function SelectInput({
       <option value="">{placeholder ?? ""}</option>
       {schema.options?.map((option) => (
         <option key={option.value} value={option.value}>
-          {option.label[language]}
+          {option.label[language] ?? option.label.en}
         </option>
       ))}
     </select>

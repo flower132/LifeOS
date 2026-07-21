@@ -84,7 +84,7 @@ export function AISuggestionCard({
       <p className="text-sm text-muted-foreground">{suggestion.description}</p>
       {suggestion.completedAt && (
         <p className="mt-2 text-xs text-muted-foreground">
-          {t("completedAt") ?? "Completed"}:{" "}
+          {t("completedAt")}:{" "}
           {new Date(suggestion.completedAt).toLocaleDateString()}
         </p>
       )}

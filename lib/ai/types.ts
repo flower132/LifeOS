@@ -1,6 +1,6 @@
 import { LifeObjectType } from "@/lib/types";
 
-export type Language = "zh" | "en";
+export type Language = "zh" | "en" | "ja";
 
 /**
  * Provider identifiers known to the AI infrastructure.

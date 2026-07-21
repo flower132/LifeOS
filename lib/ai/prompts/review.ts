@@ -14,8 +14,10 @@ function serializeNotes(notes: Note[]): string {
     .join("\n\n---\n\n");
 }
 
-function langHint(language: "zh" | "en"): string {
-  return language === "zh" ? "请使用简体中文回复。" : "Please respond in English.";
+function langHint(language: "zh" | "en" | "ja"): string {
+  if (language === "zh") return "请使用简体中文回复。";
+  if (language === "ja") return "日本語で返答してください。";
+  return "Please respond in English.";
 }
 
 // ── Daily Timeline ───────────────────────────────────────────────────────────

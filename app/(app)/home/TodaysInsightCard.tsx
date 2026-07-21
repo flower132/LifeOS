@@ -34,7 +34,7 @@ export function TodaysInsightCard() {
     <Card variant="ai" className="space-y-2">
       <div className="flex items-center gap-2 text-sm font-medium text-foreground">
         <Brain className="h-4 w-4 text-accent" />
-        {t("todaysInsight") ?? "今日洞察"}
+        {t("todaysInsight")}
       </div>
       {headline.objectId ? (
         <Link href={`/objects/${headline.objectId}`} className="group flex items-start justify-between gap-3 rounded-lg p-2 -mx-2 hover:bg-muted/60">

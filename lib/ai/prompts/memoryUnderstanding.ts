@@ -5,9 +5,9 @@ export function buildRelatedMemoriesPrompt(params: {
   targetNoteId: string;
   targetContent: string;
   otherNotesText: string;
-  language: "zh" | "en";
+  language: "zh" | "en" | "ja";
 }): string {
-  const langHint = params.language === "zh" ? "请使用简体中文回复。" : "Please respond in English.";
+  const langHint = params.language === "zh" ? "请使用简体中文回复。" : params.language === "ja" ? "日本語で返答してください。" : "Please respond in English.";
 
   const shape = JSON.stringify(
     {

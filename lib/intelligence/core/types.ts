@@ -6,7 +6,10 @@ import {
   IntelligenceTodayStory,
   IntelligenceEvidence,
 } from "@/lib/types";
-import { Language } from "@/lib/i18n";
+import { Language as AILanguage } from "@/lib/i18n";
+
+/** UI language includes Japanese; AI prompt language is zh|en only. */
+export type Language = AILanguage | "ja";
 
 export interface IntelligenceContext {
   userId: string;

@@ -25,7 +25,7 @@ export function PatternFeedCard({ patterns }: PatternFeedCardProps) {
       <div className="mb-4 flex items-center gap-2">
         <Lightbulb className="h-4 w-4 text-accent" />
         <h2 className="text-sm font-semibold uppercase tracking-wide text-foreground">
-          {t("patterns") ?? "Patterns"}
+          {t("patterns")}
         </h2>
       </div>
 
@@ -61,8 +61,8 @@ export function PatternFeedCard({ patterns }: PatternFeedCardProps) {
                 className="text-xs font-medium text-accent hover:text-accent/90"
               >
                 {expanded[pattern.id]
-                  ? t("hideEvidence") ?? "隐藏证据"
-                  : t("viewEvidence") ?? "查看证据"}
+                  ? t("hideEvidence")
+                  : t("viewEvidence")}
               </button>
 
               <div className="ml-auto flex items-center gap-1">
@@ -74,7 +74,7 @@ export function PatternFeedCard({ patterns }: PatternFeedCardProps) {
                       ? "text-accent bg-accent/10"
                       : "text-muted-foreground hover:bg-muted"
                   }`}
-                  title={t("thisIsMe") ?? "是的"}
+                  title={t("thisIsMe")}
                 >
                   <ThumbsUp className="h-3.5 w-3.5" />
                 </button>
@@ -86,7 +86,7 @@ export function PatternFeedCard({ patterns }: PatternFeedCardProps) {
                       ? "text-destructive bg-destructive/10"
                       : "text-muted-foreground hover:bg-muted"
                   }`}
-                  title={t("thisIsNotMe") ?? "这不是我"}
+                  title={t("thisIsNotMe")}
                 >
                   <ThumbsDown className="h-3.5 w-3.5" />
                 </button>

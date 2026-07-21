@@ -45,10 +45,10 @@ export function TimelineExplorerDialog({ tab, onClose }: TimelineExplorerDialogP
   }
 
   const TAB_LABEL: Record<ExplorerTab, string> = {
-    travel: t("timeTravel") ?? "时间旅行",
-    replay: t("lifeReplay") ?? "人生回放",
-    search: t("timelineSearch") ?? "时间线搜索",
-    chapters: t("lifeChapters") ?? "人生章节",
+    travel: t("timeTravel"),
+    replay: t("lifeReplay"),
+    search: t("timelineSearch"),
+    chapters: t("lifeChapters"),
   };
 
   return (
@@ -121,9 +121,9 @@ function TravelTab() {
   };
 
   const PRESETS: { key: TimeTravelPreset; label: string }[] = [
-    { key: "week", label: t("oneWeekAgo") ?? "一周前" },
-    { key: "month", label: t("oneMonthAgo") ?? "一个月前" },
-    { key: "year", label: t("oneYearAgo") ?? "一年前" },
+    { key: "week", label: t("oneWeekAgo") },
+    { key: "month", label: t("oneMonthAgo") },
+    { key: "year", label: t("oneYearAgo") },
   ];
 
   return (
@@ -144,26 +144,26 @@ function TravelTab() {
       {snapshot && (
         <div className="space-y-2 text-sm">
           <p className="text-xs text-muted-foreground">
-            {snapshot.date} · {t("readOnly") ?? "只读，历史不可修改"}
+            {snapshot.date} · {t("readOnly")}
           </p>
           {snapshot.todayFocusTitle && (
             <p className="text-foreground">🎯 {snapshot.todayFocusTitle}</p>
           )}
           {snapshot.activeGoals.length > 0 && (
             <p className="text-muted-foreground">
-              {t("activeGoals") ?? "进行中的目标"}：
+              {t("activeGoals")}：
               {snapshot.activeGoals.map((g) => g.name).join("、")}
             </p>
           )}
           {snapshot.activeProjects.length > 0 && (
             <p className="text-muted-foreground">
-              {t("activeProjects") ?? "进行中的项目"}：
+              {t("activeProjects")}：
               {snapshot.activeProjects.map((p) => p.name).join("、")}
             </p>
           )}
           {snapshot.peopleContacted.length > 0 && (
             <p className="text-muted-foreground">
-              {t("peopleContacted") ?? "当周联系"}：
+              {t("peopleContacted")}：
               {snapshot.peopleContacted.map((p) => `${p.name}（${p.count}次）`).join("、")}
             </p>
           )}
@@ -179,13 +179,13 @@ function TravelTab() {
           {loading ? (
             <p className="flex items-center gap-2 text-xs text-muted-foreground">
               <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              {t("analyzing") ?? "分析中…"}
+              {t("analyzing")}
             </p>
           ) : advice ? (
             <div className="rounded-lg border border-accent/20 bg-accent/5 p-3 text-sm leading-relaxed text-foreground">
               <p className="mb-1 flex items-center gap-1.5 text-xs font-medium text-accent">
                 <Sparkles className="h-3.5 w-3.5" />
-                {t("ifBackToThatDay") ?? "如果回到那一天"}
+                {t("ifBackToThatDay")}
               </p>
               {advice}
             </div>
@@ -235,9 +235,9 @@ function ReplayTab() {
   };
 
   const PERIODS: { key: ReplayPeriod; label: string }[] = [
-    { key: "month", label: t("thisMonth") ?? "本月" },
-    { key: "quarter", label: t("thisQuarter") ?? "本季度" },
-    { key: "year", label: t("thisYear") ?? "今年" },
+    { key: "month", label: t("thisMonth") },
+    { key: "quarter", label: t("thisQuarter") },
+    { key: "year", label: t("thisYear") },
   ];
 
   return (
@@ -257,7 +257,7 @@ function ReplayTab() {
       {loading ? (
         <p className="flex items-center gap-2 text-xs text-muted-foreground">
           <Loader2 className="h-3.5 w-3.5 animate-spin" />
-          {t("analyzing") ?? "分析中…"}
+          {t("analyzing")}
         </p>
       ) : text ? (
         <p className="rounded-lg bg-muted/50 p-4 text-sm leading-relaxed text-foreground">
@@ -265,7 +265,7 @@ function ReplayTab() {
         </p>
       ) : (
         <p className="text-xs text-muted-foreground">
-          {t("replayEmpty") ?? "这段时间还没有足够的记录生成回放。"}
+          {t("replayEmpty")}
         </p>
       )}
     </div>
@@ -298,12 +298,11 @@ function SearchTab() {
           onChange={(e) => setQuestion(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && void ask()}
           placeholder={
-            t("timelineSearchPlaceholder") ??
-            "例如：第一次见张三是什么时候？今年完成了哪些目标？"
+            t("timelineSearchPlaceholder")
           }
         />
         <Button onClick={() => void ask()} disabled={loading || !question.trim()}>
-          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : (t("search") ?? "搜索")}
+          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : (t("search"))}
         </Button>
       </div>
       {answer && (
@@ -312,7 +311,7 @@ function SearchTab() {
         </p>
       )}
       <p className="text-xs text-muted-foreground">
-        {t("timelineSearchHint") ?? "回答只来自你的时间线，不会自由发挥。"}
+        {t("timelineSearchHint")}
       </p>
     </div>
   );
@@ -373,7 +372,7 @@ function ChaptersTab() {
       <div className="flex items-center gap-2">
         <Button size="sm" onClick={() => void handleGenerate()} disabled={generating}>
           {generating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
-          {t("generateChapters") ?? "AI 生成章节"}
+          {t("generateChapters")}
         </Button>
         {selected.size >= 2 && (
           <Button size="sm" variant="secondary" onClick={() => void handleMerge()}>
@@ -384,7 +383,7 @@ function ChaptersTab() {
 
       {sorted.length === 0 ? (
         <p className="text-xs text-muted-foreground">
-          {t("chaptersEmpty") ?? "还没有章节。点击「AI 生成章节」让 AI 根据你的时间线划分人生阶段。"}
+          {t("chaptersEmpty")}
         </p>
       ) : (
         <ul className="space-y-2">
@@ -407,7 +406,7 @@ function ChaptersTab() {
                           onKeyDown={(e) => e.key === "Enter" && void handleRename(chapter.id)}
                         />
                         <Button size="sm" onClick={() => void handleRename(chapter.id)}>
-                          {t("save") ?? "保存"}
+                          {t("save")}
                         </Button>
                       </div>
                     ) : (
@@ -418,13 +417,13 @@ function ChaptersTab() {
                           setRenamingId(chapter.id);
                           setRenameValue(chapter.title);
                         }}
-                        title={t("renameChapter") ?? "点击重命名"}
+                        title={t("renameChapter")}
                       >
                         {chapter.title}
                       </button>
                     )}
                     <p className="text-xs text-muted-foreground">
-                      {chapter.startDate.slice(0, 10)} → {chapter.endDate?.slice(0, 10) ?? (t("ongoing") ?? "进行中")}
+                      {chapter.startDate.slice(0, 10)} → {chapter.endDate?.slice(0, 10) ?? (t("ongoing"))}
                     </p>
                     {chapter.description && (
                       <p className="mt-1 text-xs text-muted-foreground">{chapter.description}</p>
@@ -439,7 +438,7 @@ function ChaptersTab() {
                     setSplitDate("");
                   }}
                 >
-                  {t("splitChapter") ?? "拆分"}
+                  {t("splitChapter")}
                 </Button>
               </div>
               {splittingId === chapter.id && (
@@ -450,7 +449,7 @@ function ChaptersTab() {
                     onChange={(e) => setSplitDate(e.target.value)}
                   />
                   <Button size="sm" onClick={() => void handleSplit(chapter.id)} disabled={!splitDate}>
-                    {t("confirm") ?? "确定"}
+                    {t("confirm")}
                   </Button>
                 </div>
               )}

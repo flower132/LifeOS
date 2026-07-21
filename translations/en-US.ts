@@ -103,6 +103,126 @@ const enUS = {
   "focus.relationshipAnd": " & ",
   "focus.aRelationship": "A relationship",
   "focus.aMemory": "A memory",
+
+  // Settings — companion & notifications
+  "companionSettings": "Daily Companion",
+  "companionEnabled": "Enable Daily Companion",
+  "allowNotifications": "Allow daily reminder notifications",
+  "companionSettingsDescription": "Daily Companion shows only the one thing worth appearing each day: a Today Focus, a Today Story, and a gentle evening reflection.",
+  "aiServerManagedDescription": "AI is managed by the server; keys never appear in the browser.",
+  "backToSettings": "Back to settings",
+
+  // Home — insights
+  "todaysInsight": "Today's Insight",
+  "graphInsights": "Graph Insights",
+
+  // Home — reflection
+  "reflectionLoading": "Preparing tonight's reflection...",
+  "eveningReflection": "Tonight's Reflection",
+  "reflectionPlaceholder": "Write a few words if you'd like...",
+  "answer": "Answer",
+
+  // Home — reminder
+  "reminderLoading": "Looking for something worth reminding you about today...",
+  "todayReminder": "Today's Reminder",
+  "later": "Later",
+  "skip": "Skip",
+
+  // Home — timeline explorer
+  "oneWeekAgo": "One week ago",
+  "oneMonthAgo": "One month ago",
+  "oneYearAgo": "One year ago",
+  "readOnly": "Read-only; history cannot be modified",
+  "activeGoals": "Active goals",
+  "activeProjects": "Active projects",
+  "peopleContacted": "People contacted",
+  "ifBackToThatDay": "If I went back to that day",
+  "thisMonth": "This month",
+  "thisQuarter": "This quarter",
+  "thisYear": "This year",
+  "replayEmpty": "Not enough records to generate a replay for this period.",
+  "timelineSearchPlaceholder": "e.g., When did I first meet Zhang San? What goals did I complete this year?",
+  "search": "Search",
+  "timelineSearchHint": "Answers come only from your timeline; no free-form generation.",
+  "generateChapters": "AI generate chapters",
+  "chaptersEmpty": "No chapters yet. Click \"AI generate chapters\" to let AI divide your life stages from the timeline.",
+  "renameChapter": "Click to rename",
+  "ongoing": "Ongoing",
+  "splitChapter": "Split",
+  "confirm": "Confirm",
+
+  // Object intelligence
+  "aiProfileBuilding": "AI is understanding this object in the background; check back later for the profile.",
+  "aiUnderstanding": "AI Understanding",
+  "communicationAssistant": "AI Communication Assistant",
+  "refresh": "Refresh",
+  "graphSummary": "Graph Summary",
+  "recentChanges": "Recent Changes",
+  "suggestionLabel": "Suggestion",
+  "communicationSituationPlaceholder": "Describe the communication situation you're about to face, e.g., Today I need to ask my boss for budget.",
+  "analyzing": "Analyzing…",
+  "getCommunicationAdvice": "Get communication advice",
+  "communicationAdviceFailed": "Unable to generate advice right now, please try again later.",
+  "adviceLabel": "Advice",
+  "warningsLabel": "Caution",
+  "suggestedApproachLabel": "Suggested approach",
+  "possibleReactionsLabel": "Possible reactions",
+
+  // Object timeline
+  "timelineEmpty": "No timeline records for this object yet.",
+  "relationshipEvolution": "Relationship Evolution",
+  "projectHistory": "Project History",
+  "goalRoadmap": "Goal Roadmap",
+
+  // Relations
+  "relationTimeline": "Relationship Timeline",
+  "deleteRelationConfirm": "Delete this relationship?",
+  "relationSuggestions": "AI-discovered relationships (confirm to add to graph)",
+  "accept": "Accept",
+  "reject": "Reject",
+  "relationCreatedByUser": "Manual",
+  "explainRelation": "Explain this relationship",
+  "editRelation": "Edit relationship",
+  "deleteRelation": "Delete relationship",
+  "relationType": "Relationship type",
+  "relationLabel": "Relationship label",
+  "relationLabelPlaceholder": "e.g., joint project",
+  "relationNote": "Relationship note",
+  "saving": "Saving…",
+  "sharedProjects": "Shared projects",
+  "sharedGoals": "Shared goals",
+
+  // Intelligence cards
+  "weeklyReviewLoading": "Preparing this week's review...",
+  "weeklyReview": "This Week",
+  "mostImportantPerson": "Most Important Person",
+  "mostImportantGoal": "Most Important Goal",
+  "growth": "Growth",
+  "emotion": "Emotion",
+  "gratitude": "Gratitude",
+  "dismiss": "Dismiss",
+  "monthlyStoryLoading": "Writing this month's story...",
+  "monthlyStory": "This Month's Story",
+  "patterns": "Patterns",
+  "hideEvidence": "Hide evidence",
+  "viewEvidence": "View evidence",
+  "thisIsMe": "Yes, this is me",
+  "thisIsNotMe": "This is not me",
+
+  // AI suggestions
+  "aiSuggestionsActive": "Active",
+  "aiNoActiveSuggestions": "No active suggestions.",
+  "aiSuggestionsDone": "Done",
+  "aiSuggestionsDismissed": "Dismissed",
+  "completedAt": "Completed",
+  "aiProfileRollingSummary": "Rolling Summary",
+
+  // History
+  "collapse": "Collapse",
+  "expand": "Expand",
+
+  // Type
+  "type": "Type",
 };
 
 export default enUS;

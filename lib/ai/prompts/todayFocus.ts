@@ -5,7 +5,7 @@ import { resolveTranslation, interpolate, localeFromLanguage } from "@/translati
 /** Translate a focus key in the given language (falls back to key). */
 function tt(
   key: string,
-  language: "zh" | "en",
+  language: "zh" | "en" | "ja",
   vars: Record<string, string | number> = {}
 ): string {
   const locale = localeFromLanguage(language);
@@ -15,7 +15,7 @@ function tt(
 
 function serializeNotes(
   notes: { id: string; created_at: string; content: string }[],
-  language: "zh" | "en"
+  language: "zh" | "en" | "ja"
 ): string {
   if (notes.length === 0) return tt("focus.noNotes", language);
   return notes
@@ -23,7 +23,7 @@ function serializeNotes(
     .join("\n\n---\n\n");
 }
 
-function evidenceShape(language: "zh" | "en"): string {
+function evidenceShape(language: "zh" | "en" | "ja"): string {
   if (language === "zh") {
     return JSON.stringify(
       {
@@ -136,7 +136,7 @@ Rules:
 
 export function buildMockFocusOutput(
   candidate: FocusCandidate,
-  language: "zh" | "en" = "zh"
+  language: "zh" | "en" | "ja" = "zh"
 ): FocusOutput {
   return {
     title: candidate.title.slice(0, 15),

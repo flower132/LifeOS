@@ -104,6 +104,126 @@ const zhCN = {
   "focus.relationshipAnd": " 与 ",
   "focus.aRelationship": "一段关系",
   "focus.aMemory": "一段记忆",
+
+  // Settings — companion & notifications
+  "companionSettings": "Daily Companion",
+  "companionEnabled": "启用 Daily Companion",
+  "allowNotifications": "允许每日提醒通知",
+  "companionSettingsDescription": "Daily Companion 每天只出现最值得出现的一件事：一条 Today Focus、一句 Today Story，以及一个温柔的晚间反思。",
+  "aiServerManagedDescription": "AI 由服务端统一管理，密钥不会出现在浏览器中。",
+  "backToSettings": "返回设置",
+
+  // Home — insights
+  "todaysInsight": "今日洞察",
+  "graphInsights": "图谱洞察",
+
+  // Home — reflection
+  "reflectionLoading": "正在准备今晚的反思...",
+  "eveningReflection": "今晚的反思",
+  "reflectionPlaceholder": "如果你愿意，可以写两句...",
+  "answer": "回答",
+
+  // Home — reminder
+  "reminderLoading": "正在看看今天有什么值得提醒的事...",
+  "todayReminder": "今日提醒",
+  "later": "稍后",
+  "skip": "跳过",
+
+  // Home — timeline explorer
+  "oneWeekAgo": "一周前",
+  "oneMonthAgo": "一个月前",
+  "oneYearAgo": "一年前",
+  "readOnly": "只读，历史不可修改",
+  "activeGoals": "进行中的目标",
+  "activeProjects": "进行中的项目",
+  "peopleContacted": "当周联系",
+  "ifBackToThatDay": "如果回到那一天",
+  "thisMonth": "本月",
+  "thisQuarter": "本季度",
+  "thisYear": "今年",
+  "replayEmpty": "这段时间还没有足够的记录生成回放。",
+  "timelineSearchPlaceholder": "例如：第一次见张三是什么时候？今年完成了哪些目标？",
+  "search": "搜索",
+  "timelineSearchHint": "回答只来自你的时间线，不会自由发挥。",
+  "generateChapters": "AI 生成章节",
+  "chaptersEmpty": "还没有章节。点击「AI 生成章节」让 AI 根据你的时间线划分人生阶段。",
+  "renameChapter": "点击重命名",
+  "ongoing": "进行中",
+  "splitChapter": "拆分",
+  "confirm": "确定",
+
+  // Object intelligence
+  "aiProfileBuilding": "AI 正在后台理解这个对象，稍后回来查看画像。",
+  "aiUnderstanding": "AI 理解",
+  "communicationAssistant": "AI 沟通助手",
+  "refresh": "刷新",
+  "graphSummary": "图谱摘要",
+  "recentChanges": "最近变化",
+  "suggestionLabel": "建议",
+  "communicationSituationPlaceholder": "描述你即将面对的沟通情境，例如：今天我要找老板申请预算。",
+  "analyzing": "分析中…",
+  "getCommunicationAdvice": "获取沟通建议",
+  "communicationAdviceFailed": "暂时无法生成建议，请稍后再试。",
+  "adviceLabel": "建议",
+  "warningsLabel": "注意",
+  "suggestedApproachLabel": "推荐表达",
+  "possibleReactionsLabel": "可能的反应",
+
+  // Object timeline
+  "timelineEmpty": "这个对象还没有时间线记录。",
+  "relationshipEvolution": "关系演化",
+  "projectHistory": "项目历程",
+  "goalRoadmap": "目标路线",
+
+  // Relations
+  "relationTimeline": "关系时间线",
+  "deleteRelationConfirm": "删除这条关系？",
+  "relationSuggestions": "AI 发现的关系（确认后加入图谱）",
+  "accept": "接受",
+  "reject": "拒绝",
+  "relationCreatedByUser": "手动",
+  "explainRelation": "解释这条关系",
+  "editRelation": "编辑关系",
+  "deleteRelation": "删除关系",
+  "relationType": "关系类型",
+  "relationLabel": "关系标签",
+  "relationLabelPlaceholder": "如：合作项目",
+  "relationNote": "关系说明",
+  "saving": "保存中…",
+  "sharedProjects": "共同项目",
+  "sharedGoals": "共同目标",
+
+  // Intelligence cards
+  "weeklyReviewLoading": "正在整理本周回顾...",
+  "weeklyReview": "本周回顾",
+  "mostImportantPerson": "本周最重要的人",
+  "mostImportantGoal": "本周最重要的目标",
+  "growth": "成长",
+  "emotion": "情绪",
+  "gratitude": "感恩",
+  "dismiss": "忽略",
+  "monthlyStoryLoading": "正在书写本月故事...",
+  "monthlyStory": "本月故事",
+  "patterns": "规律",
+  "hideEvidence": "隐藏证据",
+  "viewEvidence": "查看证据",
+  "thisIsMe": "是的",
+  "thisIsNotMe": "这不是我",
+
+  // AI suggestions
+  "aiSuggestionsActive": "进行中",
+  "aiNoActiveSuggestions": "暂无进行中的建议。",
+  "aiSuggestionsDone": "已完成",
+  "aiSuggestionsDismissed": "已忽略",
+  "completedAt": "完成于",
+  "aiProfileRollingSummary": "滚动摘要",
+
+  // History
+  "collapse": "收起",
+  "expand": "展开",
+
+  // Type
+  "type": "类型",
 };
 
 export default zhCN;

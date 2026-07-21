@@ -203,7 +203,7 @@ export default function SettingsPage() {
               <label className="text-sm font-medium text-foreground">
                 {t("language")}
               </label>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-3 gap-3">
                 <button
                   type="button"
                   onClick={() => void setLanguage("zh")}
@@ -225,6 +225,17 @@ export default function SettingsPage() {
                   }`}
                 >
                   English
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void setLanguage("ja")}
+                  className={`rounded-lg border px-4 py-2.5 text-sm font-medium transition-colors ${
+                    language === "ja"
+                      ? "border-accent bg-accent/10 text-accent"
+                      : "border-input bg-background text-foreground hover:bg-muted"
+                  }`}
+                >
+                  日本語
                 </button>
               </div>
             </div>
@@ -429,8 +440,7 @@ export default function SettingsPage() {
                 </span>
               </div>
               <p className="text-xs text-muted-foreground">
-                {t("aiServerManagedDescription") ??
-                  "AI 由服务端统一管理，密钥不会出现在浏览器中。"}
+                {t("aiServerManagedDescription")}
               </p>
             </div>
 
@@ -494,11 +504,11 @@ export default function SettingsPage() {
         </SectionCard>
 
         {/* Daily Companion */}
-        <SectionCard icon={Heart} title={t("companionSettings") ?? "Daily Companion"}>
+        <SectionCard icon={Heart} title={t("companionSettings")}>
           <div className="space-y-4">
             <label className="flex items-center justify-between">
               <span className="text-sm text-foreground">
-                {t("companionEnabled") ?? "启用 Daily Companion"}
+                {t("companionEnabled")}
               </span>
               <input
                 type="checkbox"
@@ -510,7 +520,7 @@ export default function SettingsPage() {
 
             <label className="flex items-center justify-between">
               <span className="text-sm text-foreground">
-                {t("allowNotifications") ?? "允许每日提醒通知"}
+                {t("allowNotifications")}
               </span>
               <input
                 type="checkbox"
@@ -521,8 +531,7 @@ export default function SettingsPage() {
             </label>
 
             <p className="text-xs text-muted-foreground">
-              {t("companionSettingsDescription") ??
-                "Daily Companion 每天只出现最值得出现的一件事：一条 Today Focus、一句 Today Story，以及一个温柔的晚间反思。"}
+              {t("companionSettingsDescription")}
             </p>
           </div>
         </SectionCard>

@@ -12,7 +12,7 @@ import {
 
 type TranslationContextValue = {
   locale: Locale;
-  language: "zh" | "en";
+  language: "zh" | "en" | "ja";
   t: (key: string, values?: TranslationValues) => string;
 };
 

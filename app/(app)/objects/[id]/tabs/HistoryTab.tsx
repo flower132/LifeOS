@@ -81,7 +81,7 @@ function HistoryCard({ entry }: { entry: AIAnalysisHistoryEntry }) {
           onClick={() => setExpanded((v) => !v)}
           className="text-xs font-medium text-accent hover:text-accent/90"
         >
-          {expanded ? t("collapse") ?? "Collapse" : t("expand") ?? "Expand"}
+          {expanded ? t("collapse") : t("expand")}
         </button>
       </div>
 

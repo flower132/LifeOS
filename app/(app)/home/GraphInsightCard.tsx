@@ -32,7 +32,7 @@ export function GraphInsightCard() {
     <Card variant="ai" className="space-y-3">
       <div className="flex items-center gap-2 text-sm font-medium text-foreground">
         <Network className="h-4 w-4 text-accent" />
-        {t("graphInsights") ?? "图谱洞察"}
+        {t("graphInsights")}
       </div>
       <ul className="space-y-2">
         {insights.map((insight) => (

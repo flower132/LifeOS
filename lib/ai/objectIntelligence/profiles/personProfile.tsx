@@ -255,7 +255,7 @@ function PersonAIProfileReader({ profile }: { profile: PersonAIProfile }) {
       </LabelValueCard>
 
       {profile.rollingSummary && (
-        <LabelValueCard label={t("aiProfileRollingSummary") ?? "Rolling Summary"}>
+        <LabelValueCard label={t("aiProfileRollingSummary")}>
           {profile.rollingSummary}
         </LabelValueCard>
       )}

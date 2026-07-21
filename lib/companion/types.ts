@@ -15,7 +15,7 @@ export interface CompanionContext {
   relations: Relation[];
   patterns: IntelligencePattern[];
   today: string; // YYYY-MM-DD local date
-  language: "zh" | "en";
+  language: "zh" | "en" | "ja";
 }
 
 export interface FocusCandidate {

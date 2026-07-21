@@ -113,7 +113,7 @@ export function RelationList({ objectId, relations }: RelationListProps) {
   };
 
   const handleDelete = async (relation: Relation) => {
-    if (!confirm(t("deleteRelationConfirm") ?? "删除这条关系？")) return;
+    if (!confirm(t("deleteRelationConfirm"))) return;
     await removeRelation(relation.id);
   };
 
@@ -136,7 +136,7 @@ export function RelationList({ objectId, relations }: RelationListProps) {
         <div className="mb-4 space-y-2">
           <p className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
             <Sparkles className="h-3.5 w-3.5 text-accent" />
-            {t("relationSuggestions") ?? "AI 发现的关系（确认后加入图谱）"}
+            {t("relationSuggestions")}
           </p>
           {suggestions.map((suggestion) => {
             const otherId =
@@ -163,7 +163,7 @@ export function RelationList({ objectId, relations }: RelationListProps) {
                     type="button"
                     onClick={() => void acceptRelationSuggestion(suggestion.id)}
                     className="rounded-lg p-1.5 text-green-600 hover:bg-green-500/10"
-                    title={t("accept") ?? "接受"}
+                    title={t("accept")}
                   >
                     <Check className="h-4 w-4" />
                   </button>
@@ -171,7 +171,7 @@ export function RelationList({ objectId, relations }: RelationListProps) {
                     type="button"
                     onClick={() => void rejectRelationSuggestion(suggestion.id)}
                     className="rounded-lg p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
-                    title={t("reject") ?? "拒绝"}
+                    title={t("reject")}
                   >
                     <X className="h-4 w-4" />
                   </button>
@@ -218,7 +218,7 @@ export function RelationList({ objectId, relations }: RelationListProps) {
                       ) : (
                         <span className="inline-flex items-center gap-0.5 rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
                           <User className="h-2.5 w-2.5" />
-                          {t("relationCreatedByUser") ?? "手动"}
+                          {t("relationCreatedByUser")}
                         </span>
                       )}
                       {strength && (
@@ -251,7 +251,7 @@ export function RelationList({ objectId, relations }: RelationListProps) {
                     type="button"
                     onClick={() => setTimelineRelation(relation)}
                     className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
-                    title={t("relationTimeline") ?? "关系时间线"}
+                    title={t("relationTimeline")}
                   >
                     <History className="h-3.5 w-3.5" />
                   </button>
@@ -259,7 +259,7 @@ export function RelationList({ objectId, relations }: RelationListProps) {
                     type="button"
                     onClick={() => handleExplain(relation)}
                     className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
-                    title={t("explainRelation") ?? "解释这条关系"}
+                    title={t("explainRelation")}
                   >
                     <Info className="h-3.5 w-3.5" />
                   </button>
@@ -267,7 +267,7 @@ export function RelationList({ objectId, relations }: RelationListProps) {
                     type="button"
                     onClick={() => openEdit(relation)}
                     className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
-                    title={t("editRelation") ?? "编辑关系"}
+                    title={t("editRelation")}
                   >
                     <Pencil className="h-3.5 w-3.5" />
                   </button>
@@ -275,7 +275,7 @@ export function RelationList({ objectId, relations }: RelationListProps) {
                     type="button"
                     onClick={() => void handleDelete(relation)}
                     className="rounded-lg p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
-                    title={t("deleteRelation") ?? "删除关系"}
+                    title={t("deleteRelation")}
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                   </button>
@@ -290,13 +290,13 @@ export function RelationList({ objectId, relations }: RelationListProps) {
       <Dialog
         open={editing !== null}
         onClose={() => setEditing(null)}
-        title={t("editRelation") ?? "编辑关系"}
+        title={t("editRelation")}
         maxWidth="sm"
       >
         <div className="space-y-3">
           <div className="space-y-1">
             <span className="text-sm font-medium text-foreground">
-              {t("relationType") ?? "关系类型"}
+              {t("relationType")}
             </span>
             <select
               value={editType}
@@ -312,17 +312,17 @@ export function RelationList({ objectId, relations }: RelationListProps) {
           </div>
           <div className="space-y-1">
             <span className="text-sm font-medium text-foreground">
-              {t("relationLabel") ?? "关系标签"}
+              {t("relationLabel")}
             </span>
             <Input
               value={editLabel}
               onChange={(e) => setEditLabel(e.target.value)}
-              placeholder={t("relationLabelPlaceholder") ?? "如：合作项目"}
+              placeholder={t("relationLabelPlaceholder")}
             />
           </div>
           <div className="space-y-1">
             <span className="text-sm font-medium text-foreground">
-              {t("relationNote") ?? "关系说明"}
+              {t("relationNote")}
             </span>
             <Textarea
               value={editNote}
@@ -331,7 +331,7 @@ export function RelationList({ objectId, relations }: RelationListProps) {
             />
           </div>
           <Button onClick={() => void handleSave()} disabled={saving}>
-            {saving ? (t("saving") ?? "保存中…") : (t("save") ?? "保存")}
+            {saving ? (t("saving")) : (t("save"))}
           </Button>
         </div>
       </Dialog>
@@ -347,7 +347,7 @@ export function RelationList({ objectId, relations }: RelationListProps) {
       <Dialog
         open={explaining !== null}
         onClose={() => setExplaining(null)}
-        title={`${t("explainRelation") ?? "解释关系"} · ${explaining?.otherObjectName ?? ""}`}
+        title={`${t("explainRelation")} · ${explaining?.otherObjectName ?? ""}`}
         maxWidth="sm"
       >
         {explaining && (
@@ -357,13 +357,13 @@ export function RelationList({ objectId, relations }: RelationListProps) {
             </p>
             {explaining.sharedProjects.length > 0 && (
               <p className="text-xs text-muted-foreground">
-                {t("sharedProjects") ?? "共同项目"}：
+                {t("sharedProjects")}：
                 {explaining.sharedProjects.map((p) => p.name).join("、")}
               </p>
             )}
             {explaining.sharedGoals.length > 0 && (
               <p className="text-xs text-muted-foreground">
-                {t("sharedGoals") ?? "共同目标"}：
+                {t("sharedGoals")}：
                 {explaining.sharedGoals.map((g) => g.name).join("、")}
               </p>
             )}

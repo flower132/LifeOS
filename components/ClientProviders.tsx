@@ -57,8 +57,10 @@ function applyAccentColor(
   }
 }
 
-function applyLanguage(language: "zh" | "en"): void {
-  document.documentElement.lang = language === "zh" ? "zh-CN" : "en";
+function applyLanguage(language: "zh" | "en" | "ja"): void {
+  if (language === "zh") document.documentElement.lang = "zh-CN";
+  else if (language === "ja") document.documentElement.lang = "ja";
+  else document.documentElement.lang = "en";
 }
 
 function applySettings(settings: ReturnType<typeof useSettingsStore.getState>): void {

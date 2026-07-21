@@ -11,11 +11,11 @@ export type PropertyFieldType =
 
 export interface PropertyFieldSchema {
   key: string;
-  label: { zh: string; en: string };
+  label: { zh: string; en: string; ja?: string };
   type: PropertyFieldType;
-  options?: { value: string; label: { zh: string; en: string } }[];
-  placeholder?: { zh: string; en: string };
-  legacyLabels?: { zh?: string[]; en?: string[] };
+  options?: { value: string; label: { zh: string; en: string; ja?: string } }[];
+  placeholder?: { zh: string; en: string; ja?: string };
+  legacyLabels?: { zh?: string[]; en?: string[]; ja?: string[] };
 }
 
 const PERSON_SCHEMA: PropertyFieldSchema[] = [
@@ -814,7 +814,7 @@ export function getPropertyLabel(
 ): string {
   const schema = getFieldSchema(type, key);
   if (schema) {
-    return schema.label[language];
+    return schema.label[language] ?? schema.label.en;
   }
   return key;
 }
@@ -825,7 +825,7 @@ export function getPropertyPlaceholder(
   language: Language
 ): string {
   const schema = getFieldSchema(type, key);
-  return schema?.placeholder?.[language] ?? "";
+  return schema?.placeholder?.[language] ?? schema?.placeholder?.en ?? "";
 }
 
 export function formatPropertyValue(value: unknown): string {

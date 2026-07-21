@@ -37,7 +37,7 @@ export default function CreateObjectAIPage() {
   const searchParams = useSearchParams();
   const addObject = useObjectStore((s) => s.addObject);
 
-  const rawType = searchParams.get("type") ?? "person";
+  const rawType = searchParams.get("type");
   const objectType: LifeObjectType = LIFE_OBJECT_TYPES.includes(rawType as LifeObjectType)
     ? (rawType as LifeObjectType)
     : "person";

@@ -47,7 +47,7 @@ export function CommunicationDialog({ person, open, onClose }: CommunicationDial
     <Dialog
       open={open}
       onClose={onClose}
-      title={`${t("communicationAssistant") ?? "AI 沟通助手"} · ${person.name}`}
+      title={`${t("communicationAssistant")} · ${person.name}`}
       maxWidth="md"
     >
       <div className="space-y-4">
@@ -55,19 +55,18 @@ export function CommunicationDialog({ person, open, onClose }: CommunicationDial
           value={situation}
           onChange={(e) => setSituation(e.target.value)}
           placeholder={
-            t("communicationSituationPlaceholder") ??
-            "描述你即将面对的沟通情境，例如：今天我要找老板申请预算。"
+            t("communicationSituationPlaceholder")
           }
           rows={3}
         />
         <Button onClick={() => void handleAsk()} disabled={loading || !situation.trim()}>
           {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <MessageCircleHeart className="h-4 w-4" />}
-          {loading ? (t("analyzing") ?? "分析中…") : (t("getCommunicationAdvice") ?? "获取沟通建议")}
+          {loading ? (t("analyzing")) : (t("getCommunicationAdvice"))}
         </Button>
 
         {failed && !loading && (
           <p className="text-sm text-muted-foreground">
-            {t("communicationAdviceFailed") ?? "暂时无法生成建议，请稍后再试。"}
+            {t("communicationAdviceFailed")}
           </p>
         )}
 
@@ -83,7 +82,7 @@ export function CommunicationDialog({ person, open, onClose }: CommunicationDial
               <div>
                 <p className="mb-1 flex items-center gap-1.5 font-medium text-foreground">
                   <Lightbulb className="h-4 w-4 text-accent" />
-                  {t("adviceLabel") ?? "建议"}
+                  {t("adviceLabel")}
                 </p>
                 <ol className="list-decimal space-y-1 pl-5 text-muted-foreground">
                   {advice.advice.map((item, i) => (
@@ -97,7 +96,7 @@ export function CommunicationDialog({ person, open, onClose }: CommunicationDial
               <div>
                 <p className="mb-1 flex items-center gap-1.5 font-medium text-foreground">
                   <AlertTriangle className="h-4 w-4 text-amber-500" />
-                  {t("warningsLabel") ?? "注意"}
+                  {t("warningsLabel")}
                 </p>
                 <ul className="list-disc space-y-1 pl-5 text-muted-foreground">
                   {advice.warnings.map((item, i) => (
@@ -111,7 +110,7 @@ export function CommunicationDialog({ person, open, onClose }: CommunicationDial
               <div>
                 <p className="mb-1 flex items-center gap-1.5 font-medium text-foreground">
                   <Reply className="h-4 w-4 text-accent" />
-                  {t("suggestedApproachLabel") ?? "推荐表达"}
+                  {t("suggestedApproachLabel")}
                 </p>
                 <p className="rounded-lg border border-accent/20 bg-accent/5 p-3 text-foreground">
                   {advice.suggestedApproach}
@@ -123,7 +122,7 @@ export function CommunicationDialog({ person, open, onClose }: CommunicationDial
               <div>
                 <p className="mb-1 flex items-center gap-1.5 font-medium text-foreground">
                   <Users className="h-4 w-4 text-muted-foreground" />
-                  {t("possibleReactionsLabel") ?? "可能的反应"}
+                  {t("possibleReactionsLabel")}
                 </p>
                 <ul className="list-disc space-y-1 pl-5 text-muted-foreground">
                   {advice.possibleReactions.map((item, i) => (

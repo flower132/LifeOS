@@ -79,7 +79,7 @@ export function TimelineTab({ object }: TimelineTabProps) {
   const evolutionText = evolution?.id === object.id ? evolution.text : null;
 
   if (events.length === 0) {
-    return <EmptyState description={t("timelineEmpty") ?? "这个对象还没有时间线记录。"} />;
+    return <EmptyState description={t("timelineEmpty")} />;
   }
 
   return (
@@ -89,10 +89,10 @@ export function TimelineTab({ object }: TimelineTabProps) {
           <p className="mb-1 flex items-center gap-1.5 text-xs font-medium text-accent">
             <Sparkles className="h-3.5 w-3.5" />
             {kind === "relationship"
-              ? (t("relationshipEvolution") ?? "关系演化")
+              ? (t("relationshipEvolution"))
               : kind === "project"
-                ? (t("projectHistory") ?? "项目历程")
-                : (t("goalRoadmap") ?? "目标路线")}
+                ? (t("projectHistory"))
+                : (t("goalRoadmap"))}
           </p>
           <p className="text-sm leading-relaxed text-foreground">{evolutionText}</p>
         </div>

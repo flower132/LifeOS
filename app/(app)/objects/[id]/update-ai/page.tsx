@@ -314,8 +314,7 @@ export default function ObjectUpdateAIPage() {
         {phase === "review" && reviewResult && (
           <div className="space-y-6">
             <div className="rounded-lg border border-accent/20 bg-accent/5 px-4 py-3 text-sm text-foreground">
-              {t("reviewPersonAIHint") ??
-                "Review the updated profile below. Items reflect both existing and new understanding."}
+              {t("reviewPersonAIHint")}
             </div>
             <AIReviewPanel
               result={reviewResult}

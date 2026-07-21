@@ -13,8 +13,10 @@ export const dictionaries: Record<Locale, Readonly<Record<string, string>>> = {
 };
 
 /** Maps persisted language values to a UI locale without changing AI prompt language. */
-export function localeFromLanguage(language: "zh" | "en"): Locale {
-  return language === "zh" ? "zh-CN" : "en-US";
+export function localeFromLanguage(language: "zh" | "en" | "ja"): Locale {
+  if (language === "zh") return "zh-CN";
+  if (language === "ja") return "ja-JP";
+  return "en-US";
 }
 
 export function interpolate(message: string, values: TranslationValues = {}): string {

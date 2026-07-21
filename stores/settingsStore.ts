@@ -54,7 +54,9 @@ interface SettingsState extends AppSettings {
 }
 
 function coerceLanguage(value: string): Language {
-  return value === "zh" ? "zh" : "en";
+  if (value === "zh") return "zh";
+  if (value === "ja") return "ja";
+  return "en";
 }
 
 function coerceTheme(value: string): Theme {

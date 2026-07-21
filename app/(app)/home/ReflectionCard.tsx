@@ -91,7 +91,7 @@ export function ReflectionCard() {
       <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Spinner size="sm" />
-          {t("reflectionLoading") ?? "正在准备今晚的反思..."}
+          {t("reflectionLoading")}
         </div>
       </div>
     );
@@ -115,7 +115,7 @@ export function ReflectionCard() {
         <div className="flex items-center gap-2">
           <Moon className="h-4 w-4 text-muted-foreground" />
           <h2 className="text-sm font-semibold uppercase tracking-wide text-foreground">
-            {t("eveningReflection") ?? "今晚的反思"}
+            {t("eveningReflection")}
           </h2>
         </div>
         <button
@@ -132,7 +132,7 @@ export function ReflectionCard() {
       <textarea
         value={answer}
         onChange={(e) => setAnswer(e.target.value)}
-        placeholder={t("reflectionPlaceholder") ?? "如果你愿意，可以写两句..."}
+        placeholder={t("reflectionPlaceholder")}
         rows={3}
         className="mb-3 w-full resize-none rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent"
       />
@@ -146,7 +146,7 @@ export function ReflectionCard() {
           className="inline-flex items-center gap-1 rounded-lg bg-accent px-3 py-1.5 text-xs font-medium text-accent-foreground hover:bg-accent/90 disabled:opacity-50"
         >
           <Send className="h-3.5 w-3.5" />
-          {t("answer") ?? "回答"}
+          {t("answer")}
         </button>
       </div>
     </div>

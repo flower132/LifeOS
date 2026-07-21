@@ -30,7 +30,7 @@ export type DateFormat = "YYYY-MM-DD" | "MM/DD/YYYY" | "DD/MM/YYYY";
 export type TimeFormat = "24h" | "12h";
 
 export type AppSettings = {
-  language: "zh" | "en";
+  language: "zh" | "en" | "ja";
   theme: "light" | "dark" | "system";
   themeColor: "light" | "dark";
   accentColor: AccentColorId;

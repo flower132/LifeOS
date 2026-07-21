@@ -156,8 +156,7 @@ export function NoteForm({ initialObjectId }: NoteFormProps) {
         void triggerBackgroundObjectUpdate(targetObject, created);
       } else if (targetObject?.type === "person") {
         const shouldUpdate = confirm(
-          t("confirmUpdatePersonAfterNote") ??
-            "Note saved. Update this person's AI understanding with the new material?"
+          t("confirmUpdatePersonAfterNote")
         );
         if (shouldUpdate) {
           router.push(`/objects/${created.object_id}/update-ai?noteId=${created.id}`);
@@ -284,14 +283,12 @@ export function NoteForm({ initialObjectId }: NoteFormProps) {
 
       {selectedObject?.type === "person" && (
         <p className="text-xs text-muted-foreground">
-          {t("noteWillFeedPersonAI") ??
-            "This note can be used to update the person's AI understanding after saving."}
+          {t("noteWillFeedPersonAI")}
         </p>
       )}
       {selectedObject?.type === "self" && (
         <p className="text-xs text-muted-foreground">
-          {t("noteWillFeedSelfAI") ??
-            "This note will gently update your Self understanding in the background."}
+          {t("noteWillFeedSelfAI")}
         </p>
       )}
 

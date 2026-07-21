@@ -60,7 +60,7 @@ export function MonthlyStoryCard() {
       <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Spinner size="sm" />
-          {t("monthlyStoryLoading") ?? "正在书写本月故事..."}
+          {t("monthlyStoryLoading")}
         </div>
       </div>
     );
@@ -84,14 +84,14 @@ export function MonthlyStoryCard() {
         <div className="flex items-center gap-2">
           <BookOpen className="h-4 w-4 text-accent" />
           <h2 className="text-sm font-semibold uppercase tracking-wide text-foreground">
-            {t("monthlyStory") ?? "This Month's Story"}
+            {t("monthlyStory")}
           </h2>
         </div>
         <button
           type="button"
           onClick={() => void handleDismiss()}
           className="rounded-lg p-1 text-muted-foreground hover:bg-accent/10"
-          aria-label={t("dismiss") ?? "忽略"}
+          aria-label={t("dismiss")}
         >
           <X className="h-4 w-4" />
         </button>

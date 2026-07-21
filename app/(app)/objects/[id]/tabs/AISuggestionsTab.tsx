@@ -44,16 +44,16 @@ export function AISuggestionsTab({ object }: AISuggestionsTabProps) {
   return (
     <div className="space-y-8">
       <SuggestionSection
-        title={t("aiSuggestionsActive") ?? "Active"}
+        title={t("aiSuggestionsActive")}
         suggestions={activeSuggestions}
-        emptyText={t("aiNoActiveSuggestions") ?? "No active suggestions."}
+        emptyText={t("aiNoActiveSuggestions")}
         onDone={(id) => updateStatus(id, "done")}
         onDismiss={(id) => updateStatus(id, "dismissed")}
       />
 
       {doneSuggestions.length > 0 && (
         <SuggestionSection
-          title={t("aiSuggestionsDone") ?? "Done"}
+          title={t("aiSuggestionsDone")}
           suggestions={doneSuggestions}
           emptyText=""
           onReactivate={(id) => updateStatus(id, "active")}
@@ -63,7 +63,7 @@ export function AISuggestionsTab({ object }: AISuggestionsTabProps) {
 
       {dismissedSuggestions.length > 0 && (
         <SuggestionSection
-          title={t("aiSuggestionsDismissed") ?? "Dismissed"}
+          title={t("aiSuggestionsDismissed")}
           suggestions={dismissedSuggestions}
           emptyText=""
           onReactivate={(id) => updateStatus(id, "active")}

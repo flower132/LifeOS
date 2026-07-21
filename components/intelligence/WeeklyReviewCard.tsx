@@ -60,7 +60,7 @@ export function WeeklyReviewCard() {
       <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Spinner size="sm" />
-          {t("weeklyReviewLoading") ?? "正在整理本周回顾..."}
+          {t("weeklyReviewLoading")}
         </div>
       </div>
     );
@@ -84,14 +84,14 @@ export function WeeklyReviewCard() {
         <div className="flex items-center gap-2">
           <CalendarDays className="h-4 w-4 text-muted-foreground" />
           <h2 className="text-sm font-semibold uppercase tracking-wide text-foreground">
-            {t("weeklyReview") ?? "This Week"}
+            {t("weeklyReview")}
           </h2>
         </div>
         <button
           type="button"
           onClick={() => void handleDismiss()}
           className="rounded-lg p-1 text-muted-foreground hover:bg-muted"
-          aria-label={t("dismiss") ?? "忽略"}
+          aria-label={t("dismiss")}
         >
           <X className="h-4 w-4" />
         </button>
@@ -100,7 +100,7 @@ export function WeeklyReviewCard() {
       {review.mostImportantPerson && (
         <div className="mb-3 rounded-lg border border-border bg-background p-3">
           <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            {t("mostImportantPerson") ?? "Important Person"}
+            {t("mostImportantPerson")}
           </h3>
           <p className="text-sm font-medium text-foreground">{review.mostImportantPerson.name}</p>
           <p className="text-sm text-muted-foreground">{review.mostImportantPerson.reason}</p>
@@ -111,7 +111,7 @@ export function WeeklyReviewCard() {
       {review.mostImportantGoal && (
         <div className="mb-3 rounded-lg border border-border bg-background p-3">
           <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            {t("mostImportantGoal") ?? "Important Goal"}
+            {t("mostImportantGoal")}
           </h3>
           <p className="text-sm font-medium text-foreground">{review.mostImportantGoal.name}</p>
           <p className="text-sm text-muted-foreground">{review.mostImportantGoal.reason}</p>
@@ -122,7 +122,7 @@ export function WeeklyReviewCard() {
       {review.growth && (
         <div className="mb-3 rounded-lg border border-border bg-background p-3">
           <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            {t("growth") ?? "Growth"}
+            {t("growth")}
           </h3>
           <p className="text-sm text-muted-foreground">{review.growth.statement}</p>
           <IntelligenceEvidenceList evidence={review.growth.evidence} />
@@ -132,7 +132,7 @@ export function WeeklyReviewCard() {
       {review.emotion && (
         <div className="mb-3 rounded-lg border border-border bg-background p-3">
           <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            {t("emotion") ?? "Emotion"}
+            {t("emotion")}
           </h3>
           <p className="text-sm text-muted-foreground">{review.emotion.statement}</p>
           <IntelligenceEvidenceList evidence={review.emotion.evidence} />
@@ -142,7 +142,7 @@ export function WeeklyReviewCard() {
       {review.gratitude && (
         <div className="rounded-lg border border-border bg-background p-3">
           <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            {t("gratitude") ?? "Gratitude"}
+            {t("gratitude")}
           </h3>
           <p className="text-sm text-muted-foreground">{review.gratitude.statement}</p>
           <IntelligenceEvidenceList evidence={review.gratitude.evidence} />

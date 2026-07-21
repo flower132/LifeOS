@@ -7,7 +7,7 @@ import { resolveTranslation, interpolate, localeFromLanguage } from "@/translati
 /** Translate an insight key in the given language (falls back to key). */
 function tt(
   key: string,
-  language: "zh" | "en",
+  language: "zh" | "en" | "ja",
   vars: Record<string, string | number> = {}
 ): string {
   const locale = localeFromLanguage(language);
@@ -53,7 +53,7 @@ function streakDays(events: TimelineEvent[], objectId: string): number {
   return streak;
 }
 
-export function computeTimelineInsights(language?: "zh" | "en"): TimelineInsight[] {
+export function computeTimelineInsights(language?: "zh" | "en" | "ja"): TimelineInsight[] {
   if (typeof window === "undefined") return [];
   const lang = language ?? useSettingsStore.getState().language ?? "en";
   const events = getTimelineEvents();

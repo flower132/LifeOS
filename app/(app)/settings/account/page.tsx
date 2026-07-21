@@ -128,7 +128,7 @@ export default function AccountPage() {
   return (
     <WorkspaceLayout
       backHref="/settings"
-      backLabel={t("backToSettings") ?? "Back"}
+      backLabel={t("backToSettings")}
       title={t("accountTitle") ?? t("accountCardTitle")}
       className="pb-24"
     >

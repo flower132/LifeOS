@@ -75,7 +75,7 @@ export function AISummaryCard({ object }: AISummaryCardProps) {
       <Card variant="ai" className="mb-6">
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Sparkles className="h-4 w-4 text-accent" />
-          {t("aiProfileBuilding") ?? "AI 正在后台理解这个对象，稍后回来查看画像。"}
+          {t("aiProfileBuilding")}
         </div>
       </Card>
     );
@@ -87,7 +87,7 @@ export function AISummaryCard({ object }: AISummaryCardProps) {
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-2 text-sm font-medium text-foreground">
             <Sparkles className="h-4 w-4 text-accent" />
-            {t("aiUnderstanding") ?? "AI 理解"}
+            {t("aiUnderstanding")}
             <span className="rounded-full bg-accent/10 px-2 py-0.5 text-xs text-accent">
               {Math.round(profile.confidence * 100)}%
             </span>
@@ -100,7 +100,7 @@ export function AISummaryCard({ object }: AISummaryCardProps) {
                 className="inline-flex items-center gap-1 rounded-lg border border-accent/30 bg-accent/10 px-2.5 py-1 text-xs font-medium text-accent hover:bg-accent/20"
               >
                 <MessageCircleHeart className="h-3.5 w-3.5" />
-                {t("communicationAssistant") ?? "AI 沟通助手"}
+                {t("communicationAssistant")}
               </button>
             )}
             <button
@@ -108,7 +108,7 @@ export function AISummaryCard({ object }: AISummaryCardProps) {
               onClick={() => void handleRefresh()}
               disabled={refreshing}
               className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-50"
-              title={t("refresh") ?? "刷新"}
+              title={t("refresh")}
             >
               <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`} />
             </button>
@@ -123,7 +123,7 @@ export function AISummaryCard({ object }: AISummaryCardProps) {
           <div className="rounded-lg bg-muted/50 p-3 text-sm">
             <p className="mb-1 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
               <Network className="h-3.5 w-3.5" />
-              {t("graphSummary") ?? "图谱摘要"}
+              {t("graphSummary")}
             </p>
             <p className="leading-relaxed text-foreground">{graphSummary}</p>
           </div>
@@ -146,7 +146,7 @@ export function AISummaryCard({ object }: AISummaryCardProps) {
           <div className="text-sm">
             <p className="mb-1 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
               <TrendingUp className="h-3.5 w-3.5" />
-              {t("recentChanges") ?? "最近变化"}
+              {t("recentChanges")}
             </p>
             <ul className="list-disc space-y-0.5 pl-5 text-muted-foreground">
               {profile.recentChanges.slice(0, 3).map((change, i) => (
@@ -173,7 +173,7 @@ export function AISummaryCard({ object }: AISummaryCardProps) {
           <div className="rounded-lg bg-muted/50 p-3 text-sm">
             <p className="text-foreground">{goalInsight.message}</p>
             <p className="mt-0.5 text-muted-foreground">
-              {t("suggestionLabel") ?? "建议"}：{goalInsight.suggestion}
+              {t("suggestionLabel")}：{goalInsight.suggestion}
             </p>
           </div>
         )}
