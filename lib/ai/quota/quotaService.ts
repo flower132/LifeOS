@@ -1,6 +1,6 @@
 import "server-only";
 
-import { getPlanConfig } from "../plans";
+import { getUserPlanConfig } from "../plans";
 import {
   exceededDimensions,
   nextResetAt,
@@ -29,24 +29,22 @@ import {
 // plans.ts 的部署级配置，以后会员系统按用户注入，引擎不变。
 // ---------------------------------------------------------------------------
 
-/** 每日 token 上限：env 覆盖优先（运维旋钮），否则取套餐配置。 */
-function dailyTokenLimit(): number | null {
+/** 每日 token 上限：env 覆盖优先（运维旋钮），否则取当前用户 Plan 的配置。 */
+async function dailyTokenLimit(userId: string): Promise<number | null> {
   const raw =
     process.env.AI_DAILY_TOKEN_QUOTA ?? process.env.AI_DAILY_QUOTA; // 兼容旧变量
   const parsed = raw ? Number.parseInt(raw, 10) : NaN;
   if (Number.isFinite(parsed) && parsed > 0) return parsed;
-  return getPlanConfig().dailyTokens;
+  return (await getUserPlanConfig(userId)).dailyTokens;
 }
 
 /**
- * 用户当前的每日限额。
- * userId 目前不影响结果（部署级单一额度）；会员系统落地后按用户解析，
- * 签名保持不变。
+ * 用户当前的每日限额（由 Plan Resolver 决定：Free / Trial / Plus 各有配额，
+ * Trial 到期回落 Free 后限额自动随之变化）。
  */
-export function getDailyQuota(userId?: string): QuotaLimits {
-  void userId;
+export async function getDailyQuota(userId: string): Promise<QuotaLimits> {
   return {
-    tokens: dailyTokenLimit(),
+    tokens: await dailyTokenLimit(userId),
     requests: null, // 预留：请求次数限制
     images: null,   // 预留：图片次数限制
     files: null,    // 预留：文件次数限制
@@ -73,7 +71,7 @@ function toStatus(
 /** 今日配额快照（含各维度剩余量）—— 首页 / Dashboard 的数据源。 */
 export async function getRemainingQuota(userId: string): Promise<QuotaStatus> {
   const usage = await readQuotaUsage(userId, quotaDay());
-  return toStatus(userId, usage.counters, getDailyQuota(userId));
+  return toStatus(userId, usage.counters, await getDailyQuota(userId));
 }
 
 /**
@@ -81,7 +79,7 @@ export async function getRemainingQuota(userId: string): Promise<QuotaStatus> {
  * 不得继续调用模型。
  */
 export async function checkQuota(userId: string): Promise<QuotaCheckResult> {
-  const limits = getDailyQuota(userId);
+  const limits = await getDailyQuota(userId);
   const usage = await readQuotaUsage(userId, quotaDay());
   const exceeded = exceededDimensions(usage.counters, limits);
   return {
@@ -100,7 +98,7 @@ export async function consumeQuota(
   delta: QuotaDelta
 ): Promise<QuotaStatus> {
   const usage = await addQuotaUsage(userId, quotaDay(), delta);
-  return toStatus(userId, usage.counters, getDailyQuota(userId));
+  return toStatus(userId, usage.counters, await getDailyQuota(userId));
 }
 
 /** 清零当日配额（运维 / 测试）。日常重置靠跨天自动换桶，无需调用。 */

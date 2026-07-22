@@ -10,7 +10,13 @@ import {
   TASK_ROUTING,
 } from "./models";
 import { getProvider, isProviderEnabled, primaryKeyEnv } from "./registry";
-import { getCurrentPlan, getPlanConfig, planAllowsModel } from "./plans";
+import {
+  AIPlanConfig,
+  configAllowsCapability,
+  configAllowsModel,
+  configAllowsProvider,
+  getUserPlanConfig,
+} from "./plans";
 import { recordUsage } from "./usage";
 import {
   AIGenerateParams,
@@ -106,17 +112,29 @@ interface ResolvedModel {
 }
 
 /**
- * Pick the best usable model for a task+capability:
- * routed model first, then FALLBACK_MODELS — filtered by Capability Matrix,
- * plan allowance, and provider enabled-ness (env key present).
+ * Pick the best usable model for a task+capability under the user's plan:
+ * plan feature gate → routed model, then FALLBACK_MODELS — filtered by
+ * Capability Matrix, plan model/provider allowance, and provider
+ * enabled-ness (env key present).
  */
-function resolveModel(task: AITask, capability: AICapability): ResolvedModel {
+function resolveModel(
+  task: AITask,
+  capability: AICapability,
+  plan: AIPlanConfig
+): ResolvedModel {
   const rule = TASK_ROUTING[task];
   if (!rule) {
     throw new AIProviderError("validation", `No routing rule for task: ${task}`);
   }
 
-  const plan = getCurrentPlan();
+  // Plan 能力门控：Free 禁图片 / 文件 / 推理等，业务代码无感知。
+  if (!configAllowsCapability(plan, capability)) {
+    throw new AIProviderError(
+      "not_supported",
+      `Plan "${plan.id}" does not include the "${capability}" capability.`
+    );
+  }
+
   const candidates = [
     rule.model,
     ...(FALLBACK_MODELS[capability] ?? FALLBACK_MODELS.chat),
@@ -128,7 +146,8 @@ function resolveModel(task: AITask, capability: AICapability): ResolvedModel {
     const info = MODEL_REGISTRY[modelKey];
     if (!info) continue;
     if (!info.capabilities.includes(capability)) continue;
-    if (!planAllowsModel(modelKey, plan)) continue;
+    if (!configAllowsModel(plan, modelKey)) continue;
+    if (!configAllowsProvider(plan, info.provider)) continue;
     if (!isProviderEnabled(info.provider)) {
       if (modelKey === rule.model) primaryBlockedByMissingKey = info;
       continue;
@@ -147,7 +166,7 @@ function resolveModel(task: AITask, capability: AICapability): ResolvedModel {
 
   throw new AIProviderError(
     "not_supported",
-    `No enabled provider supports "${capability}" for task ${task} under plan "${plan}". ` +
+    `No enabled provider supports "${capability}" for task ${task} under plan "${plan.id}". ` +
       `Configure a provider API key or adjust TASK_ROUTING / plan config.`
   );
 }
@@ -203,14 +222,16 @@ export async function executeTask(input: AIExecuteInput): Promise<AIExecuteOutpu
   let model = "unknown";
 
   try {
+    // Plan Resolver：每个请求统一读取当前用户 Plan（Trial 自动开通/降级）。
+    const plan = await getUserPlanConfig(usageMeta.userId);
+
     const method = requiredMethod(input.task, input.images);
     const capability = METHOD_CAPABILITY[method];
-    const { info } = resolveModel(input.task, capability);
+    const { info } = resolveModel(input.task, capability, plan);
     provider = info.provider;
     model = info.model;
 
     const rule = TASK_ROUTING[input.task];
-    const plan = getPlanConfig();
     const aiProvider = getProvider(info.provider);
 
     const params: AIGenerateParams = {

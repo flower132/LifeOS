@@ -395,3 +395,21 @@ create policy "Server can write ai_quota_daily"
   on public.ai_quota_daily for all
   using (true)
   with check (true);
+
+-- ------------------- ai_user_plans -------------------
+-- 用户会员计划（Plan）：首次访问自动开通 Trial，到期自动降级 Free。
+-- source: default（默认/降级）| trial（试用）| admin（后台调整）| billing（支付，预留）
+-- admin / billing 写入的记录不参与自动开通与自动降级。
+create table if not exists public.ai_user_plans (
+  user_id          text primary key default 'local',
+  plan_id          text not null default 'free' check (plan_id in ('free','trial','plus')),
+  source           text not null default 'default',
+  trial_started_at timestamptz,
+  updated_at       timestamptz default now()
+);
+alter table public.ai_user_plans enable row level security;
+-- 服务端路由在鉴权接入前以匿名身份读写，故放开；鉴权接入后收紧为本人可读。
+create policy "Server can manage ai_user_plans"
+  on public.ai_user_plans for all
+  using (true)
+  with check (true);
