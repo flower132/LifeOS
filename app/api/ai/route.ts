@@ -4,7 +4,6 @@ import { AITASKS, AIErrorCode, AIServerResponse } from "@/lib/ai/types";
 import { AIProviderError } from "@/lib/ai/provider";
 import { executeTask } from "@/lib/ai/router";
 import { canUse, consume, restore } from "@/lib/ai/quota";
-import { recordUsage } from "@/lib/ai/usage";
 
 export const runtime = "nodejs";
 
@@ -13,6 +12,8 @@ export const runtime = "nodejs";
 //
 // Client → POST /api/ai → quota → router → provider → model → unified result.
 // Clients may pass a task + prompt only — never provider, model, baseUrl, key.
+// Usage recording lives INSIDE the router (success + failure) — the route
+// only passes the caller identity through.
 // ---------------------------------------------------------------------------
 
 const MAX_IMAGES = 4;
@@ -142,28 +143,19 @@ export async function POST(request: Request): Promise<Response> {
     );
   }
 
-  let providerId: string | undefined;
-  let model: string | undefined;
-
   try {
-    const result = await executeTask({ task, prompt, images, context, options });
-    providerId = result.providerId;
-    model = result.model;
+    const result = await executeTask({
+      task,
+      prompt,
+      images,
+      context,
+      options,
+      userId,
+      sessionId: parsed.data.sessionToken,
+    });
 
     const latency = elapsed(start);
     consume(userId, task);
-    await recordUsage({
-      userId,
-      timestamp: new Date().toISOString(),
-      task,
-      provider: result.providerId,
-      model: result.model,
-      promptTokens: result.usage.promptTokens,
-      completionTokens: result.usage.completionTokens,
-      totalTokens: result.usage.totalTokens,
-      latency,
-      success: true,
-    });
 
     const body: AIServerResponse = {
       success: true,
@@ -190,21 +182,7 @@ export async function POST(request: Request): Promise<Response> {
       console.error("[ai] Unexpected route error:", err);
     }
 
-    await recordUsage({
-      userId,
-      timestamp: new Date().toISOString(),
-      task,
-      provider: providerId ?? "unknown",
-      model: model ?? "unknown",
-      promptTokens: 0,
-      completionTokens: 0,
-      totalTokens: 0,
-      latency,
-      success: false,
-      errorCode: code,
-    });
-
-    return failure(code, message, latency, { provider: providerId, model });
+    return failure(code, message, latency);
   }
 }
 

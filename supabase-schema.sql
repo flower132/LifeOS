@@ -338,3 +338,38 @@ create index if not exists idx_companion_meta_user on public.companion_meta(user
 -- ============================================================
 -- Done! Now enable Email auth in Supabase Dashboard → Authentication → Providers
 -- ============================================================
+
+-- ------------------- ai_usage -------------------
+-- AI 使用记录（Usage Tracking）：每次 AI 调用一行，无论成功失败。
+-- 只存元数据 —— prompt / 响应内容永不落库。
+-- user_id 为 text：服务端鉴权接入前本地模式写 "local"，
+-- 接入后写 auth.users 的 uuid（text 兼容两种形态，故不加 FK）。
+create table if not exists public.ai_usage (
+  id              uuid primary key default uuid_generate_v4(),
+  user_id         text not null default 'local',
+  provider        text not null,
+  model           text not null,
+  task            text not null,
+  request_tokens  int default 0,
+  response_tokens int default 0,
+  total_tokens    int default 0,
+  estimated_cost  numeric(14,8) default 0,
+  latency         int default 0,
+  success         boolean not null default true,
+  error_code      text,
+  session_id      text,        -- 预留：会话维度
+  conversation_id text,        -- 预留：多轮对话维度
+  created_at      timestamptz default now()
+);
+create index if not exists idx_ai_usage_user_created on public.ai_usage(user_id, created_at desc);
+create index if not exists idx_ai_usage_task_created on public.ai_usage(task, created_at desc);
+create index if not exists idx_ai_usage_model_created on public.ai_usage(model, created_at desc);
+alter table public.ai_usage enable row level security;
+-- 服务端路由在鉴权接入前以匿名身份写入，故 insert 放开；
+-- 读取仍按用户隔离（本地模式行可被本地读取）。
+create policy "Server can insert ai_usage"
+  on public.ai_usage for insert
+  with check (true);
+create policy "Users can read their own ai_usage"
+  on public.ai_usage for select
+  using (auth.uid()::text = user_id or user_id = 'local');

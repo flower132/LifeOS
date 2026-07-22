@@ -11,6 +11,7 @@ import {
 } from "./models";
 import { getProvider, isProviderEnabled, primaryKeyEnv } from "./registry";
 import { getCurrentPlan, getPlanConfig, planAllowsModel } from "./plans";
+import { recordUsage } from "./usage";
 import {
   AIGenerateParams,
   AIProvider,
@@ -45,6 +46,11 @@ export interface AIExecuteInput {
   images?: AIImageInput[];
   /** Serialized LifeOS context block from the client Context Engine. */
   context?: string;
+  /** Caller identity for usage records; defaults to "local". */
+  userId?: string;
+  /** 预留：会话 / 多轮对话维度（透传到 Usage）。 */
+  sessionId?: string;
+  conversationId?: string;
   options?: {
     temperature?: number;
     maxTokens?: number;
@@ -180,41 +186,83 @@ function invoke(
  * Execute an AI task end to end: resolve → capability/degradation → invoke.
  * Throws AIProviderError (unified codes) on failure; never leaks raw
  * provider errors.
+ *
+ * Every execution — success or failure — is recorded by the Usage layer.
+ * Business code never records usage itself.
  */
 export async function executeTask(input: AIExecuteInput): Promise<AIExecuteOutput> {
-  const method = requiredMethod(input.task, input.images);
-  const capability = METHOD_CAPABILITY[method];
-  const { info } = resolveModel(input.task, capability);
-
-  const rule = TASK_ROUTING[input.task];
-  const plan = getPlanConfig();
-  const provider = getProvider(info.provider);
-
-  const params: AIGenerateParams = {
-    prompt: input.prompt,
-    systemPrompt:
-      input.task === "HEALTH_CHECK"
-        ? buildSystemPrompt(input.options?.schemaHint)
-        : withLifeContext(
-            buildSystemPrompt(input.options?.schemaHint),
-            input.context
-          ),
-    images: input.images,
-    temperature: input.options?.temperature ?? rule.temperature,
-    maxTokens: Math.min(
-      input.options?.maxTokens ?? rule.maxTokens,
-      info.maxTokens,
-      plan.maxTokensPerRequest
-    ),
-    jsonMode: input.options?.jsonMode ?? true,
+  const start = Date.now();
+  const usageMeta = {
+    userId: input.userId ?? "local",
+    task: input.task,
+    sessionId: input.sessionId,
+    conversationId: input.conversationId,
   };
 
-  const result = await invoke(provider, method, info.model, params);
+  let provider = "unknown";
+  let model = "unknown";
 
-  return {
-    content: result.content,
-    usage: result.usage,
-    providerId: info.provider,
-    model: info.model,
-  };
+  try {
+    const method = requiredMethod(input.task, input.images);
+    const capability = METHOD_CAPABILITY[method];
+    const { info } = resolveModel(input.task, capability);
+    provider = info.provider;
+    model = info.model;
+
+    const rule = TASK_ROUTING[input.task];
+    const plan = getPlanConfig();
+    const aiProvider = getProvider(info.provider);
+
+    const params: AIGenerateParams = {
+      prompt: input.prompt,
+      systemPrompt:
+        input.task === "HEALTH_CHECK"
+          ? buildSystemPrompt(input.options?.schemaHint)
+          : withLifeContext(
+              buildSystemPrompt(input.options?.schemaHint),
+              input.context
+            ),
+      images: input.images,
+      temperature: input.options?.temperature ?? rule.temperature,
+      maxTokens: Math.min(
+        input.options?.maxTokens ?? rule.maxTokens,
+        info.maxTokens,
+        plan.maxTokensPerRequest
+      ),
+      jsonMode: input.options?.jsonMode ?? true,
+    };
+
+    const result = await invoke(aiProvider, method, info.model, params);
+
+    await recordUsage({
+      ...usageMeta,
+      provider,
+      model,
+      requestTokens: result.usage.promptTokens,
+      responseTokens: result.usage.completionTokens,
+      totalTokens: result.usage.totalTokens,
+      latency: Date.now() - start,
+      success: true,
+    });
+
+    return {
+      content: result.content,
+      usage: result.usage,
+      providerId: info.provider,
+      model: info.model,
+    };
+  } catch (err) {
+    await recordUsage({
+      ...usageMeta,
+      provider,
+      model,
+      requestTokens: 0,
+      responseTokens: 0,
+      totalTokens: 0,
+      latency: Date.now() - start,
+      success: false,
+      errorCode: err instanceof AIProviderError ? err.code : "unknown",
+    });
+    throw err;
+  }
 }
