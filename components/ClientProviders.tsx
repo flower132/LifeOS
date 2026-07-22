@@ -143,11 +143,18 @@ export function ClientProviders({ children }: { children: React.ReactNode }) {
   }, []);
 
   // Register service worker for PWA
+  // Use Vercel's git commit SHA (auto-injected at build time) so the SW
+  // re-registers on every deployment. Falls back to a build timestamp for
+  // local dev. This prevents stale SW from serving outdated HTML that
+  // references chunk files which no longer exist after a new deploy.
   useEffect(() => {
     if ("serviceWorker" in navigator) {
-      const buildId = process.env.NEXT_PUBLIC_BUILD_ID || "dev";
+      const swVersion =
+        process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA ||
+        process.env.NEXT_PUBLIC_BUILD_ID ||
+        `dev-${Date.now()}`;
       navigator.serviceWorker
-        .register(`/sw.js?v=${buildId}`)
+        .register(`/sw.js?v=${swVersion}`)
         .then(() => {
           // PWA service worker registered successfully
         })
@@ -155,6 +162,67 @@ export function ClientProviders({ children }: { children: React.ReactNode }) {
           console.error("[LifeOS] SW registration failed:", error);
         });
     }
+  }, []);
+
+  // Auto-recover from ChunkLoadError after deployment
+  // When a new deployment changes chunk file hashes, old cached HTML or
+  // in-flight route transitions may reference chunks that no longer exist.
+  // This handler detects the error and reloads the page once to fetch
+  // fresh HTML with up-to-date chunk references.
+  useEffect(() => {
+    const CHUNK_ERROR_PATTERNS = [
+      "ChunkLoadError",
+      "Failed to load chunk",
+      "Loading chunk",
+      "Loading CSS chunk",
+    ];
+
+    function isChunkError(message: string): boolean {
+      return CHUNK_ERROR_PATTERNS.some((p) => message.includes(p));
+    }
+
+    function handleChunkError() {
+      const reloadKey = "lifeos-chunk-reload";
+      const lastReload = sessionStorage.getItem(reloadKey);
+      const now = Date.now();
+
+      // Only reload once within a 10-second window to prevent infinite loops
+      if (!lastReload || now - parseInt(lastReload) > 10000) {
+        sessionStorage.setItem(reloadKey, String(now));
+        console.warn("[LifeOS] ChunkLoadError detected, reloading page…");
+        window.location.reload();
+      } else {
+        console.error(
+          "[LifeOS] ChunkLoadError detected repeatedly. Please hard-refresh (Cmd+Shift+R) or clear site data."
+        );
+      }
+    }
+
+    function onUnhandledRejection(event: PromiseRejectionEvent) {
+      const reason = event.reason;
+      const message =
+        typeof reason === "string"
+          ? reason
+          : reason?.message || String(reason);
+      if (isChunkError(message)) {
+        handleChunkError();
+      }
+    }
+
+    function onError(event: ErrorEvent) {
+      const message = event.message || "";
+      if (isChunkError(message)) {
+        handleChunkError();
+      }
+    }
+
+    window.addEventListener("unhandledrejection", onUnhandledRejection);
+    window.addEventListener("error", onError);
+
+    return () => {
+      window.removeEventListener("unhandledrejection", onUnhandledRejection);
+      window.removeEventListener("error", onError);
+    };
   }, []);
 
   // Trigger Daily Companion once stores are hydrated.
