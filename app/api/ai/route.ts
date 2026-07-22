@@ -3,17 +3,17 @@ import { z } from "zod";
 import { AITASKS, AIErrorCode, AIServerResponse } from "@/lib/ai/types";
 import { AIProviderError } from "@/lib/ai/provider";
 import { executeTask } from "@/lib/ai/router";
-import { canUse, consume, restore } from "@/lib/ai/quota";
+import { checkQuota, consumeQuota } from "@/lib/ai/quota";
 
 export const runtime = "nodejs";
 
 // ---------------------------------------------------------------------------
 // The single AI entry point for the entire product.
 //
-// Client → POST /api/ai → quota → router → provider → model → unified result.
-// Clients may pass a task + prompt only — never provider, model, baseUrl, key.
-// Usage recording lives INSIDE the router (success + failure) — the route
-// only passes the caller identity through.
+// Client → POST /api/ai → Quota Check → Router → Provider → Usage → Quota
+// Update. Clients may pass a task + prompt only — never provider, model,
+// baseUrl, key. Usage recording lives INSIDE the router (success + failure);
+// quota checks/updates live HERE — the router never sees the quota engine.
 // ---------------------------------------------------------------------------
 
 const MAX_IMAGES = 4;
@@ -135,7 +135,9 @@ export async function POST(request: Request): Promise<Response> {
   // User identity: no server auth yet — reserved for Supabase session wiring.
   const userId = "local";
 
-  if (!canUse(userId, task)) {
+  // ── Quota Check：超额直接返回统一错误，不调用模型 ──
+  const quota = await checkQuota(userId);
+  if (!quota.ok) {
     return failure(
       "quota_exceeded",
       "Daily AI quota exceeded. Please try again tomorrow.",
@@ -155,7 +157,13 @@ export async function POST(request: Request): Promise<Response> {
     });
 
     const latency = elapsed(start);
-    consume(userId, task);
+
+    // ── Quota Update：按 Provider 返回的真实消耗扣减（Usage 由 router 记录）──
+    await consumeQuota(userId, {
+      tokens: result.usage.totalTokens,
+      requests: 1,
+      images: images?.length ?? 0,
+    });
 
     const body: AIServerResponse = {
       success: true,
@@ -170,7 +178,7 @@ export async function POST(request: Request): Promise<Response> {
     return Response.json(body, { status: 200 });
   } catch (err) {
     const latency = elapsed(start);
-    restore(userId, task);
+    // 失败的调用不消耗配额（consumeQuota 只在成功路径调用）。
 
     const code: AIErrorCode =
       err instanceof AIProviderError ? err.code : "unknown";

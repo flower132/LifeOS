@@ -373,3 +373,25 @@ create policy "Server can insert ai_usage"
 create policy "Users can read their own ai_usage"
   on public.ai_usage for select
   using (auth.uid()::text = user_id or user_id = 'local');
+
+-- ------------------- ai_quota_daily -------------------
+-- AI 每日配额计数器（Quota Engine）：(user_id, day) 一桶，按 UTC 日分桶。
+-- 跨天自动落到新桶 = 每天自动重置，无需 cron，不依赖浏览器。
+-- tokens 为当前启用维度；requests/images/files/audio 计数已预留。
+create table if not exists public.ai_quota_daily (
+  user_id     text not null default 'local',
+  day         text not null,
+  tokens      int default 0,
+  requests    int default 0,
+  images      int default 0,
+  files       int default 0,
+  audio       int default 0,
+  updated_at  timestamptz default now(),
+  primary key (user_id, day)
+);
+alter table public.ai_quota_daily enable row level security;
+-- 服务端路由在鉴权接入前以匿名身份读写，故写放开；读取按用户隔离。
+create policy "Server can write ai_quota_daily"
+  on public.ai_quota_daily for all
+  using (true)
+  with check (true);

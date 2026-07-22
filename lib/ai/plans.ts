@@ -17,8 +17,8 @@ export interface AIPlanConfig {
   allowedProviders: RoutableProviderId[] | "all";
   /** MODEL_REGISTRY keys this plan may use, or "all". */
   allowedModels: string[] | "all";
-  /** Max AI calls per user per day. */
-  dailyQuota: number;
+  /** 每日 token 预算（Quota Engine 的限额输入；null = 不限）。 */
+  dailyTokens: number | null;
   /** Per-request completion-token ceiling. */
   maxTokensPerRequest: number;
 }
@@ -36,19 +36,19 @@ export const AI_PLANS: Record<AIPlanId, AIPlanConfig> = {
   free: {
     allowedProviders: ["deepseek"],
     allowedModels: ["deepseek-chat", "deepseek-reasoner"],
-    dailyQuota: 100_000,
+    dailyTokens: 100_000,
     maxTokensPerRequest: 4096,
   },
   pro: {
     allowedProviders: "all",
     allowedModels: "all",
-    dailyQuota: 100_000,
+    dailyTokens: 100_000,
     maxTokensPerRequest: 8192,
   },
   ultra: {
     allowedProviders: "all",
     allowedModels: "all",
-    dailyQuota: 100_000,
+    dailyTokens: 100_000,
     maxTokensPerRequest: 16_384,
   },
 };
