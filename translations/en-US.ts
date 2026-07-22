@@ -148,6 +148,13 @@ const enUS = {
   "replayKeyMoments": "Key Moments",
   "replayShowMore": "Show all {count} events",
   "replayShowLess": "Show less",
+
+  // AI Summary (shared AISummaryCard component)
+  "aiSummary": "AI Summary",
+  "aiSummaryGenerating": "AI is writing your summary…",
+  "aiSummaryFailed": "Failed to generate the summary. Please try again.",
+  "aiSummaryEmpty": "Not enough records to generate a summary yet.",
+  "retry": "Retry",
   "replayEvents": "Events",
   "replayMemories": "Memories",
   "replayNotes": "Notes",

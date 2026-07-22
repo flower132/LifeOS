@@ -99,6 +99,13 @@ const jaJP = {
   "replayKeyMoments": "重要な瞬間",
   "replayShowMore": "{count} 件すべて表示",
   "replayShowLess": "折りたたむ",
+
+  // AI Summary（共通 AISummaryCard コンポーネント）
+  "aiSummary": "AI 要約",
+  "aiSummaryGenerating": "AI が要約を生成しています…",
+  "aiSummaryFailed": "要約の生成に失敗しました。もう一度お試しください。",
+  "aiSummaryEmpty": "要約を生成するための記録がまだ不足しています。",
+  "retry": "再試行",
   "replayEvents": "イベント",
   "replayMemories": "記憶",
   "replayNotes": "ノート",

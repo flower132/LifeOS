@@ -23,9 +23,12 @@ import { rankTimelineEvents } from "@/lib/graph/timeline/timelineRank";
 import { answerTimelineQuestion } from "@/lib/graph/timeline/qa";
 import { useLongTermMemoryStore } from "@/stores/longTermMemoryStore";
 import { useObjectStore } from "@/stores/objectStore";
+import { useMemoryStore } from "@/stores/memoryStore";
+import { selectProviderForTask } from "@/lib/ai/objectIntelligence/fallback";
 import { Dialog } from "@/components/ui/Dialog";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { AISummaryCard } from "@/components/ai/AISummaryCard";
 import {
   Loader2,
   Sparkles,
@@ -106,6 +109,12 @@ function TravelTab() {
 
   // Track store hydration — triggers re-render when data becomes available
   const objectsLoaded = useObjectStore((s) => s.loaded);
+
+  // Provider badge（仅开发模式由 AISummaryCard 展示）
+  const travelProvider = useMemo(
+    () => selectProviderForTask("TIME_TRAVEL").providerId,
+    []
+  );
 
   // Compute snapshot during render — re-runs when preset or store data changes
   const date = useMemo(() => presetDate(preset), [preset]);
@@ -350,18 +359,16 @@ function TravelTab() {
 
           {/* AI Advice */}
           {loading ? (
-            <div className="flex items-center gap-2 rounded-lg bg-muted/30 px-3 py-4">
-              <Loader2 className="h-4 w-4 animate-spin text-accent" />
-              <span className="text-xs text-secondary">{t("analyzing")}</span>
-            </div>
+            <AISummaryCard
+              status="generating"
+              title={t("ifBackToThatDay")}
+            />
           ) : advice ? (
-            <div className="rounded-xl border border-accent/15 bg-accent/[0.03] p-4">
-              <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-accent">
-                <Sparkles className="h-3.5 w-3.5" />
-                {t("ifBackToThatDay")}
-              </p>
-              <p className="text-sm leading-relaxed text-primary">{advice}</p>
-            </div>
+            <AISummaryCard
+              content={advice}
+              title={t("ifBackToThatDay")}
+              provider={travelProvider}
+            />
           ) : null}
         </div>
       ) : (
@@ -393,10 +400,27 @@ function ReplayTab() {
   const [period, setPeriod] = useState<ReplayPeriod>("month");
   const [text, setText] = useState<string | null>(() => getReplay("month"));
   const [loading, setLoading] = useState(() => getReplay("month") === null);
-  const [expanded, setExpanded] = useState(false);
   const [showAllEvents, setShowAllEvents] = useState(false);
 
   const range = useMemo(() => replayRange(period, new Date()), [period]);
+
+  // 摘要记忆的生成时间（展示层读取，不触碰 Timeline Engine）
+  const memories = useMemoryStore((s) => s.memories);
+  const replayGeneratedAt = useMemo(
+    () =>
+      memories.find(
+        (m) =>
+          m.type === "summary" &&
+          m.topics.includes(`life_replay:${period}:${range.key}`)
+      )?.timestamp,
+    [memories, period, range.key]
+  );
+
+  // Provider badge（仅开发模式由 AISummaryCard 展示）
+  const replayProvider = useMemo(
+    () => selectProviderForTask("LIFE_REPLAY").providerId,
+    []
+  );
 
   const { stats, topEvents } = useMemo(() => {
     const s = computeTimelineStats(range.from, range.to, range.label);
@@ -433,7 +457,6 @@ function ReplayTab() {
 
   const load = (p: ReplayPeriod) => {
     setPeriod(p);
-    setExpanded(false);
     setShowAllEvents(false);
     const cached = getReplay(p);
     if (cached) {
@@ -507,31 +530,11 @@ function ReplayTab() {
 
           {/* ── AI Summary card ── */}
           {text && (
-            <div className="rounded-xl border border-accent/15 bg-accent/[0.03] p-4">
-              <div className="mb-2 flex items-center gap-1.5">
-                <Sparkles className="h-3.5 w-3.5 text-accent" />
-                <span className="text-xs font-semibold uppercase tracking-wide text-accent">
-                  {t("replayAIInsight")}
-                </span>
-              </div>
-              <div className={`text-sm leading-relaxed text-primary ${expanded ? "" : "line-clamp-4"}`}>
-                {text}
-              </div>
-              {text.length > 240 && (
-                <button
-                  type="button"
-                  onClick={() => setExpanded((v) => !v)}
-                  className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-accent hover:text-accent/80 transition-colors"
-                >
-                  {expanded ? t("replayShowLess") : t("expand")}
-                  {expanded ? (
-                    <ChevronUp className="h-3 w-3" />
-                  ) : (
-                    <ChevronDown className="h-3 w-3" />
-                  )}
-                </button>
-              )}
-            </div>
+            <AISummaryCard
+              content={text}
+              generatedAt={replayGeneratedAt}
+              provider={replayProvider}
+            />
           )}
 
           {/* ── Stats row ── */}
@@ -742,11 +745,8 @@ function SearchTab() {
           {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : (t("search"))}
         </Button>
       </div>
-      {answer && (
-        <p className="rounded-lg bg-muted/50 p-4 text-sm leading-relaxed text-foreground">
-          {answer}
-        </p>
-      )}
+      {loading && !answer && <AISummaryCard status="generating" />}
+      {answer && <AISummaryCard content={answer} />}
       <p className="text-xs text-muted-foreground">
         {t("timelineSearchHint")}
       </p>
