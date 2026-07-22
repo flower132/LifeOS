@@ -154,7 +154,15 @@ const enUS = {
   "aiSummaryGenerating": "AI is writing your summary…",
   "aiSummaryFailed": "Failed to generate the summary. Please try again.",
   "aiSummaryEmpty": "Not enough records to generate a summary yet.",
-  "retry": "Retry",
+
+  // ObjectPicker (shared object picker component)
+  "pickerNoResults": "No matching objects",
+  "pickerCreateNew": "Create new object",
+  "pickerCreateNamed": "Create new object \"{name}\"",
+  "pickerAllObjects": "All objects",
+  "pickerSelected": "{count} selected",
+  "pickerClear": "Clear",
+  "pickerSuggested": "Suggested",
   "replayEvents": "Events",
   "replayMemories": "Memories",
   "replayNotes": "Notes",

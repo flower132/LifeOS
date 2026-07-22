@@ -19,6 +19,7 @@ import {
 } from "@/lib/objectProperties";
 import { useTemplateStore } from "@/stores/templateStore";
 import { isAIProfileSupported } from "@/lib/ai/objectIntelligence/profiles";
+import { stashPickedObject } from "@/components/object/ObjectPicker";
 
 type CreateStep = "type" | "method" | "template" | "form";
 
@@ -36,6 +37,11 @@ export default function CreateObjectManualPage() {
   const [showConfirm, setShowConfirm] = useState(false);
 
   const aiSupported = isAIProfileSupported(type);
+
+  // ObjectPicker 快速创建：?pick=1 时创建完成自动返回并由 picker 选中；
+  // ?name= 预填对象名称。
+  const pickMode = searchParams.get("pick") === "1";
+  const initialName = searchParams.get("name") ?? undefined;
 
   const steps = useMemo(
     () =>
@@ -270,9 +276,18 @@ export default function CreateObjectManualPage() {
                 key={step}
                 type={type}
                 lockType
+                initialName={initialName}
                 initialProperties={initialProperties}
                 templateName={selectedTemplate?.name}
                 onDirtyChange={setFormDirty}
+                onCreated={
+                  pickMode
+                    ? (created) => {
+                        stashPickedObject(created.id);
+                        router.back();
+                      }
+                    : undefined
+                }
               />
               <button
                 type="button"

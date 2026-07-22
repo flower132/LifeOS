@@ -10,6 +10,7 @@ import { NoteSourceType, NoteAttachment } from "@/lib/types";
 import { triggerBackgroundObjectUpdate } from "@/lib/ai/objectIntelligence/update";
 import { intelligenceScheduler } from "@/lib/intelligence";
 import { ErrorState } from "@/components/ui/ErrorState";
+import { ObjectPickerField } from "@/components/object/ObjectPicker";
 
 interface NoteFormProps {
   initialObjectId?: string;
@@ -63,19 +64,14 @@ export function NoteForm({ initialObjectId }: NoteFormProps) {
     }
   }, [objectsLoaded, objectsLoading, loadObjects]);
 
-  const sortedObjects = useMemo(
-    () => objects.slice().sort((a, b) => a.name.localeCompare(b.name)),
-    [objects]
-  );
-
   const selectedObject = useMemo(
-    () => sortedObjects.find((o) => o.id === objectId),
-    [sortedObjects, objectId]
+    () => objects.find((o) => o.id === objectId),
+    [objects, objectId]
   );
 
   const canSubmit =
     objectsLoaded &&
-    sortedObjects.length > 0 &&
+    objects.length > 0 &&
     !submitting &&
     objectId.trim().length > 0 &&
     content.trim().length > 0;
@@ -183,22 +179,12 @@ export function NoteForm({ initialObjectId }: NoteFormProps) {
       )}
       <div className="space-y-2">
         <label className="text-sm font-medium text-foreground">{t("linkToObject")}</label>
-        <select
-          value={objectId}
-          name="object_id"
-          onChange={(e) => setObjectId(e.target.value)}
-          disabled={!objectsLoaded || sortedObjects.length === 0}
-          className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-accent focus:ring-2 focus:ring-accent disabled:bg-muted"
-        >
-          <option value="" disabled>
-            {!objectsLoaded ? t("loading") : t("selectObject")}
-          </option>
-          {sortedObjects.map((obj) => (
-            <option key={obj.id} value={obj.id}>
-              {obj.name} ({t(obj.type)})
-            </option>
-          ))}
-        </select>
+        <ObjectPickerField
+          value={objectId || null}
+          onChange={(id) => setObjectId(id)}
+          placeholder={t("selectObject")}
+          disabled={!objectsLoaded}
+        />
       </div>
 
       <div className="space-y-2">

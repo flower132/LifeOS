@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Trash2, Sparkles, Compass } from "lucide-react";
 import { useObjectStore } from "@/stores/objectStore";
+import { useObjectRecencyStore } from "@/stores/objectRecencyStore";
 import { useNoteStore } from "@/stores/noteStore";
 import { useRelationStore } from "@/stores/relationStore";
 import { useTagStore } from "@/stores/tagStore";
@@ -53,6 +54,13 @@ export default function ObjectDetailPage() {
   const [activeTab, setActiveTab] = useState<DetailTab>("overview");
 
   const object = objects.find((o) => o.id === id);
+
+  // 记录「最近查看」，供 ObjectPicker 最近排序
+  const markViewed = useObjectRecencyStore((s) => s.markViewed);
+  useEffect(() => {
+    if (object) markViewed(object.id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [object?.id, markViewed]);
   const notes = object ? getNotesByObjectId(object.id) : [];
   const relations = object ? getRelationsByObjectId(object.id) : [];
   const objectTags = object

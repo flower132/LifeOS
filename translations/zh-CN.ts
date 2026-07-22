@@ -160,7 +160,15 @@ const zhCN = {
   "aiSummaryGenerating": "AI 正在生成摘要…",
   "aiSummaryFailed": "摘要生成失败，请稍后重试。",
   "aiSummaryEmpty": "暂时没有足够的记录生成摘要。",
-  "retry": "重试",
+
+  // ObjectPicker（统一对象选择组件）
+  "pickerNoResults": "没有找到匹配的对象",
+  "pickerCreateNew": "创建新对象",
+  "pickerCreateNamed": "创建新对象「{name}」",
+  "pickerAllObjects": "全部对象",
+  "pickerSelected": "已选 {count} 个",
+  "pickerClear": "清除",
+  "pickerSuggested": "AI 推荐",
   "travelEmptyTitle": "这段时间还没有记录",
   "travelEmptyDescription": "这个时间点还没有任何数据。继续记录吧，未来的你会感谢现在留下痕迹的自己。",
   "travelSparseData": "这段时间只有少量记录，快照内容有限，但每一条都算数。",

@@ -252,7 +252,7 @@ export function AISummaryCard({
                 className="ml-auto inline-flex shrink-0 items-center gap-1 rounded-lg border border-border px-2.5 py-1 text-xs font-medium text-secondary transition-colors hover:border-accent/30 hover:text-accent"
               >
                 <RefreshCw className="h-3 w-3" />
-                {t("retry")}
+                {t("common.retry")}
               </button>
             )}
           </div>

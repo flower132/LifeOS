@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
+  LifeObject,
   LifeObjectType,
   LIFE_OBJECT_TYPES,
   ObjectProperties,
@@ -17,27 +18,32 @@ import { propertiesToPromptContext } from "@/lib/objectProperties";
 import { ErrorState } from "@/components/ui/ErrorState";
 
 interface ObjectFormProps {
+  initialName?: string;
   initialDescription?: string;
   initialProperties?: ObjectProperties;
   templateName?: string;
   type?: LifeObjectType;
   lockType?: boolean;
   onDirtyChange?: (dirty: boolean) => void;
+  /** 提供时创建成功后不跳转对象页，改由调用方处理（如 picker 快速创建回跳）。 */
+  onCreated?: (object: LifeObject) => void;
 }
 
 export function ObjectForm({
+  initialName,
   initialDescription,
   initialProperties,
   templateName,
   type: initialType = "person",
   lockType = false,
   onDirtyChange,
+  onCreated,
 }: ObjectFormProps) {
   const router = useRouter();
   const addObject = useObjectStore((s) => s.addObject);
   const { t } = useTranslation();
   const [type, setType] = useState<LifeObjectType>(initialType);
-  const [name, setName] = useState("");
+  const [name, setName] = useState(initialName ?? "");
   const [description, setDescription] = useState(initialDescription ?? "");
   const [properties, setProperties] = useState<ObjectProperties>(
     initialProperties ?? {}
@@ -110,6 +116,11 @@ export function ObjectForm({
             );
           }
         })();
+      }
+
+      if (onCreated) {
+        onCreated(created);
+        return;
       }
 
       router.push(`/objects/${created.id}`);

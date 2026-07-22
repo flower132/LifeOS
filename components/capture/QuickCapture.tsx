@@ -8,6 +8,7 @@ import { PenLine } from "lucide-react";
 import { useTranslation } from "@/lib/useTranslation";
 import { triggerBackgroundObjectUpdate } from "@/lib/ai/objectIntelligence/update";
 import { intelligenceScheduler } from "@/lib/intelligence";
+import { ObjectPickerField } from "@/components/object/ObjectPicker";
 
 export function QuickCapture() {
   const router = useRouter();
@@ -17,10 +18,6 @@ export function QuickCapture() {
   const [objectId, setObjectId] = useState("");
   const [content, setContent] = useState("");
   const [submitting, setSubmitting] = useState(false);
-
-  const sortedObjects = objects.slice().sort((a, b) =>
-    a.name.localeCompare(b.name)
-  );
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -59,18 +56,11 @@ export function QuickCapture() {
           <span className="text-sm font-medium">{t("quickCaptureTitle")}</span>
         </div>
 
-        <select
-          value={objectId}
-          onChange={(e) => setObjectId(e.target.value)}
-          className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent"
-        >
-          <option value="" disabled>{t("linkToObject")}</option>
-          {sortedObjects.map((obj) => (
-            <option key={obj.id} value={obj.id}>
-              {obj.name} ({t(obj.type)})
-            </option>
-          ))}
-        </select>
+        <ObjectPickerField
+          value={objectId || null}
+          onChange={(id) => setObjectId(id)}
+          placeholder={t("linkToObject")}
+        />
 
         <textarea
           value={content}
